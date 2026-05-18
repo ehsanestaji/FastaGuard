@@ -58,8 +58,8 @@ For the first public release:
 1. Tag the release:
 
    ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
+   git tag v0.1.1
+   git push origin v0.1.1
    ```
 
 2. Push the tag to trigger `.github/workflows/release.yml`.
@@ -120,7 +120,7 @@ Once the Bioconda recipe is merged upstream, BioContainers can build the corresp
 
 ## MultiQC
 
-FastaGuard v0.1.0 emits MultiQC custom content as `fastaguard_mqc.json`.
+FastaGuard emits MultiQC custom content as `fastaguard_mqc.json`.
 
 A native MultiQC plugin starter now lives in:
 
