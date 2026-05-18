@@ -35,6 +35,13 @@ class ReleaseMetadataTest(unittest.TestCase):
 
         self.assertNotIn("    - zlib", recipe)
 
+    def test_bioconda_recipe_includes_required_lint_metadata(self):
+        recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
+
+        self.assertIn("run_exports:", recipe)
+        self.assertIn('{{ pin_subpackage(\'fastaguard\', max_pin="x.x") }}', recipe)
+        self.assertIn("{{ stdlib('c') }}", recipe)
+
     def test_bioconda_build_script_uses_portable_install(self):
         script = (ROOT / "packaging" / "bioconda" / "build.sh").read_text()
 
