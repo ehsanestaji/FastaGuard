@@ -1,8 +1,9 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use flate2::read::MultiGzDecoder;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
+use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FastaRecord {
@@ -23,6 +24,22 @@ pub enum FastaEvent<'a> {
         line_number: usize,
     },
     EndRecord,
+}
+
+#[derive(Debug, Error)]
+pub enum FastaParseError {
+    #[error("sequence before first header at line {line_number}")]
+    SequenceBeforeFirstHeader { line_number: usize },
+    #[error("empty FASTA header at line {line_number}")]
+    EmptyHeader { line_number: usize },
+    #[error("empty FASTA record for {id} at line {line_number}")]
+    EmptyRecord { id: String, line_number: usize },
+    #[error("input contains no FASTA records")]
+    NoRecords,
+}
+
+pub fn is_structural_fasta_error(error: &anyhow::Error) -> bool {
+    error.chain().any(|cause| cause.is::<FastaParseError>())
 }
 
 // Convenience collector for tests and early internal use. Production orchestration should prefer
@@ -123,12 +140,12 @@ where
 
             let header = header_text.trim().to_string();
             if header.is_empty() {
-                return Err(anyhow!("empty FASTA header at line {line_number}"));
+                return Err(FastaParseError::EmptyHeader { line_number }.into());
             }
             let id = header
                 .split_whitespace()
                 .next()
-                .ok_or_else(|| anyhow!("empty FASTA header at line {line_number}"))?
+                .ok_or(FastaParseError::EmptyHeader { line_number })?
                 .to_string();
             current_id = Some(id);
             current_header_line = Some(line_number);
@@ -141,9 +158,7 @@ where
             continue;
         } else {
             if current_id.is_none() {
-                return Err(anyhow!(
-                    "sequence before first header at line {line_number}"
-                ));
+                return Err(FastaParseError::SequenceBeforeFirstHeader { line_number }.into());
             }
             current_has_sequence = true;
             visitor(FastaEvent::SequenceLine {
@@ -162,7 +177,7 @@ where
     )?;
 
     if record_count == 0 {
-        return Err(anyhow!("input contains no FASTA records"));
+        return Err(FastaParseError::NoRecords.into());
     }
 
     Ok(())
@@ -184,7 +199,11 @@ where
 
     if !*current_has_sequence {
         let header_line = current_header_line.unwrap_or_default();
-        return Err(anyhow!("empty FASTA record for {id} at line {header_line}"));
+        return Err(FastaParseError::EmptyRecord {
+            id,
+            line_number: header_line,
+        }
+        .into());
     }
 
     visitor(FastaEvent::EndRecord)?;

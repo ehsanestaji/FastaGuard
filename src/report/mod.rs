@@ -25,9 +25,7 @@ fn validate_output_paths(outputs: &OutputPaths) -> Result<()> {
     let mut seen_paths = BTreeSet::new();
 
     for path in paths {
-        let normalized = normalize_path_lexically(path)
-            .to_string_lossy()
-            .into_owned();
+        let normalized = normalize_output_path(path)?.to_string_lossy().into_owned();
         if !seen_paths.insert(normalized.clone()) {
             return Err(anyhow!("duplicate output paths: {}", normalized));
         }
@@ -62,6 +60,18 @@ fn validate_output_paths(outputs: &OutputPaths) -> Result<()> {
     Ok(())
 }
 
+fn normalize_output_path(path: &Path) -> Result<PathBuf> {
+    let anchored = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .context("failed to resolve current directory for output path validation")?
+            .join(path)
+    };
+
+    Ok(normalize_path_lexically(&anchored))
+}
+
 fn normalize_path_lexically(path: &Path) -> PathBuf {
     let mut components = Vec::new();
 
@@ -94,6 +104,7 @@ fn normalize_path_lexically(path: &Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::sync::Mutex;
 
     use tempfile::TempDir;
 
@@ -170,6 +181,7 @@ mod tests {
 
     #[test]
     fn duplicate_output_paths_detect_equivalent_dot_relative_paths() {
+        let _guard = current_dir_lock().lock().unwrap();
         let temp_dir = TempDir::new().unwrap();
         let current_dir = std::env::current_dir().unwrap();
         std::env::set_current_dir(temp_dir.path()).unwrap();
@@ -192,6 +204,7 @@ mod tests {
 
     #[test]
     fn duplicate_output_paths_detect_equivalent_parent_relative_paths() {
+        let _guard = current_dir_lock().lock().unwrap();
         let temp_dir = TempDir::new().unwrap();
         fs::create_dir(temp_dir.path().join("subdir")).unwrap();
         let current_dir = std::env::current_dir().unwrap();
@@ -211,6 +224,35 @@ mod tests {
         assert!(!temp_dir.path().join("report.html").exists());
         assert!(!temp_dir.path().join("report.json").exists());
         assert!(!temp_dir.path().join("multiqc.json").exists());
+    }
+
+    #[test]
+    fn duplicate_output_paths_detect_relative_and_absolute_aliases() {
+        let _guard = current_dir_lock().lock().unwrap();
+        let temp_dir = TempDir::new().unwrap();
+        let current_dir = std::env::current_dir().unwrap();
+        std::env::set_current_dir(temp_dir.path()).unwrap();
+        let absolute_duplicate = std::env::current_dir().unwrap().join("report.same");
+        let outputs = OutputPaths {
+            html: "report.html".into(),
+            json: "report.same".into(),
+            tsv: absolute_duplicate,
+            multiqc: "multiqc.json".into(),
+        };
+
+        let result = write_all(&test_report(), &outputs);
+        std::env::set_current_dir(current_dir).unwrap();
+
+        let error = result.unwrap_err();
+        assert!(error.to_string().contains("duplicate output paths"));
+        assert!(!temp_dir.path().join("report.html").exists());
+        assert!(!temp_dir.path().join("report.same").exists());
+        assert!(!temp_dir.path().join("multiqc.json").exists());
+    }
+
+    fn current_dir_lock() -> &'static Mutex<()> {
+        static LOCK: Mutex<()> = Mutex::new(());
+        &LOCK
     }
 
     fn test_report() -> FastaguardReport {

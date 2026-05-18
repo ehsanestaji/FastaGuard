@@ -204,10 +204,6 @@ pub struct Cli {
     #[arg(long, value_delimiter = ',')]
     pub fail_on: Vec<String>,
 
-    /// Comma-separated rule IDs that should warn when triggered.
-    #[arg(long, value_delimiter = ',')]
-    pub warn_on: Vec<String>,
-
     /// Maximum allowed global N fraction before a high_n_rate finding.
     #[arg(long)]
     pub max_n_rate: Option<f64>,
@@ -242,7 +238,6 @@ pub struct OutputPaths {
 #[derive(Debug, Clone)]
 pub struct RuleConfig {
     pub fail_on: BTreeSet<String>,
-    pub warn_on: BTreeSet<String>,
 }
 
 impl Cli {
@@ -265,7 +260,6 @@ impl Cli {
             },
             rules: RuleConfig {
                 fail_on: normalize_rules(&self.fail_on),
-                warn_on: normalize_rules(&self.warn_on),
             },
             thresholds: ThresholdOverrides {
                 max_n_rate: self.max_n_rate,
@@ -1441,7 +1435,6 @@ mod tests {
     fn duplicate_ids_can_fail_when_configured() {
         let rules = RuleConfig {
             fail_on: BTreeSet::from(["duplicate_ids".to_string()]),
-            warn_on: BTreeSet::new(),
         };
         let profile = ProfileConfig::assembly(ThresholdOverrides { max_n_rate: None, min_contig_length: None });
         let analysis = analyze(&metrics(), &profile, &rules);
@@ -1451,7 +1444,7 @@ mod tests {
 
     #[test]
     fn high_n_defaults_to_warning() {
-        let rules = RuleConfig { fail_on: BTreeSet::new(), warn_on: BTreeSet::new() };
+        let rules = RuleConfig { fail_on: BTreeSet::new() };
         let profile = ProfileConfig::assembly(ThresholdOverrides { max_n_rate: None, min_contig_length: None });
         let analysis = analyze(&metrics(), &profile, &rules);
         assert_eq!(analysis.status, VerdictStatus::Warn);

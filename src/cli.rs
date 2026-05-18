@@ -37,10 +37,6 @@ pub struct Cli {
     #[arg(long, value_delimiter = ',')]
     pub fail_on: Vec<String>,
 
-    /// Comma-separated rule IDs that should warn when triggered.
-    #[arg(long, value_delimiter = ',')]
-    pub warn_on: Vec<String>,
-
     /// Maximum allowed global N fraction before a high_n_rate finding.
     #[arg(long)]
     pub max_n_rate: Option<f64>,
@@ -75,7 +71,6 @@ pub struct OutputPaths {
 #[derive(Debug, Clone)]
 pub struct RuleConfig {
     pub fail_on: BTreeSet<String>,
-    pub warn_on: BTreeSet<String>,
 }
 
 impl Cli {
@@ -108,7 +103,6 @@ impl Cli {
             },
             rules: RuleConfig {
                 fail_on: normalize_rules(&self.fail_on),
-                warn_on: normalize_rules(&self.warn_on),
             },
             thresholds: ThresholdOverrides {
                 max_n_rate: self.max_n_rate,
@@ -142,7 +136,6 @@ mod tests {
             tsv: PathBuf::from("fastaguard.tsv"),
             multiqc: PathBuf::from("fastaguard_multiqc.json"),
             fail_on: Vec::new(),
-            warn_on: Vec::new(),
             max_n_rate,
             min_contig_length: None,
             threads: 1,

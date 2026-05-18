@@ -37,7 +37,7 @@ TSV summary = fastaguard.tsv
 MultiQC JSON = fastaguard_multiqc.json
 ```
 
-## In Scope
+## Implemented In v0.1
 
 ### Inputs
 
@@ -52,10 +52,11 @@ MultiQC JSON = fastaguard_multiqc.json
 
 - malformed headers
 - empty records
+- sequence before first header
+- empty input
 - duplicate IDs
 - duplicate sequences
 - invalid nucleotide/IUPAC symbols
-- mixed or suspicious non-nucleotide content
 - bad line endings and hidden characters where detectable
 
 ### Structural Stats
@@ -70,8 +71,6 @@ MultiQC JSON = fastaguard_multiqc.json
 - N90
 - L50
 - L90
-- length histogram data
-- ultra-short and ultra-long outliers
 
 ### Composition Stats
 
@@ -79,16 +78,12 @@ MultiQC JSON = fastaguard_multiqc.json
 - AT percent
 - N percent
 - IUPAC ambiguity rate
-- per-sequence composition outliers
-- GC-vs-length anomaly data
 
 ### Assembly QC
 
 - gap runs
-- scaffold fragmentation heuristics
 - suspicious tiny contigs
 - high-N scaffolds
-- GC-vs-length anomaly plot data
 
 ### Explainability
 
@@ -120,6 +115,14 @@ Suggested next step: inspect high-N scaffolds or run gap closing/polishing.
 - browser-based contig filtering
 - AI-generated summaries
 
+## Planned After v0.1
+
+- length histogram data
+- ultra-short and ultra-long outliers
+- per-sequence composition outliers
+- GC-vs-length anomaly data and plot data
+- scaffold fragmentation heuristics beyond the current tiny-contig and gap-run checks
+
 ## Verdicts
 
 Verdict levels:
@@ -134,15 +137,14 @@ Default FAIL conditions:
 
 - invalid FASTA structure
 - empty input
-- duplicate IDs when default fail rules are enabled
-- invalid nucleotide symbols above configured threshold
+- duplicate IDs
+- invalid nucleotide symbols
 
 Default WARN conditions:
 
 - high N content
 - many high-N scaffolds
 - excessive tiny contigs
-- extreme GC outliers
 - suspiciously many duplicate sequences
 - very long gap runs
 
@@ -161,7 +163,7 @@ The first release is successful if:
 
 - it validates huge FASTA files without loading full sequences into memory
 - it produces useful HTML, JSON, TSV, and MultiQC-compatible outputs
-- it catches duplicate IDs, invalid characters, high-N content, length outliers, and suspicious composition
+- it catches invalid FASTA structure, duplicate IDs, invalid characters, and high-N content
 - it has deterministic, documented exit codes
 - it can be added to a Nextflow or Snakemake pipeline in under 5 minutes
 

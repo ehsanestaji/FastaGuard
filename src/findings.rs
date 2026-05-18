@@ -255,8 +255,6 @@ fn verdict_reasons(findings: &[Finding], rules: &RuleConfig, status: VerdictStat
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeSet;
-
     use super::*;
     use crate::metrics::SequenceSummary;
     use crate::profile::ThresholdOverrides;
@@ -304,7 +302,6 @@ mod tests {
     fn rules(fail_on: &[&str]) -> RuleConfig {
         RuleConfig {
             fail_on: fail_on.iter().map(|value| (*value).to_string()).collect(),
-            warn_on: BTreeSet::new(),
         }
     }
 

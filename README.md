@@ -73,6 +73,7 @@ fastaguard sample.fa \
 The MVP focuses on:
 
 - FASTA validity
+- invalid FASTA structure reports with explainable FAIL verdicts
 - duplicate IDs
 - duplicate sequences
 - invalid nucleotide/IUPAC characters
@@ -83,9 +84,14 @@ The MVP focuses on:
 - high-N scaffolds
 - gap runs
 - suspicious tiny contigs
-- length and composition outliers
 - explainable PASS / WARN / FAIL verdicts
 - stable JSON, TSV, HTML, and MultiQC-compatible outputs
+
+Planned after v0.1:
+
+- length histograms and length outliers
+- composition outliers
+- GC-vs-length anomaly data and plots
 
 ## Positioning
 

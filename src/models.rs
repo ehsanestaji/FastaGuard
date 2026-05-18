@@ -110,7 +110,7 @@ impl FastaguardReport {
             },
             input: InputInfo {
                 path: config.input.display().to_string(),
-                profile: config.profile,
+                profile: config.profile.clone(),
                 compressed: path_is_gzip(&config.input),
             },
             verdict: Verdict {
@@ -140,6 +140,66 @@ impl FastaguardReport {
                 max_gap_run: metrics.max_gap_run,
             },
             findings: analysis.findings,
+            artifacts: Artifacts {
+                html: config.outputs.html.display().to_string(),
+                tsv: config.outputs.tsv.display().to_string(),
+                multiqc: config.outputs.multiqc.display().to_string(),
+            },
+        }
+    }
+
+    pub fn from_invalid_fasta(config: RunConfig, message: String) -> Self {
+        Self {
+            schema_version: SCHEMA_VERSION.to_string(),
+            tool: ToolInfo {
+                name: TOOL_NAME.to_string(),
+                version: TOOL_VERSION.to_string(),
+            },
+            input: InputInfo {
+                path: config.input.display().to_string(),
+                profile: config.profile.clone(),
+                compressed: path_is_gzip(&config.input),
+            },
+            verdict: Verdict {
+                status: VerdictStatus::Fail,
+                reasons: vec!["invalid_fasta_structure".to_string()],
+            },
+            summary: Summary {
+                sequence_count: 0,
+                total_length: 0,
+                min_length: 0,
+                max_length: 0,
+                mean_length: 0.0,
+                median_length: 0.0,
+                n50: 0,
+                n90: 0,
+                l50: 0,
+                l90: 0,
+                gc_percent: 0.0,
+                at_percent: 0.0,
+                n_percent: 0.0,
+                ambiguity_percent: 0.0,
+                duplicate_id_count: 0,
+                duplicate_sequence_count: 0,
+                invalid_sequence_count: 0,
+                high_n_sequence_count: 0,
+                tiny_contig_count: 0,
+                max_gap_run: 0,
+            },
+            findings: vec![Finding {
+                id: "invalid_fasta_structure".to_string(),
+                severity: Severity::Critical,
+                profile: config.profile,
+                affected_count: 0,
+                affected_fraction: 0.0,
+                message,
+                why_it_matters:
+                    "Structurally invalid FASTA cannot be parsed reliably by downstream tools."
+                        .to_string(),
+                suggested_next_step:
+                    "Fix FASTA headers and ensure every record has sequence data before rerunning FastaGuard."
+                        .to_string(),
+            }],
             artifacts: Artifacts {
                 html: config.outputs.html.display().to_string(),
                 tsv: config.outputs.tsv.display().to_string(),

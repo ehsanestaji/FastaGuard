@@ -74,10 +74,13 @@ Core checks:
 - AT percent
 - N percent
 - ambiguity rate
-- per-sequence composition outliers
 - suspicious tiny contigs
 - high-N scaffolds
 - long gap runs
+
+Planned beyond v0.1:
+
+- per-sequence composition outliers
 - length outliers
 - GC-vs-length anomaly data
 
@@ -137,7 +140,6 @@ Pipeline controls:
 ```bash
 fastaguard sample.fa \
   --fail-on duplicate_ids,invalid_chars,high_n_rate,gap_runs \
-  --warn-on tiny_contigs,gc_outliers \
   --max-n-rate 0.05 \
   --min-contig-length 200 \
   --threads 8
@@ -335,15 +337,14 @@ Default FAIL conditions:
 
 - invalid FASTA structure
 - empty input
-- duplicate IDs when configured as a fail rule
-- invalid nucleotide symbols above configured threshold
+- duplicate IDs
+- invalid nucleotide symbols
 
 Default WARN conditions:
 
 - high N content
 - many high-N scaffolds
 - excessive tiny contigs
-- extreme GC outliers
 - suspiciously many duplicate sequences
 - very long gap runs
 
@@ -360,10 +361,9 @@ The report should have three layers:
 2. Evidence
    summary stats
    N50 / N90 / L50 / L90
-   length distribution
+   length summary
    GC / N composition
    top problematic sequences
-   GC-vs-length anomaly plot
 
 3. Actions
    suggested follow-up tools:
@@ -391,7 +391,6 @@ Fixture tests:
 - invalid characters
 - high-N scaffolds
 - many tiny contigs
-- GC outlier contigs
 - gzipped FASTA
 
 Snapshot or golden tests:
@@ -428,7 +427,7 @@ The first release is successful if:
 
 - it validates huge FASTA files without loading full sequences into memory
 - it produces useful HTML, JSON, TSV, and MultiQC-compatible output
-- it catches duplicate IDs, invalid chars, high-N content, length outliers, and suspicious composition
+- it catches invalid FASTA structure, duplicate IDs, invalid chars, and high-N content
 - it installs with one command
 - it can be added to a Nextflow or Snakemake pipeline in under five minutes
 - MultiQC can consume its output
