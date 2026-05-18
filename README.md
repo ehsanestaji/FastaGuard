@@ -25,7 +25,7 @@ Run the assembly preflight check:
   --out fastaguard_report.html \
   --json fastaguard.json \
   --tsv fastaguard.tsv \
-  --multiqc fastaguard_multiqc.json
+  --multiqc fastaguard_mqc.json
 ```
 
 Pipeline gate example:
@@ -51,7 +51,7 @@ docker run --rm -v "$PWD:/data" fastaguard:local /data/sample.fa \
   --out /data/fastaguard_report.html \
   --json /data/fastaguard.json \
   --tsv /data/fastaguard.tsv \
-  --multiqc /data/fastaguard_multiqc.json
+  --multiqc /data/fastaguard_mqc.json
 ```
 
 Exit codes:
@@ -87,7 +87,7 @@ fastaguard sample.fa \
   --out fastaguard_report.html \
   --json fastaguard.json \
   --tsv fastaguard.tsv \
-  --multiqc fastaguard_multiqc.json
+  --multiqc fastaguard_mqc.json
 ```
 
 The MVP focuses on:
@@ -107,12 +107,11 @@ The MVP focuses on:
 - explainable PASS / WARN / FAIL verdicts
 - machine-readable summaries, actions, scope, and provenance
 - stable JSON, TSV, HTML, and MultiQC-compatible outputs
+- length histogram and GC-vs-length plot data in JSON and HTML
 
 Planned after v0.1:
 
-- length histograms and length outliers
 - composition outliers
-- GC-vs-length anomaly data and plots
 
 ## Positioning
 
@@ -139,6 +138,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [LLM and tooling vision](docs/llm-tooling-vision.md)
 - [Benchmarking](docs/benchmarking.md)
 - [Packaging](docs/packaging.md)
+- [v0.1.0 release notes](docs/releases/v0.1.0.md)
 - [Roadmap](docs/roadmap.md)
 - [First-release design](docs/superpowers/specs/2026-05-18-fastaguard-first-release-design.md)
 

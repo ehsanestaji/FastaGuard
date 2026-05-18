@@ -18,7 +18,7 @@ fastaguard sample.fa \
   --out fastaguard_report.html \
   --json fastaguard.json \
   --tsv fastaguard.tsv \
-  --multiqc fastaguard_multiqc.json
+  --multiqc fastaguard_mqc.json
 ```
 
 The default command should be useful:
@@ -34,7 +34,7 @@ profile = assembly
 HTML report = fastaguard_report.html
 JSON report = fastaguard.json
 TSV summary = fastaguard.tsv
-MultiQC JSON = fastaguard_multiqc.json
+MultiQC JSON = fastaguard_mqc.json
 ```
 
 ## Implemented In v0.1
@@ -84,6 +84,8 @@ MultiQC JSON = fastaguard_multiqc.json
 - gap runs
 - suspicious tiny contigs
 - high-N scaffolds
+- length histogram data
+- GC-vs-length plot data
 
 ### Explainability
 
@@ -117,10 +119,8 @@ Suggested next step: inspect high-N scaffolds or run gap closing/polishing.
 
 ## Planned After v0.1
 
-- length histogram data
 - ultra-short and ultra-long outliers
 - per-sequence composition outliers
-- GC-vs-length anomaly data and plot data
 - scaffold fragmentation heuristics beyond the current tiny-contig and gap-run checks
 
 ## Verdicts

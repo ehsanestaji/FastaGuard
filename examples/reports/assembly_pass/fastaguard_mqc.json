@@ -1,0 +1,22 @@
+{
+  "id": "fastaguard",
+  "section_name": "FastaGuard",
+  "description": "FASTA preflight QC summary",
+  "plot_type": "table",
+  "pconfig": {
+    "id": "fastaguard_summary",
+    "title": "FastaGuard FASTA preflight summary"
+  },
+  "data": {
+    "valid_assembly": {
+      "verdict": "PASS",
+      "sequence_count": 3,
+      "total_length": 47,
+      "n50": 16,
+      "n90": 15,
+      "gc_percent": 34.04,
+      "n_percent": 2.13,
+      "finding_count": 0
+    }
+  }
+}

@@ -5,7 +5,7 @@ rule fastaguard:
         html="fastaguard_report.html",
         json="fastaguard.json",
         tsv="fastaguard.tsv",
-        multiqc="fastaguard_multiqc.json"
+        multiqc="fastaguard_mqc.json"
     shell:
         """
         fastaguard {input.fasta} \

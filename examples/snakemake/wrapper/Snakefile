@@ -1,0 +1,13 @@
+rule fastaguard_wrapped:
+    input:
+        fasta="sample.fa"
+    output:
+        html="fastaguard_report.html",
+        json="fastaguard.json",
+        tsv="fastaguard.tsv",
+        multiqc="fastaguard_mqc.json"
+    params:
+        profile="assembly",
+        extra=""
+    wrapper:
+        "file:wrapper/fastaguard"

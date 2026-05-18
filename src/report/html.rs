@@ -13,6 +13,7 @@ fn render(report: &FastaguardReport) -> Result<String> {
     let summary = &report.summary;
     let machine_summary = render_machine_summary(report);
     let scope = render_scope(report);
+    let plots = render_plots(report);
     let findings = render_findings(report);
     let json = serde_json::to_string_pretty(report).context("failed to serialize report JSON")?;
 
@@ -45,6 +46,14 @@ th {{ background: #ecece6; }}
 .nowrap {{ white-space: nowrap; }}
 .table-scroll {{ overflow-x: auto; }}
 .table-scroll table {{ min-width: 760px; }}
+.plot-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }}
+.plot {{ background: #ffffff; border: 1px solid #d8d8d2; padding: 14px; }}
+.plot svg {{ width: 100%; height: auto; display: block; }}
+.bar {{ fill: #437c90; }}
+.point {{ fill: #5b7f3a; opacity: 0.78; }}
+.point.gc-outlier {{ fill: #b23a48; opacity: 0.9; }}
+.axis {{ stroke: #5f6368; stroke-width: 1; }}
+.axis-label {{ fill: #4f565c; font-size: 12px; }}
 pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
 </style>
 </head>
@@ -69,6 +78,8 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
 </table>
 <h2>Scope</h2>
 {scope}
+<h2>Plots</h2>
+{plots}
 <h2>Findings</h2>
 {findings}
 <h2>JSON</h2>
@@ -86,6 +97,7 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
         gc_percent = summary.gc_percent,
         n_percent = summary.n_percent,
         scope = scope,
+        plots = plots,
         findings = findings,
         json = escape_html(&json),
     ))
@@ -169,6 +181,135 @@ fn render_scope(report: &FastaguardReport) -> String {
 </div>"#,
         can_conclude = render_string_list(&report.scope.can_conclude),
         cannot_conclude = render_string_list(&report.scope.cannot_conclude),
+    )
+}
+
+fn render_plots(report: &FastaguardReport) -> String {
+    format!(
+        r#"<div class="plot-grid">
+<section class="plot">
+<h3>Length Histogram</h3>
+{histogram}
+</section>
+<section class="plot">
+<h3>GC vs Length</h3>
+{gc_length}
+</section>
+</div>"#,
+        histogram = render_length_histogram(report),
+        gc_length = render_gc_length_plot(report),
+    )
+}
+
+fn render_length_histogram(report: &FastaguardReport) -> String {
+    let bins = &report.plots.length_histogram;
+    if bins.is_empty() {
+        return r#"<p class="muted">No length histogram data available.</p>"#.to_string();
+    }
+
+    let width = 720.0;
+    let height = 260.0;
+    let left = 48.0;
+    let right = 16.0;
+    let top = 18.0;
+    let bottom = 42.0;
+    let plot_width = width - left - right;
+    let plot_height = height - top - bottom;
+    let max_count = bins
+        .iter()
+        .map(|bin| bin.sequence_count)
+        .max()
+        .unwrap_or(1)
+        .max(1) as f64;
+    let gap = 4.0;
+    let bar_width =
+        ((plot_width - gap * (bins.len().saturating_sub(1) as f64)) / bins.len() as f64).max(1.0);
+    let bars = bins
+        .iter()
+        .enumerate()
+        .map(|(index, bin)| {
+            let bar_height = if bin.sequence_count == 0 {
+                0.0
+            } else {
+                (bin.sequence_count as f64 / max_count) * plot_height
+            };
+            let x = left + index as f64 * (bar_width + gap);
+            let y = top + plot_height - bar_height;
+            format!(
+                r#"<rect class="bar" x="{x:.2}" y="{y:.2}" width="{bar_width:.2}" height="{bar_height:.2}"><title>{min}-{max}: {count} sequences, {total} bases</title></rect>"#,
+                min = bin.min_length,
+                max = bin.max_length,
+                count = bin.sequence_count,
+                total = bin.total_length,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    format!(
+        r#"<svg viewBox="0 0 {width:.0} {height:.0}" role="img" aria-label="Length Histogram">
+<line class="axis" x1="{left:.0}" y1="{top:.0}" x2="{left:.0}" y2="{axis_y:.0}"/>
+<line class="axis" x1="{left:.0}" y1="{axis_y:.0}" x2="{axis_x:.0}" y2="{axis_y:.0}"/>
+{bars}
+<text class="axis-label" x="{left:.0}" y="{label_y:.0}">sequence length bins</text>
+<text class="axis-label" x="4" y="{top:.0}">count</text>
+</svg>"#,
+        axis_y = top + plot_height,
+        axis_x = left + plot_width,
+        label_y = height - 10.0,
+    )
+}
+
+fn render_gc_length_plot(report: &FastaguardReport) -> String {
+    let points = &report.plots.gc_length_plot;
+    if points.is_empty() {
+        return r#"<p class="muted">No GC-vs-length data available.</p>"#.to_string();
+    }
+
+    let width = 720.0;
+    let height = 260.0;
+    let left = 56.0;
+    let right = 16.0;
+    let top = 18.0;
+    let bottom = 42.0;
+    let plot_width = width - left - right;
+    let plot_height = height - top - bottom;
+    let min_length = points.iter().map(|point| point.length).min().unwrap_or(0);
+    let max_length = points.iter().map(|point| point.length).max().unwrap_or(0);
+    let length_span = (max_length.saturating_sub(min_length)).max(1) as f64;
+    let circles = points
+        .iter()
+        .map(|point| {
+            let x = left + ((point.length.saturating_sub(min_length) as f64 / length_span) * plot_width);
+            let y = top + plot_height - ((point.gc_percent / 100.0) * plot_height);
+            let class = if point.flags.iter().any(|flag| flag == "gc_outlier") {
+                "point gc-outlier"
+            } else {
+                "point"
+            };
+            format!(
+                r#"<circle class="{class}" cx="{x:.2}" cy="{y:.2}" r="4"><title>{id}: length {length}, GC {gc:.2}%, N {n:.2}%{flags}</title></circle>"#,
+                id = escape_html(&point.id),
+                length = point.length,
+                gc = point.gc_percent,
+                n = point.n_percent,
+                flags = render_plot_flags(&point.flags),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    format!(
+        r#"<svg viewBox="0 0 {width:.0} {height:.0}" role="img" aria-label="GC vs Length">
+<line class="axis" x1="{left:.0}" y1="{top:.0}" x2="{left:.0}" y2="{axis_y:.0}"/>
+<line class="axis" x1="{left:.0}" y1="{axis_y:.0}" x2="{axis_x:.0}" y2="{axis_y:.0}"/>
+{circles}
+<text class="axis-label" x="{left:.0}" y="{label_y:.0}">length</text>
+<text class="axis-label" x="4" y="{top:.0}">GC%</text>
+</svg>"#,
+        axis_y = top + plot_height,
+        axis_x = left + plot_width,
+        label_y = height - 10.0,
     )
 }
 
@@ -327,6 +468,14 @@ fn render_optional_f64(value: Option<f64>) -> String {
         .unwrap_or_else(|| "-".to_string())
 }
 
+fn render_plot_flags(flags: &[String]) -> String {
+    if flags.is_empty() {
+        String::new()
+    } else {
+        format!("; flags {}", escape_html(&flags.join(", ")))
+    }
+}
+
 fn verdict_status(status: VerdictStatus) -> &'static str {
     match status {
         VerdictStatus::Pass => "PASS",
@@ -367,9 +516,10 @@ mod tests {
 
     use super::*;
     use crate::models::{
-        empty_evidence, Artifacts, EvidenceRecord, FastaguardReport, Finding, FindingAction,
-        FindingEvidence, InputInfo, MachineSummary, Provenance, ProvenanceThresholds,
-        RecommendedTool, Scope, Severity, Summary, ToolInfo, Verdict, VerdictStatus,
+        empty_evidence, empty_plots, Artifacts, EvidenceRecord, FastaguardReport, Finding,
+        FindingAction, FindingEvidence, InputInfo, MachineSummary, Provenance,
+        ProvenanceThresholds, RecommendedTool, Scope, Severity, Summary, ToolInfo, Verdict,
+        VerdictStatus,
     };
 
     #[test]
@@ -524,11 +674,12 @@ mod tests {
                 tiny_contig_count: 0,
                 max_gap_run: 1,
             },
+            plots: empty_plots(),
             findings: Vec::new(),
             artifacts: Artifacts {
                 html: "fastaguard_report.html".to_string(),
                 tsv: "fastaguard.tsv".to_string(),
-                multiqc: "fastaguard_multiqc.json".to_string(),
+                multiqc: "fastaguard_mqc.json".to_string(),
             },
         }
     }

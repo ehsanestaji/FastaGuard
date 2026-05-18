@@ -110,8 +110,8 @@ mod tests {
 
     use super::*;
     use crate::models::{
-        Artifacts, FastaguardReport, InputInfo, MachineSummary, Provenance, ProvenanceThresholds,
-        Scope, Summary, ToolInfo, Verdict, VerdictStatus,
+        empty_plots, Artifacts, FastaguardReport, InputInfo, MachineSummary, Provenance,
+        ProvenanceThresholds, Scope, Summary, ToolInfo, Verdict, VerdictStatus,
     };
 
     #[test]
@@ -317,11 +317,12 @@ mod tests {
                 tiny_contig_count: 0,
                 max_gap_run: 1,
             },
+            plots: empty_plots(),
             findings: Vec::new(),
             artifacts: Artifacts {
                 html: "fastaguard_report.html".to_string(),
                 tsv: "fastaguard.tsv".to_string(),
-                multiqc: "fastaguard_multiqc.json".to_string(),
+                multiqc: "fastaguard_mqc.json".to_string(),
             },
         }
     }

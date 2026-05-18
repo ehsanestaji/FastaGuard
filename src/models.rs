@@ -4,12 +4,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::cli::RunConfig;
 use crate::findings::Analysis;
-use crate::metrics::AssemblyMetrics;
+use crate::metrics::{AssemblyMetrics, SequenceSummary};
 use crate::profile::ProfileConfig;
+use crate::stats::composition::{percent, round2};
 
 pub const SCHEMA_VERSION: &str = "0.1.0";
 pub const TOOL_NAME: &str = "FastaGuard";
 pub const TOOL_VERSION: &str = env!("CARGO_PKG_VERSION");
+const LENGTH_HISTOGRAM_BIN_COUNT: u64 = 10;
+const GC_LENGTH_POINT_LIMIT: usize = 5_000;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FastaguardReport {
@@ -21,6 +24,7 @@ pub struct FastaguardReport {
     pub scope: Scope,
     pub provenance: Provenance,
     pub summary: Summary,
+    pub plots: Plots,
     pub findings: Vec<Finding>,
     pub artifacts: Artifacts,
 }
@@ -171,6 +175,31 @@ pub struct Summary {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Plots {
+    pub length_histogram: Vec<LengthHistogramBin>,
+    pub gc_length_plot: Vec<GcLengthPoint>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LengthHistogramBin {
+    pub min_length: u64,
+    pub max_length: u64,
+    pub sequence_count: u64,
+    pub total_length: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GcLengthPoint {
+    pub id: String,
+    pub length: u64,
+    pub gc_percent: f64,
+    pub n_percent: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gc_zscore: Option<f64>,
+    pub flags: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Artifacts {
     pub html: String,
     pub tsv: String,
@@ -185,6 +214,7 @@ impl FastaguardReport {
         analysis: Analysis,
     ) -> Self {
         let findings = analysis.findings;
+        let plots = build_plots(&metrics, profile);
         Self {
             schema_version: SCHEMA_VERSION.to_string(),
             tool: ToolInfo {
@@ -225,6 +255,7 @@ impl FastaguardReport {
                 tiny_contig_count: metrics.tiny_contig_count,
                 max_gap_run: metrics.max_gap_run,
             },
+            plots,
             findings,
             artifacts: Artifacts {
                 html: config.outputs.html.display().to_string(),
@@ -291,6 +322,7 @@ impl FastaguardReport {
                 tiny_contig_count: 0,
                 max_gap_run: 0,
             },
+            plots: empty_plots(),
             findings,
             artifacts: Artifacts {
                 html: config.outputs.html.display().to_string(),
@@ -378,6 +410,13 @@ pub fn empty_evidence() -> FindingEvidence {
         total_records: 0,
         truncated: false,
         records: Vec::new(),
+    }
+}
+
+pub fn empty_plots() -> Plots {
+    Plots {
+        length_histogram: Vec::new(),
+        gc_length_plot: Vec::new(),
     }
 }
 
@@ -482,8 +521,167 @@ fn build_provenance(config: &RunConfig, profile: &ProfileConfig) -> Provenance {
     }
 }
 
+fn build_plots(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Plots {
+    Plots {
+        length_histogram: build_length_histogram(metrics),
+        gc_length_plot: build_gc_length_plot(metrics, profile),
+    }
+}
+
+fn build_length_histogram(metrics: &AssemblyMetrics) -> Vec<LengthHistogramBin> {
+    if metrics.sequence_count == 0 {
+        return Vec::new();
+    }
+    if metrics.min_length == metrics.max_length {
+        return vec![LengthHistogramBin {
+            min_length: metrics.min_length,
+            max_length: metrics.max_length,
+            sequence_count: metrics.sequence_count,
+            total_length: metrics.total_length,
+        }];
+    }
+
+    let span = metrics.max_length - metrics.min_length + 1;
+    let bin_width = span.div_ceil(LENGTH_HISTOGRAM_BIN_COUNT).max(1);
+    let bin_count = span.div_ceil(bin_width);
+    let mut bins = (0..bin_count)
+        .map(|index| {
+            let min_length = metrics.min_length + index * bin_width;
+            LengthHistogramBin {
+                min_length,
+                max_length: (min_length + bin_width - 1).min(metrics.max_length),
+                sequence_count: 0,
+                total_length: 0,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    for sequence in &metrics.sequences {
+        let index = ((sequence.length - metrics.min_length) / bin_width) as usize;
+        let index = index.min(bins.len().saturating_sub(1));
+        bins[index].sequence_count += 1;
+        bins[index].total_length = bins[index].total_length.saturating_add(sequence.length);
+    }
+
+    bins
+}
+
+fn build_gc_length_plot(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<GcLengthPoint> {
+    let zscores = gc_zscores(&metrics.sequences);
+    let mut points = metrics
+        .sequences
+        .iter()
+        .enumerate()
+        .map(|(index, sequence)| {
+            let gc_zscore = zscores.get(index).copied().flatten();
+            let mut flags = Vec::new();
+            if sequence.length < profile.min_contig_length {
+                flags.push("tiny_contig".to_string());
+            }
+            if sequence.n_fraction >= profile.high_n_sequence_fraction {
+                flags.push("high_n".to_string());
+            }
+            if gc_zscore.is_some_and(|zscore| zscore >= profile.gc_outlier_zscore) {
+                flags.push("gc_outlier".to_string());
+            }
+
+            GcLengthPoint {
+                id: sequence.id.clone(),
+                length: sequence.length,
+                gc_percent: sequence.gc_percent,
+                n_percent: percent(sequence.n_count, sequence.length),
+                gc_zscore,
+                flags,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    points.sort_by(|left, right| {
+        right
+            .length
+            .cmp(&left.length)
+            .then_with(|| left.id.cmp(&right.id))
+    });
+    points.truncate(GC_LENGTH_POINT_LIMIT);
+    points
+}
+
+fn gc_zscores(sequences: &[SequenceSummary]) -> Vec<Option<f64>> {
+    if sequences.len() < 3 {
+        return vec![None; sequences.len()];
+    }
+
+    let mean = sequences
+        .iter()
+        .map(|sequence| sequence.gc_percent)
+        .sum::<f64>()
+        / sequences.len() as f64;
+    let variance = sequences
+        .iter()
+        .map(|sequence| {
+            let delta = sequence.gc_percent - mean;
+            delta * delta
+        })
+        .sum::<f64>()
+        / sequences.len() as f64;
+    let stddev = variance.sqrt();
+
+    if stddev == 0.0 {
+        return vec![None; sequences.len()];
+    }
+
+    sequences
+        .iter()
+        .map(|sequence| Some(round2((sequence.gc_percent - mean).abs() / stddev)))
+        .collect()
+}
+
 fn path_is_gzip(path: &Path) -> bool {
     path.extension()
         .and_then(|extension| extension.to_str())
         .is_some_and(|extension| extension.eq_ignore_ascii_case("gz"))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::metrics::AssemblyMetrics;
+    use crate::parser::FastaRecord;
+    use crate::profile::{ProfileConfig, ThresholdOverrides};
+
+    use super::*;
+
+    #[test]
+    fn plot_histogram_uses_deterministic_linear_bins() {
+        let profile = profile();
+        let metrics = AssemblyMetrics::from_records(
+            vec![record("one", 1), record("two", 2), record("hundred", 100)],
+            &profile,
+        );
+
+        let plots = build_plots(&metrics, &profile);
+
+        assert_eq!(plots.length_histogram.len(), 10);
+        assert_eq!(plots.length_histogram[0].min_length, 1);
+        assert_eq!(plots.length_histogram[0].max_length, 10);
+        assert_eq!(plots.length_histogram[0].sequence_count, 2);
+        assert_eq!(plots.length_histogram[0].total_length, 3);
+        assert_eq!(plots.length_histogram[9].min_length, 91);
+        assert_eq!(plots.length_histogram[9].max_length, 100);
+        assert_eq!(plots.length_histogram[9].sequence_count, 1);
+    }
+
+    fn profile() -> ProfileConfig {
+        ProfileConfig::assembly(ThresholdOverrides {
+            max_n_rate: None,
+            min_contig_length: Some(1),
+        })
+    }
+
+    fn record(id: &str, length: usize) -> FastaRecord {
+        FastaRecord {
+            id: id.to_string(),
+            header: id.to_string(),
+            sequence: vec![b'A'; length],
+        }
+    }
 }

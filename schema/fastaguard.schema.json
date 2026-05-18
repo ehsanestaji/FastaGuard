@@ -13,6 +13,7 @@
     "scope",
     "provenance",
     "summary",
+    "plots",
     "findings",
     "artifacts"
   ],
@@ -287,6 +288,25 @@
         "$ref": "#/$defs/finding"
       }
     },
+    "plots": {
+      "type": "object",
+      "required": ["length_histogram", "gc_length_plot"],
+      "properties": {
+        "length_histogram": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/length_histogram_bin"
+          }
+        },
+        "gc_length_plot": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gc_length_point"
+          },
+          "maxItems": 5000
+        }
+      }
+    },
     "artifacts": {
       "type": "object",
       "required": ["html", "tsv", "multiqc"],
@@ -304,6 +324,63 @@
     }
   },
   "$defs": {
+    "length_histogram_bin": {
+      "type": "object",
+      "required": ["min_length", "max_length", "sequence_count", "total_length"],
+      "properties": {
+        "min_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sequence_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_length": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "gc_length_point": {
+      "type": "object",
+      "required": ["id", "length", "gc_percent", "n_percent", "flags"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "gc_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "n_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "gc_zscore": {
+          "type": "number",
+          "minimum": 0
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["tiny_contig", "high_n", "gc_outlier"]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
     "finding": {
       "type": "object",
       "required": [

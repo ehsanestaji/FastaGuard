@@ -62,7 +62,7 @@ FastaGuard should produce a FASTA QC contract:
 fastaguard.json
 fastaguard.tsv
 fastaguard_report.html
-fastaguard_multiqc.json
+fastaguard_mqc.json
 ```
 
 The product is not only a nice report. It is a stable, versioned schema that pipelines can depend on.

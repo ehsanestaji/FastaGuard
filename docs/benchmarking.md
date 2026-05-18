@@ -17,7 +17,7 @@ python3 scripts/benchmark_large_fasta.py \
   --out-dir target/bench-smoke
 ```
 
-This should finish quickly and produce `fastaguard.json`, `fastaguard.tsv`, `fastaguard_report.html`, and `fastaguard_multiqc.json` in `target/bench-smoke/`.
+This should finish quickly and produce `fastaguard.json`, `fastaguard.tsv`, `fastaguard_report.html`, and `fastaguard_mqc.json` in `target/bench-smoke/`.
 
 ## Larger Local Benchmark
 

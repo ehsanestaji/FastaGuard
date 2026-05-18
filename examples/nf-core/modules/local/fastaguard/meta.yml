@@ -1,0 +1,41 @@
+name: fastaguard
+description: FASTA preflight QC for assembly pipelines
+keywords:
+  - fasta
+  - assembly
+  - qc
+tools:
+  - fastaguard:
+      description: FASTA preflight QC for assembly pipelines
+      licence: ["MIT"]
+input:
+  - meta:
+      type: map
+      description: Sample metadata map containing at least an id key.
+  - fasta:
+      type: file
+      description: Assembly FASTA file.
+      pattern: "*.{fa,fasta,fa.gz,fasta.gz}"
+output:
+  - html:
+      type: file
+      description: FastaGuard HTML report.
+      pattern: "*.fastaguard.html"
+  - json:
+      type: file
+      description: FastaGuard JSON report.
+      pattern: "*.fastaguard.json"
+  - tsv:
+      type: file
+      description: FastaGuard TSV summary.
+      pattern: "*.fastaguard.tsv"
+  - mqc:
+      type: file
+      description: MultiQC custom-content JSON.
+      pattern: "*.fastaguard_mqc.json"
+  - versions:
+      type: file
+      description: Software versions file.
+      pattern: "versions.yml"
+authors:
+  - FastaGuard contributors

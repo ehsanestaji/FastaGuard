@@ -26,7 +26,7 @@ Run it:
   --out fastaguard_report.html \
   --json fastaguard.json \
   --tsv fastaguard.tsv \
-  --multiqc fastaguard_multiqc.json
+  --multiqc fastaguard_mqc.json
 ```
 
 ## Docker
@@ -48,7 +48,7 @@ docker run --rm \
   --out /data/fastaguard_report.html \
   --json /data/fastaguard.json \
   --tsv /data/fastaguard.tsv \
-  --multiqc /data/fastaguard_multiqc.json
+  --multiqc /data/fastaguard_mqc.json
 ```
 
 ## GitHub Release Binaries
@@ -62,9 +62,10 @@ For the first public release:
    git push origin v0.1.0
    ```
 
-2. Build release binaries for Linux, macOS, and later Windows.
-3. Attach checksums and a short example command to the release notes.
-4. Keep the JSON Schema and finding catalog in the source archive.
+2. Push the tag to trigger `.github/workflows/release.yml`.
+3. Build release binaries for Linux x86_64, macOS Intel, and macOS Apple Silicon.
+4. Attach `SHA256SUMS` and release archives to the GitHub release.
+5. Keep the JSON Schema and finding catalog in the source archive and binary archives.
 
 ## Bioconda
 

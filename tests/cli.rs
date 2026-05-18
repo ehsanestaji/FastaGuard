@@ -161,6 +161,98 @@ fn valid_report_includes_machine_summary_scope_and_provenance() {
 }
 
 #[test]
+fn valid_report_includes_plot_contract() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "valid_plots");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--min-contig-length",
+        "1",
+        "--out",
+    ])
+    .arg(&outputs.html)
+    .arg("--json")
+    .arg(&outputs.json)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .success()
+    .stderr(predicate::str::is_empty());
+
+    let report = read_json(&outputs.json);
+    let histogram = report["plots"]["length_histogram"].as_array().unwrap();
+    assert!(!histogram.is_empty(), "{report}");
+    assert_eq!(histogram[0]["min_length"], json!(15));
+    assert_eq!(histogram[0]["sequence_count"], json!(1));
+
+    let points = report["plots"]["gc_length_plot"].as_array().unwrap();
+    assert_eq!(points.len(), 3);
+    assert_eq!(points[0]["length"], json!(16));
+    assert!(points[0]["flags"].as_array().unwrap().is_empty());
+
+    let html = std::fs::read_to_string(&outputs.html).unwrap();
+    assert!(html.contains("Length Histogram"), "{html}");
+    assert!(html.contains("GC vs Length"), "{html}");
+    assert!(html.contains("<svg"), "{html}");
+}
+
+#[test]
+fn gc_outlier_plot_flags_do_not_change_verdict() {
+    let temp_dir = TempDir::new().unwrap();
+    let input = temp_dir.path().join("gc_outlier.fa");
+    std::fs::write(
+        &input,
+        [
+            ">balanced_1\nAAAACCCC\n",
+            ">balanced_2\nTTTTGGGG\n",
+            ">balanced_3\nAAAAGGGG\n",
+            ">balanced_4\nTTTTCCCC\n",
+            ">balanced_5\nAACCGGTT\n",
+            ">balanced_6\nAAGGCCTT\n",
+            ">balanced_7\nACGTACGT\n",
+            ">balanced_8\nAGCTAGCT\n",
+            ">balanced_9\nATGCCGTA\n",
+            ">balanced_10\nTACGGCAT\n",
+            ">high_gc\nGGGGGGGG\n",
+        ]
+        .concat(),
+    )
+    .unwrap();
+    let outputs = output_paths(&temp_dir, "gc_outlier");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg(&input)
+        .arg("--min-contig-length")
+        .arg("1")
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--json")
+        .arg(&outputs.json)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .success()
+        .stderr(predicate::str::is_empty());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["verdict"]["status"], json!("PASS"));
+    let high_gc = report["plots"]["gc_length_plot"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|point| point["id"] == json!("high_gc"))
+        .unwrap();
+    assert!(array_contains_string(&high_gc["flags"], "gc_outlier"));
+    assert!(high_gc["gc_zscore"].as_f64().unwrap() >= 3.0);
+}
+
+#[test]
 fn valid_assembly_json_matches_golden_contract() {
     let paths = golden_output_paths("valid_assembly");
 

@@ -32,7 +32,7 @@ def main() -> int:
     json_path = out_dir / "fastaguard.json"
     html_path = out_dir / "fastaguard_report.html"
     tsv_path = out_dir / "fastaguard.tsv"
-    multiqc_path = out_dir / "fastaguard_multiqc.json"
+    multiqc_path = out_dir / "fastaguard_mqc.json"
 
     generated_bytes = write_fasta(fasta_path, args.records, args.length)
     command = [

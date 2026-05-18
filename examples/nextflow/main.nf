@@ -10,7 +10,7 @@ process FASTAGUARD {
     path "fastaguard_report.html"
     path "fastaguard.json"
     path "fastaguard.tsv"
-    path "fastaguard_multiqc.json"
+    path "fastaguard_mqc.json"
 
     script:
     """
@@ -19,7 +19,7 @@ process FASTAGUARD {
       --out fastaguard_report.html \
       --json fastaguard.json \
       --tsv fastaguard.tsv \
-      --multiqc fastaguard_multiqc.json
+      --multiqc fastaguard_mqc.json
     """
 }
 

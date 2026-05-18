@@ -8,7 +8,7 @@ Generated from `testdata/valid_assembly.fa` with `--min-contig-length 1`.
 
 - `assembly_pass/fastaguard.json`
 - `assembly_pass/fastaguard.tsv`
-- `assembly_pass/fastaguard_multiqc.json`
+- `assembly_pass/fastaguard_mqc.json`
 - `assembly_pass/fastaguard_report.html`
 
 Regenerate:
@@ -19,7 +19,7 @@ cargo run -- testdata/valid_assembly.fa \
   --out examples/reports/assembly_pass/fastaguard_report.html \
   --json examples/reports/assembly_pass/fastaguard.json \
   --tsv examples/reports/assembly_pass/fastaguard.tsv \
-  --multiqc examples/reports/assembly_pass/fastaguard_multiqc.json
+  --multiqc examples/reports/assembly_pass/fastaguard_mqc.json
 ```
 
 ## Assembly Fail
@@ -28,7 +28,7 @@ Generated from `testdata/problem_assembly.fa`. This fixture intentionally contai
 
 - `assembly_fail/fastaguard.json`
 - `assembly_fail/fastaguard.tsv`
-- `assembly_fail/fastaguard_multiqc.json`
+- `assembly_fail/fastaguard_mqc.json`
 - `assembly_fail/fastaguard_report.html`
 
 Regenerate:
@@ -38,7 +38,7 @@ cargo run -- testdata/problem_assembly.fa \
   --out examples/reports/assembly_fail/fastaguard_report.html \
   --json examples/reports/assembly_fail/fastaguard.json \
   --tsv examples/reports/assembly_fail/fastaguard.tsv \
-  --multiqc examples/reports/assembly_fail/fastaguard_multiqc.json
+  --multiqc examples/reports/assembly_fail/fastaguard_mqc.json
 ```
 
 The command exits with code `2` because this example is supposed to fail the hard QC gate.

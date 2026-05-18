@@ -87,6 +87,124 @@
     "tiny_contig_count": 5,
     "max_gap_run": 101
   },
+  "plots": {
+    "length_histogram": [
+      {
+        "min_length": 4,
+        "max_length": 14,
+        "sequence_count": 3,
+        "total_length": 19
+      },
+      {
+        "min_length": 15,
+        "max_length": 25,
+        "sequence_count": 1,
+        "total_length": 16
+      },
+      {
+        "min_length": 26,
+        "max_length": 36,
+        "sequence_count": 0,
+        "total_length": 0
+      },
+      {
+        "min_length": 37,
+        "max_length": 47,
+        "sequence_count": 0,
+        "total_length": 0
+      },
+      {
+        "min_length": 48,
+        "max_length": 58,
+        "sequence_count": 0,
+        "total_length": 0
+      },
+      {
+        "min_length": 59,
+        "max_length": 69,
+        "sequence_count": 0,
+        "total_length": 0
+      },
+      {
+        "min_length": 70,
+        "max_length": 80,
+        "sequence_count": 0,
+        "total_length": 0
+      },
+      {
+        "min_length": 81,
+        "max_length": 91,
+        "sequence_count": 0,
+        "total_length": 0
+      },
+      {
+        "min_length": 92,
+        "max_length": 102,
+        "sequence_count": 0,
+        "total_length": 0
+      },
+      {
+        "min_length": 103,
+        "max_length": 110,
+        "sequence_count": 1,
+        "total_length": 110
+      }
+    ],
+    "gc_length_plot": [
+      {
+        "id": "gap_rich",
+        "length": 110,
+        "gc_percent": 3.64,
+        "n_percent": 91.82,
+        "gc_zscore": 1.06,
+        "flags": [
+          "tiny_contig",
+          "high_n"
+        ]
+      },
+      {
+        "id": "dup",
+        "length": 16,
+        "gc_percent": 0.0,
+        "n_percent": 100.0,
+        "gc_zscore": 1.22,
+        "flags": [
+          "tiny_contig",
+          "high_n"
+        ]
+      },
+      {
+        "id": "dup",
+        "length": 8,
+        "gc_percent": 50.0,
+        "n_percent": 0.0,
+        "gc_zscore": 1.09,
+        "flags": [
+          "tiny_contig"
+        ]
+      },
+      {
+        "id": "bad_chars",
+        "length": 7,
+        "gc_percent": 28.57,
+        "n_percent": 0.0,
+        "gc_zscore": 0.1,
+        "flags": [
+          "tiny_contig"
+        ]
+      },
+      {
+        "id": "tiny",
+        "length": 4,
+        "gc_percent": 50.0,
+        "n_percent": 0.0,
+        "gc_zscore": 1.09,
+        "flags": [
+          "tiny_contig"
+        ]
+      }
+    ]
+  },
   "findings": [
     {
       "id": "duplicate_ids",
@@ -285,6 +403,6 @@
   "artifacts": {
     "html": "examples/reports/assembly_fail/fastaguard_report.html",
     "tsv": "examples/reports/assembly_fail/fastaguard.tsv",
-    "multiqc": "examples/reports/assembly_fail/fastaguard_multiqc.json"
+    "multiqc": "examples/reports/assembly_fail/fastaguard_mqc.json"
   }
 }

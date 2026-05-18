@@ -47,7 +47,7 @@ pub struct Cli {
     pub tsv: PathBuf,
 
     /// MultiQC-compatible JSON path.
-    #[arg(long, default_value = "fastaguard_multiqc.json")]
+    #[arg(long, default_value = "fastaguard_mqc.json")]
     pub multiqc: PathBuf,
 
     /// Comma-separated rule IDs that should fail the run when triggered.
@@ -146,6 +146,7 @@ fn normalize_rules(values: &[String]) -> BTreeSet<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clap::Parser;
 
     fn cli_with_max_n_rate(max_n_rate: Option<f64>) -> Cli {
         Cli {
@@ -157,7 +158,7 @@ mod tests {
             out: PathBuf::from("fastaguard_report.html"),
             json: PathBuf::from("fastaguard.json"),
             tsv: PathBuf::from("fastaguard.tsv"),
-            multiqc: PathBuf::from("fastaguard_multiqc.json"),
+            multiqc: PathBuf::from("fastaguard_mqc.json"),
             fail_on: Vec::new(),
             max_n_rate,
             min_contig_length: None,
@@ -187,5 +188,13 @@ mod tests {
                 .to_string()
                 .contains("--max-n-rate must be finite and between 0.0 and 1.0"));
         }
+    }
+
+    #[test]
+    fn default_multiqc_output_uses_mqc_suffix_for_auto_discovery() {
+        let cli = Cli::parse_from(["fastaguard", "input.fa"]);
+        let config = cli.to_run_config().unwrap();
+
+        assert_eq!(config.outputs.multiqc, PathBuf::from("fastaguard_mqc.json"));
     }
 }

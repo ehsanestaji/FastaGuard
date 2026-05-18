@@ -12,7 +12,7 @@ The output contract is as important as the HTML report. Pipeline authors need st
 fastaguard.json
 fastaguard.tsv
 fastaguard_report.html
-fastaguard_multiqc.json
+fastaguard_mqc.json
 schema/fastaguard.schema.json
 schema/finding-catalog.json
 ```
@@ -87,6 +87,26 @@ Example v0.1 shape:
     "tiny_contig_count": 4,
     "max_gap_run": 25
   },
+  "plots": {
+    "length_histogram": [
+      {
+        "min_length": 203,
+        "max_length": 50400,
+        "sequence_count": 41,
+        "total_length": 993002
+      }
+    ],
+    "gc_length_plot": [
+      {
+        "id": "scaffold_42",
+        "length": 18004,
+        "gc_percent": 51.2,
+        "n_percent": 37.0,
+        "gc_zscore": 0.8,
+        "flags": ["high_n"]
+      }
+    ]
+  },
   "findings": [
     {
       "id": "high_n_rate",
@@ -124,7 +144,7 @@ Example v0.1 shape:
   "artifacts": {
     "html": "fastaguard_report.html",
     "tsv": "fastaguard.tsv",
-    "multiqc": "fastaguard_multiqc.json"
+    "multiqc": "fastaguard_mqc.json"
   }
 }
 ```
@@ -155,6 +175,8 @@ Stable from v0.1:
 - `summary.l90`
 - `summary.gc_percent`
 - `summary.n_percent`
+- `plots.length_histogram`
+- `plots.gc_length_plot`
 - `findings[].id`
 - `findings[].severity`
 - `findings[].message`
@@ -226,11 +248,20 @@ finding_count	2
 
 ## MultiQC Contract
 
-The MultiQC JSON should be deliberately boring:
+The MultiQC JSON is emitted as MultiQC custom content and should use the default filename:
 
-- one section for summary metrics
-- one section for verdict and findings
-- one section for top affected sequences where useful
+```text
+fastaguard_mqc.json
+```
+
+The top-level shape should be deliberately boring:
+
+- `id`
+- `section_name`
+- `description`
+- `plot_type`
+- `pconfig`
+- `data`
 
 This keeps FastaGuard easy to integrate before a custom MultiQC module exists.
 
@@ -251,10 +282,10 @@ Report layers:
    PASS / WARN / FAIL with profile-aware reasons
 
 2. Evidence
-   summary tables, finding details, and embedded JSON
+   summary tables, finding details, length histogram, GC-vs-length plot, and embedded JSON
 
 3. Actions
    suggested next tools and remediation steps
 ```
 
-Outlier lists, histograms, and GC-vs-length plots are planned beyond the v0.1 report contract.
+Outlier findings and richer plot interactivity are planned beyond the v0.1 report contract.

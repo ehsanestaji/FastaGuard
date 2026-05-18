@@ -26,6 +26,14 @@ th { background: #ecece6; }
 .nowrap { white-space: nowrap; }
 .table-scroll { overflow-x: auto; }
 .table-scroll table { min-width: 760px; }
+.plot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.plot { background: #ffffff; border: 1px solid #d8d8d2; padding: 14px; }
+.plot svg { width: 100%; height: auto; display: block; }
+.bar { fill: #437c90; }
+.point { fill: #5b7f3a; opacity: 0.78; }
+.point.gc-outlier { fill: #b23a48; opacity: 0.9; }
+.axis { stroke: #5f6368; stroke-width: 1; }
+.axis-label { fill: #4f565c; font-size: 12px; }
 pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </style>
 </head>
@@ -80,6 +88,32 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <li>taxonomic contamination</li>
 <li>whole-assembly accuracy</li>
 <li>misassembly status without alignment evidence</li></ul>
+</section>
+</div>
+<h2>Plots</h2>
+<div class="plot-grid">
+<section class="plot">
+<h3>Length Histogram</h3>
+<svg viewBox="0 0 720 260" role="img" aria-label="Length Histogram">
+<line class="axis" x1="48" y1="18" x2="48" y2="218"/>
+<line class="axis" x1="48" y1="218" x2="704" y2="218"/>
+<rect class="bar" x="48.00" y="118.00" width="326.00" height="100.00"><title>15-15: 1 sequences, 15 bases</title></rect>
+<rect class="bar" x="378.00" y="18.00" width="326.00" height="200.00"><title>16-16: 2 sequences, 32 bases</title></rect>
+<text class="axis-label" x="48" y="250">sequence length bins</text>
+<text class="axis-label" x="4" y="18">count</text>
+</svg>
+</section>
+<section class="plot">
+<h3>GC vs Length</h3>
+<svg viewBox="0 0 720 260" role="img" aria-label="GC vs Length">
+<line class="axis" x1="56" y1="18" x2="56" y2="218"/>
+<line class="axis" x1="56" y1="218" x2="704" y2="218"/>
+<circle class="point" cx="704.00" cy="143.00" r="4"><title>contig_1: length 16, GC 37.50%, N 0.00%</title></circle>
+<circle class="point" cx="704.00" cy="118.00" r="4"><title>contig_2: length 16, GC 50.00%, N 0.00%</title></circle>
+<circle class="point" cx="56.00" cy="191.34" r="4"><title>contig_3: length 15, GC 13.33%, N 6.67%</title></circle>
+<text class="axis-label" x="56" y="250">length</text>
+<text class="axis-label" x="4" y="18">GC%</text>
+</svg>
 </section>
 </div>
 <h2>Findings</h2>
@@ -169,11 +203,53 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     &quot;tiny_contig_count&quot;: 0,
     &quot;max_gap_run&quot;: 1
   },
+  &quot;plots&quot;: {
+    &quot;length_histogram&quot;: [
+      {
+        &quot;min_length&quot;: 15,
+        &quot;max_length&quot;: 15,
+        &quot;sequence_count&quot;: 1,
+        &quot;total_length&quot;: 15
+      },
+      {
+        &quot;min_length&quot;: 16,
+        &quot;max_length&quot;: 16,
+        &quot;sequence_count&quot;: 2,
+        &quot;total_length&quot;: 32
+      }
+    ],
+    &quot;gc_length_plot&quot;: [
+      {
+        &quot;id&quot;: &quot;contig_1&quot;,
+        &quot;length&quot;: 16,
+        &quot;gc_percent&quot;: 37.5,
+        &quot;n_percent&quot;: 0.0,
+        &quot;gc_zscore&quot;: 0.26,
+        &quot;flags&quot;: []
+      },
+      {
+        &quot;id&quot;: &quot;contig_2&quot;,
+        &quot;length&quot;: 16,
+        &quot;gc_percent&quot;: 50.0,
+        &quot;n_percent&quot;: 0.0,
+        &quot;gc_zscore&quot;: 1.08,
+        &quot;flags&quot;: []
+      },
+      {
+        &quot;id&quot;: &quot;contig_3&quot;,
+        &quot;length&quot;: 15,
+        &quot;gc_percent&quot;: 13.33,
+        &quot;n_percent&quot;: 6.67,
+        &quot;gc_zscore&quot;: 1.33,
+        &quot;flags&quot;: []
+      }
+    ]
+  },
   &quot;findings&quot;: [],
   &quot;artifacts&quot;: {
     &quot;html&quot;: &quot;examples/reports/assembly_pass/fastaguard_report.html&quot;,
     &quot;tsv&quot;: &quot;examples/reports/assembly_pass/fastaguard.tsv&quot;,
-    &quot;multiqc&quot;: &quot;examples/reports/assembly_pass/fastaguard_multiqc.json&quot;
+    &quot;multiqc&quot;: &quot;examples/reports/assembly_pass/fastaguard_mqc.json&quot;
   }
 }</pre>
 </main>

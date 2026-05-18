@@ -82,10 +82,52 @@
     "tiny_contig_count": 0,
     "max_gap_run": 1
   },
+  "plots": {
+    "length_histogram": [
+      {
+        "min_length": 15,
+        "max_length": 15,
+        "sequence_count": 1,
+        "total_length": 15
+      },
+      {
+        "min_length": 16,
+        "max_length": 16,
+        "sequence_count": 2,
+        "total_length": 32
+      }
+    ],
+    "gc_length_plot": [
+      {
+        "id": "contig_1",
+        "length": 16,
+        "gc_percent": 37.5,
+        "n_percent": 0.0,
+        "gc_zscore": 0.26,
+        "flags": []
+      },
+      {
+        "id": "contig_2",
+        "length": 16,
+        "gc_percent": 50.0,
+        "n_percent": 0.0,
+        "gc_zscore": 1.08,
+        "flags": []
+      },
+      {
+        "id": "contig_3",
+        "length": 15,
+        "gc_percent": 13.33,
+        "n_percent": 6.67,
+        "gc_zscore": 1.33,
+        "flags": []
+      }
+    ]
+  },
   "findings": [],
   "artifacts": {
     "html": "examples/reports/assembly_pass/fastaguard_report.html",
     "tsv": "examples/reports/assembly_pass/fastaguard.tsv",
-    "multiqc": "examples/reports/assembly_pass/fastaguard_multiqc.json"
+    "multiqc": "examples/reports/assembly_pass/fastaguard_mqc.json"
   }
 }

@@ -78,6 +78,10 @@
     "tiny_contig_count": 0,
     "max_gap_run": 0
   },
+  "plots": {
+    "length_histogram": [],
+    "gc_length_plot": []
+  },
   "findings": [
     {
       "id": "invalid_fasta_structure",
