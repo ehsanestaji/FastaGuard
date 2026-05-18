@@ -1,0 +1,123 @@
+use anyhow::{anyhow, Result};
+use clap::Parser;
+use std::collections::BTreeSet;
+use std::path::PathBuf;
+
+use crate::profile::ThresholdOverrides;
+
+#[derive(Debug, Parser)]
+#[command(name = "fastaguard")]
+#[command(version)]
+#[command(about = "FASTA preflight QC for assembly pipelines")]
+pub struct Cli {
+    /// Input FASTA file. Plain .fa/.fasta and gzipped .gz files are supported.
+    pub input: PathBuf,
+
+    /// QC profile. v0.1 supports assembly.
+    #[arg(long, default_value = "assembly")]
+    pub profile: String,
+
+    /// HTML report path.
+    #[arg(long, default_value = "fastaguard_report.html")]
+    pub out: PathBuf,
+
+    /// JSON report path.
+    #[arg(long, default_value = "fastaguard.json")]
+    pub json: PathBuf,
+
+    /// TSV summary path.
+    #[arg(long, default_value = "fastaguard.tsv")]
+    pub tsv: PathBuf,
+
+    /// MultiQC-compatible JSON path.
+    #[arg(long, default_value = "fastaguard_multiqc.json")]
+    pub multiqc: PathBuf,
+
+    /// Comma-separated rule IDs that should fail the run when triggered.
+    #[arg(long, value_delimiter = ',')]
+    pub fail_on: Vec<String>,
+
+    /// Comma-separated rule IDs that should warn when triggered.
+    #[arg(long, value_delimiter = ',')]
+    pub warn_on: Vec<String>,
+
+    /// Maximum allowed global N fraction before a high_n_rate finding.
+    #[arg(long)]
+    pub max_n_rate: Option<f64>,
+
+    /// Minimum contig length used for tiny_contigs finding.
+    #[arg(long)]
+    pub min_contig_length: Option<u64>,
+
+    /// Worker thread count reserved for later parallel post-processing.
+    #[arg(long, default_value_t = 1)]
+    pub threads: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct RunConfig {
+    pub input: PathBuf,
+    pub profile: String,
+    pub outputs: OutputPaths,
+    pub rules: RuleConfig,
+    pub thresholds: ThresholdOverrides,
+    pub threads: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct OutputPaths {
+    pub html: PathBuf,
+    pub json: PathBuf,
+    pub tsv: PathBuf,
+    pub multiqc: PathBuf,
+}
+
+#[derive(Debug, Clone)]
+pub struct RuleConfig {
+    pub fail_on: BTreeSet<String>,
+    pub warn_on: BTreeSet<String>,
+}
+
+impl Cli {
+    pub fn to_run_config(&self) -> Result<RunConfig> {
+        if self.profile != "assembly" {
+            return Err(anyhow!(
+                "unsupported profile '{}'; v0.1 supports assembly",
+                self.profile
+            ));
+        }
+        if self.threads == 0 {
+            return Err(anyhow!("--threads must be at least 1"));
+        }
+
+        Ok(RunConfig {
+            input: self.input.clone(),
+            profile: self.profile.clone(),
+            outputs: OutputPaths {
+                html: self.out.clone(),
+                json: self.json.clone(),
+                tsv: self.tsv.clone(),
+                multiqc: self.multiqc.clone(),
+            },
+            rules: RuleConfig {
+                fail_on: normalize_rules(&self.fail_on),
+                warn_on: normalize_rules(&self.warn_on),
+            },
+            thresholds: ThresholdOverrides {
+                max_n_rate: self.max_n_rate,
+                min_contig_length: self.min_contig_length,
+            },
+            threads: self.threads,
+        })
+    }
+}
+
+fn normalize_rules(values: &[String]) -> BTreeSet<String> {
+    values
+        .iter()
+        .flat_map(|value| value.split(','))
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+        .collect()
+}
