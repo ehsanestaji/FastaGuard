@@ -65,20 +65,32 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
         ));
     }
 
-    if metrics.n_percent / 100.0 >= profile.high_global_n_fraction
-        || metrics.high_n_sequence_count > 0
-    {
+    let global_n_fraction = global_n_fraction(metrics);
+    if high_global_n_rate(global_n_fraction, profile) || metrics.high_n_sequence_count > 0 {
         let threshold_percent = profile.high_global_n_fraction * 100.0;
+        let global_n_percent = global_n_fraction * 100.0;
+        let (affected_count, affected_fraction) = if metrics.high_n_sequence_count > 0 {
+            (
+                metrics.high_n_sequence_count,
+                affected_fraction(metrics.high_n_sequence_count, metrics.sequence_count),
+            )
+        } else {
+            (
+                metrics.sequence_count,
+                affected_fraction(metrics.sequence_count, metrics.sequence_count),
+            )
+        };
+
         findings.push(finding(
             "high_n_rate",
             Severity::Major,
             profile,
-            metrics.high_n_sequence_count,
-            affected_fraction(metrics.high_n_sequence_count, metrics.sequence_count),
+            affected_count,
+            affected_fraction,
             FindingText {
                 message: format!(
-                    "{} sequences exceed the per-sequence N threshold, and global N is {:.2}% (threshold {:.2}%).",
-                    metrics.high_n_sequence_count, metrics.n_percent, threshold_percent
+                    "Global N is {:.2}% (threshold {:.2}%), and {} sequences exceed the per-sequence N threshold.",
+                    global_n_percent, threshold_percent, metrics.high_n_sequence_count
                 ),
                 why_it_matters:
                     "High N content can reduce mapping confidence and fragment annotation or polishing steps.",
@@ -113,8 +125,8 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
             "gap_runs",
             Severity::Major,
             profile,
-            metrics.max_gap_run,
-            0.0,
+            1,
+            affected_fraction(1, metrics.sequence_count),
             FindingText {
                 message: format!(
                     "The longest N gap run is {} bp, above the {} bp profile limit.",
@@ -185,6 +197,29 @@ fn affected_fraction(affected_count: u64, sequence_count: u64) -> f64 {
     }
 }
 
+fn global_n_fraction(metrics: &AssemblyMetrics) -> f64 {
+    let (n_count, total_length) =
+        metrics
+            .sequences
+            .iter()
+            .fold((0_u128, 0_u128), |(n_total, length_total), sequence| {
+                (
+                    n_total + u128::from(sequence.n_count),
+                    length_total + u128::from(sequence.length),
+                )
+            });
+
+    if total_length == 0 {
+        0.0
+    } else {
+        n_count as f64 / total_length as f64
+    }
+}
+
+fn high_global_n_rate(global_n_fraction: f64, profile: &ProfileConfig) -> bool {
+    global_n_fraction > 0.0 && global_n_fraction >= profile.high_global_n_fraction
+}
+
 fn verdict_status(findings: &[Finding], rules: &RuleConfig) -> VerdictStatus {
     if findings.iter().any(|finding| {
         matches!(finding.severity, Severity::Critical) || rules.fail_on.contains(&finding.id)
@@ -223,6 +258,7 @@ mod tests {
     use std::collections::BTreeSet;
 
     use super::*;
+    use crate::metrics::SequenceSummary;
     use crate::profile::ThresholdOverrides;
 
     fn clean_metrics() -> AssemblyMetrics {
@@ -258,10 +294,36 @@ mod tests {
         })
     }
 
+    fn profile_with_max_n_rate(max_n_rate: f64) -> ProfileConfig {
+        ProfileConfig::assembly(ThresholdOverrides {
+            max_n_rate: Some(max_n_rate),
+            min_contig_length: None,
+        })
+    }
+
     fn rules(fail_on: &[&str]) -> RuleConfig {
         RuleConfig {
             fail_on: fail_on.iter().map(|value| (*value).to_string()).collect(),
             warn_on: BTreeSet::new(),
+        }
+    }
+
+    fn sequence_summary(length: u64, n_count: u64) -> SequenceSummary {
+        SequenceSummary {
+            id: "seq1".to_string(),
+            length,
+            gc_count: 0,
+            at_count: length.saturating_sub(n_count),
+            n_count,
+            ambiguity_count: 0,
+            invalid_count: 0,
+            max_gap_run: 0,
+            n_fraction: if length == 0 {
+                0.0
+            } else {
+                n_count as f64 / length as f64
+            },
+            gc_percent: 0.0,
         }
     }
 
@@ -305,5 +367,64 @@ mod tests {
 
         assert_eq!(analysis.status, VerdictStatus::Fail);
         assert_eq!(analysis.reasons, ["tiny_contigs"]);
+    }
+
+    #[test]
+    fn high_n_uses_exact_global_fraction_below_rounded_boundary() {
+        let mut metrics = clean_metrics();
+        metrics.sequence_count = 1;
+        metrics.total_length = 100_001;
+        metrics.n_percent = 5.0;
+        metrics.sequences = vec![sequence_summary(100_001, 5_000)];
+
+        let analysis = analyze(&metrics, &profile_with_max_n_rate(0.05), &rules(&[]));
+
+        assert_eq!(analysis.status, VerdictStatus::Pass);
+        assert!(analysis.findings.is_empty());
+    }
+
+    #[test]
+    fn clean_metrics_with_zero_max_n_rate_passes() {
+        let analysis = analyze(&clean_metrics(), &profile_with_max_n_rate(0.0), &rules(&[]));
+
+        assert_eq!(analysis.status, VerdictStatus::Pass);
+        assert!(analysis.reasons.is_empty());
+        assert!(analysis.findings.is_empty());
+    }
+
+    #[test]
+    fn global_n_only_high_n_finding_affects_all_sequences() {
+        let mut metrics = clean_metrics();
+        metrics.n_percent = 6.0;
+        metrics.sequences = vec![sequence_summary(500, 30), sequence_summary(500, 30)];
+
+        let analysis = analyze(&metrics, &profile_with_max_n_rate(0.05), &rules(&[]));
+        let finding = analysis
+            .findings
+            .iter()
+            .find(|finding| finding.id == "high_n_rate")
+            .unwrap();
+
+        assert_eq!(finding.affected_count, metrics.sequence_count);
+        assert_eq!(finding.affected_fraction, 1.0);
+    }
+
+    #[test]
+    fn gap_runs_finding_uses_record_count_semantics() {
+        let mut metrics = clean_metrics();
+        metrics.max_gap_run = 101;
+
+        let analysis = analyze(&metrics, &profile(), &rules(&[]));
+        let finding = analysis
+            .findings
+            .iter()
+            .find(|finding| finding.id == "gap_runs")
+            .unwrap();
+
+        assert_eq!(finding.affected_count, 1);
+        assert_eq!(
+            finding.affected_fraction,
+            1.0 / metrics.sequence_count as f64
+        );
     }
 }
