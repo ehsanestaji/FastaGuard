@@ -11,7 +11,21 @@ pub struct FastaRecord {
     pub sequence: Vec<u8>,
 }
 
+// Convenience collector for tests and early internal use. Production orchestration should
+// prefer `for_each_fasta_record` to avoid retaining every record in memory.
 pub fn read_fasta(path: &Path) -> Result<Vec<FastaRecord>> {
+    let mut records = Vec::new();
+    for_each_fasta_record(path, |record| {
+        records.push(record);
+        Ok(())
+    })?;
+    Ok(records)
+}
+
+pub fn for_each_fasta_record<F>(path: &Path, visitor: F) -> Result<()>
+where
+    F: FnMut(FastaRecord) -> Result<()>,
+{
     let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
     let reader: Box<dyn Read> = if path
         .extension()
@@ -24,14 +38,19 @@ pub fn read_fasta(path: &Path) -> Result<Vec<FastaRecord>> {
         Box::new(file)
     };
 
-    parse_reader(BufReader::new(reader))
+    parse_reader(BufReader::new(reader), visitor)
 }
 
-fn parse_reader<R: BufRead>(reader: R) -> Result<Vec<FastaRecord>> {
-    let mut records = Vec::new();
+fn parse_reader<R, F>(reader: R, mut visitor: F) -> Result<()>
+where
+    R: BufRead,
+    F: FnMut(FastaRecord) -> Result<()>,
+{
     let mut current_header: Option<String> = None;
     let mut current_id: Option<String> = None;
     let mut current_sequence: Vec<u8> = Vec::new();
+    let mut current_header_line: Option<usize> = None;
+    let mut record_count = 0usize;
 
     for (line_index, line_result) in reader.lines().enumerate() {
         let line_number = line_index + 1;
@@ -40,11 +59,14 @@ fn parse_reader<R: BufRead>(reader: R) -> Result<Vec<FastaRecord>> {
 
         if let Some(header_text) = trimmed.strip_prefix('>') {
             if let Some(header) = current_header.take() {
-                records.push(FastaRecord {
-                    id: current_id.take().unwrap(),
+                emit_record(
+                    current_id.take().unwrap(),
                     header,
-                    sequence: std::mem::take(&mut current_sequence),
-                });
+                    std::mem::take(&mut current_sequence),
+                    current_header_line.take().unwrap(),
+                    &mut record_count,
+                    &mut visitor,
+                )?;
             }
 
             let header = header_text.trim().to_string();
@@ -58,7 +80,8 @@ fn parse_reader<R: BufRead>(reader: R) -> Result<Vec<FastaRecord>> {
                 .to_string();
             current_header = Some(header);
             current_id = Some(id);
-        } else if trimmed.trim().is_empty() {
+            current_header_line = Some(line_number);
+        } else if trimmed.is_empty() {
             continue;
         } else {
             if current_header.is_none() {
@@ -66,28 +89,59 @@ fn parse_reader<R: BufRead>(reader: R) -> Result<Vec<FastaRecord>> {
                     "sequence before first header at line {line_number}"
                 ));
             }
-            current_sequence.extend(trimmed.trim().as_bytes());
+            current_sequence.extend(trimmed.as_bytes());
         }
     }
 
     if let Some(header) = current_header.take() {
-        records.push(FastaRecord {
-            id: current_id.take().unwrap(),
+        emit_record(
+            current_id.take().unwrap(),
             header,
-            sequence: current_sequence,
-        });
+            current_sequence,
+            current_header_line.take().unwrap(),
+            &mut record_count,
+            &mut visitor,
+        )?;
     }
 
-    if records.is_empty() {
+    if record_count == 0 {
         return Err(anyhow!("input contains no FASTA records"));
     }
 
-    Ok(records)
+    Ok(())
+}
+
+fn emit_record<F>(
+    id: String,
+    header: String,
+    sequence: Vec<u8>,
+    header_line: usize,
+    record_count: &mut usize,
+    visitor: &mut F,
+) -> Result<()>
+where
+    F: FnMut(FastaRecord) -> Result<()>,
+{
+    if sequence.is_empty() {
+        return Err(anyhow!("empty FASTA record for {id} at line {header_line}"));
+    }
+
+    visitor(FastaRecord {
+        id,
+        header,
+        sequence,
+    })?;
+    *record_count += 1;
+
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+    use std::io::Write;
 
     #[test]
     fn reads_multirecord_fasta() {
@@ -96,6 +150,18 @@ mod tests {
         assert_eq!(records[0].id, "contig_1");
         assert_eq!(records[1].id, "contig_2");
         assert_eq!(records[0].sequence, b"ACGTACGTACGTAAAA");
+    }
+
+    #[test]
+    fn streams_records_to_visitor() {
+        let mut ids = Vec::new();
+        for_each_fasta_record(Path::new("testdata/valid_assembly.fa"), |record| {
+            ids.push(record.id);
+            Ok(())
+        })
+        .unwrap();
+
+        assert_eq!(ids, ["contig_1", "contig_2", "contig_3"]);
     }
 
     #[test]
@@ -114,5 +180,57 @@ mod tests {
         std::fs::write(&path, ">\nACGT\n").unwrap();
         let error = read_fasta(&path).unwrap_err().to_string();
         assert!(error.contains("empty FASTA header"));
+    }
+
+    #[test]
+    fn rejects_consecutive_headers_as_empty_record() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("bad.fa");
+        std::fs::write(&path, ">first\n>second\nACGT\n").unwrap();
+        let error = read_fasta(&path).unwrap_err().to_string();
+        assert!(error.contains("empty FASTA record"));
+        assert!(error.contains("first"));
+    }
+
+    #[test]
+    fn rejects_final_header_only_record() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("bad.fa");
+        std::fs::write(&path, ">first\nACGT\n>empty\n").unwrap();
+        let error = read_fasta(&path).unwrap_err().to_string();
+        assert!(error.contains("empty FASTA record"));
+        assert!(error.contains("empty"));
+    }
+
+    #[test]
+    fn preserves_sequence_whitespace_for_downstream_validation() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("spaces.fa");
+        std::fs::write(&path, ">spaces\n ACGT\t\n\nNNNN\n").unwrap();
+
+        let records = read_fasta(&path).unwrap();
+
+        assert_eq!(records[0].sequence, b" ACGT\tNNNN");
+    }
+
+    #[test]
+    fn reads_gzip_fasta() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("assembly.fa.gz");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut encoder = GzEncoder::new(file, Compression::default());
+        encoder.write_all(b">gz_contig\nACGT\n").unwrap();
+        encoder.finish().unwrap();
+
+        let mut records = Vec::new();
+        for_each_fasta_record(&path, |record| {
+            records.push(record);
+            Ok(())
+        })
+        .unwrap();
+
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].id, "gz_contig");
+        assert_eq!(records[0].sequence, b"ACGT");
     }
 }
