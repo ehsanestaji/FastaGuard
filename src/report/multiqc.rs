@@ -19,7 +19,7 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
     let wrapper = MultiqcReport {
         id: "fastaguard",
         section_name: "FastaGuard",
-        description: "FASTA preflight QC for assembly pipelines",
+        description: "FASTA preflight QC summary",
         report,
     };
     serde_json::to_writer_pretty(file, &wrapper)
