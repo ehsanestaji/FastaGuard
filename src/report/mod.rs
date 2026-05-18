@@ -5,6 +5,7 @@ pub mod tsv;
 
 use anyhow::{anyhow, Context, Result};
 use std::collections::BTreeSet;
+use std::path::{Component, Path, PathBuf};
 
 use crate::cli::OutputPaths;
 use crate::models::FastaguardReport;
@@ -24,7 +25,9 @@ fn validate_output_paths(outputs: &OutputPaths) -> Result<()> {
     let mut seen_paths = BTreeSet::new();
 
     for path in paths {
-        let normalized = path.to_string_lossy().into_owned();
+        let normalized = normalize_path_lexically(path)
+            .to_string_lossy()
+            .into_owned();
         if !seen_paths.insert(normalized.clone()) {
             return Err(anyhow!("duplicate output paths: {}", normalized));
         }
@@ -47,13 +50,39 @@ fn validate_output_paths(outputs: &OutputPaths) -> Result<()> {
                 parent.display()
             ));
         }
+        if !parent.is_dir() {
+            return Err(anyhow!(
+                "parent directory for output path {} is not a directory: {}",
+                path.display(),
+                parent.display()
+            ));
+        }
     }
 
     Ok(())
 }
 
+fn normalize_path_lexically(path: &Path) -> PathBuf {
+    let mut normalized = PathBuf::new();
+
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            _ => normalized.push(component.as_os_str()),
+        }
+    }
+
+    if normalized.as_os_str().is_empty() {
+        PathBuf::from(".")
+    } else {
+        normalized
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use tempfile::TempDir;
 
     use super::*;
@@ -101,6 +130,52 @@ mod tests {
         assert!(!outputs.json.exists());
         assert!(!outputs.tsv.exists());
         assert!(!outputs.multiqc.exists());
+    }
+
+    #[test]
+    fn file_parent_errors_before_creating_earlier_artifacts() {
+        let temp_dir = TempDir::new().unwrap();
+        let parent_file = temp_dir.path().join("parent-file");
+        fs::write(&parent_file, "not a directory").unwrap();
+        let outputs = OutputPaths {
+            html: temp_dir.path().join("report.html"),
+            json: temp_dir.path().join("report.json"),
+            tsv: parent_file.join("report.tsv"),
+            multiqc: temp_dir.path().join("multiqc.json"),
+        };
+
+        let error = write_all(&test_report(), &outputs).unwrap_err();
+
+        assert!(error.to_string().contains("parent directory"));
+        assert!(error
+            .to_string()
+            .contains(&outputs.tsv.display().to_string()));
+        assert!(!outputs.html.exists());
+        assert!(!outputs.json.exists());
+        assert!(!outputs.tsv.exists());
+        assert!(!outputs.multiqc.exists());
+    }
+
+    #[test]
+    fn duplicate_output_paths_detect_equivalent_dot_relative_paths() {
+        let temp_dir = TempDir::new().unwrap();
+        let current_dir = std::env::current_dir().unwrap();
+        std::env::set_current_dir(temp_dir.path()).unwrap();
+        let outputs = OutputPaths {
+            html: "report.html".into(),
+            json: "report.json".into(),
+            tsv: "./report.json".into(),
+            multiqc: "multiqc.json".into(),
+        };
+
+        let result = write_all(&test_report(), &outputs);
+        std::env::set_current_dir(current_dir).unwrap();
+
+        let error = result.unwrap_err();
+        assert!(error.to_string().contains("duplicate output paths"));
+        assert!(!temp_dir.path().join("report.html").exists());
+        assert!(!temp_dir.path().join("report.json").exists());
+        assert!(!temp_dir.path().join("multiqc.json").exists());
     }
 
     fn test_report() -> FastaguardReport {
