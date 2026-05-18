@@ -38,6 +38,10 @@ Example v0.1 shape:
   "summary": {
     "sequence_count": 481,
     "total_length": 5042301,
+    "min_length": 203,
+    "max_length": 512044,
+    "mean_length": 10483.0,
+    "median_length": 6012.0,
     "n50": 128003,
     "n90": 24013,
     "l50": 12,
@@ -45,7 +49,13 @@ Example v0.1 shape:
     "gc_percent": 51.8,
     "at_percent": 44.8,
     "n_percent": 3.4,
-    "ambiguity_percent": 3.7
+    "ambiguity_percent": 3.7,
+    "duplicate_id_count": 1,
+    "duplicate_sequence_count": 0,
+    "invalid_sequence_count": 0,
+    "high_n_sequence_count": 62,
+    "tiny_contig_count": 4,
+    "max_gap_run": 25
   },
   "findings": [
     {
@@ -56,11 +66,7 @@ Example v0.1 shape:
       "affected_fraction": 0.128,
       "message": "12.8% of sequences contain more than 20% Ns.",
       "why_it_matters": "High ambiguity can reduce annotation and mapping quality.",
-      "suggested_next_step": "Inspect high-N scaffolds or run gap closing/polishing.",
-      "evidence": {
-        "threshold": 0.2,
-        "unit": "fraction_of_sequence_length"
-      }
+      "suggested_next_step": "Inspect high-N scaffolds or run gap closing/polishing."
     }
   ],
   "artifacts": {

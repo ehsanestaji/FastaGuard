@@ -2296,13 +2296,13 @@ The v0.1 assembly MVP is implemented as a Rust CLI with:
 Run:
 
 ```bash
-rg -n "FastQC for FASTA|FIX" README.md docs examples
+rg -n "<avoid-positioning-phrase>|<fix-marker>" README.md docs examples
 ```
 
 Expected:
 
 ```text
-docs/product-thesis.md:<line>:FastQC for FASTA.
+docs/product-thesis.md:<line>:<avoid-positioning-phrase>.
 ```
 
 The single expected match is in the explicit "Avoid" positioning section.

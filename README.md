@@ -9,6 +9,40 @@ Before QUAST. Before BUSCO. Before BlobToolKit. Before annotation.
 Run FastaGuard first.
 ```
 
+## Quickstart
+
+Build locally:
+
+```bash
+cargo build --release
+```
+
+Run the assembly preflight check:
+
+```bash
+./target/release/fastaguard sample.fa \
+  --profile assembly \
+  --out fastaguard_report.html \
+  --json fastaguard.json \
+  --tsv fastaguard.tsv \
+  --multiqc fastaguard_multiqc.json
+```
+
+Pipeline gate example:
+
+```bash
+fastaguard sample.fa --fail-on duplicate_ids,invalid_chars,high_n_rate
+```
+
+Exit codes:
+
+```text
+0 = pass
+1 = warnings above configured threshold
+2 = hard QC failure
+3 = invalid input / tool error
+```
+
 ## Product Thesis
 
 FASTA files are everywhere, but FASTA QC is fragmented across ad hoc scripts, `seqkit stats`, assembly QC tools, completeness tools, contamination workflows, and pipeline-specific checks. Each is useful, but none is the simple default first command for:
@@ -79,4 +113,4 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 ## Status
 
-Private planning repository. Implementation has not started yet.
+v0.1 assembly MVP implemented as a Rust CLI.

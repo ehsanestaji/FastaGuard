@@ -1,0 +1,17 @@
+rule fastaguard:
+    input:
+        fasta="sample.fa"
+    output:
+        html="fastaguard_report.html",
+        json="fastaguard.json",
+        tsv="fastaguard.tsv",
+        multiqc="fastaguard_multiqc.json"
+    shell:
+        """
+        fastaguard {input.fasta} \
+          --profile assembly \
+          --out {output.html} \
+          --json {output.json} \
+          --tsv {output.tsv} \
+          --multiqc {output.multiqc}
+        """

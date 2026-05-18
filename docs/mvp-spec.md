@@ -164,3 +164,13 @@ The first release is successful if:
 - it catches duplicate IDs, invalid characters, high-N content, length outliers, and suspicious composition
 - it has deterministic, documented exit codes
 - it can be added to a Nextflow or Snakemake pipeline in under 5 minutes
+
+## Implementation Status
+
+The v0.1 assembly MVP is implemented as a Rust CLI with:
+
+- streaming FASTA parsing for plain and gzipped files
+- assembly metrics
+- explainable findings
+- deterministic verdict exit codes
+- JSON, TSV, HTML, and MultiQC-compatible outputs
