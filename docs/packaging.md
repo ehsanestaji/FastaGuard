@@ -69,7 +69,13 @@ For the first public release:
 
 ## Bioconda
 
-Bioconda should be added after the first public source archive is available. The recipe should expose one executable:
+Bioconda should be submitted after the first public source archive is available. A starter recipe now lives in:
+
+```text
+packaging/bioconda/
+```
+
+The recipe should expose one executable:
 
 ```text
 fastaguard
@@ -91,6 +97,14 @@ Do not block the MVP on Bioconda, but design for it now:
 - maintain stable exit codes
 - maintain a versioned JSON Schema
 
+Important current blocker: the GitHub repository is private. Before upstream Bioconda submission, make the source archive public or move the final recipe to a public source URL and replace the placeholder SHA256 in `packaging/bioconda/meta.yaml`.
+
+Bioconda recipe guidance checked for this setup:
+
+- Bioconda hosts bioinformatics-specific packages.
+- Rust dependencies should have license metadata bundled, so the starter recipe uses `cargo-bundle-licenses`.
+- Tests in `meta.yaml` must rely only on runtime dependencies, so the starter tests use FastaGuard contract discovery commands.
+
 ## Container Strategy
 
 The Docker image should stay boring:
@@ -101,3 +115,26 @@ The Docker image should stay boring:
 - one entrypoint: `fastaguard`
 
 That makes it easy to run in Nextflow, Snakemake, Galaxy, and CI systems.
+
+Once the Bioconda recipe is merged upstream, BioContainers can build the corresponding container from the conda recipe. That path is preferable to maintaining a separate BioContainers Dockerfile unless Bioconda packaging proves impossible.
+
+## MultiQC
+
+FastaGuard v0.1.0 emits MultiQC custom content as `fastaguard_mqc.json`.
+
+A native MultiQC plugin starter now lives in:
+
+```text
+integrations/multiqc/
+```
+
+Local development:
+
+```bash
+cd integrations/multiqc
+python -m pip install -e .
+cd ../../examples/reports
+multiqc .
+```
+
+This is intentionally compact: it parses `fastaguard_mqc.json`, adds key metrics to MultiQC general stats, and adds a FastaGuard summary section. The full evidence remains in FastaGuard's own HTML and JSON reports.

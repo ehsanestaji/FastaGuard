@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches:
@@ -13,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -31,6 +34,9 @@ jobs:
 
       - name: Run clippy
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
+
+      - name: Check adoption assets
+        run: python3 -m unittest tests.python.test_adoption_assets -v
 
       - name: Build Docker image
         run: docker build -t fastaguard:ci .
