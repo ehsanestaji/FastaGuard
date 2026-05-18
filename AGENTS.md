@@ -76,12 +76,12 @@ stable JSON and finding IDs
 JSON Schema and finding catalog
 machine_summary, structured finding actions, provenance, and scope
 contract discovery commands: --schema, --finding-catalog, --explain-finding
+golden JSON conformance fixtures for pass, fail, and invalid FASTA cases
 ```
 
 Recommended next sequence:
 
 ```text
-next: golden JSON conformance fixtures
 next: richer per-record evidence tables
 later: MCP/tool-agent interface and optional local summaries
 ```

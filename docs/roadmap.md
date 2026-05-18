@@ -113,10 +113,10 @@ Completed foundation:
 - add provenance for profile, thresholds, fail rules, and thread count
 - add explicit scope fields for what FastaGuard can and cannot conclude
 - add `--schema`, `--finding-catalog`, and `--explain-finding <id>` commands
+- add golden JSON conformance tests
 
 Recommended next sequence:
 
-- add golden JSON conformance tests
 - add per-record evidence tables for affected IDs
 - enrich provenance with command, timestamps, input size, and checksums
 - explore an MCP or tool-server interface after the CLI schema is stable

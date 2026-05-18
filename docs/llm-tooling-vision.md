@@ -58,7 +58,7 @@ Let humans, pipelines, and agents decide the next step confidently.
 6. Keep explicit `scope` fields so agents know what FastaGuard can and cannot conclude.
 7. Keep contract discovery commands such as `--schema`, `--finding-catalog`, and `--explain-finding <id>` stable.
 8. Add a stable schema migration policy before the first widely distributed release.
-9. Add conformance tests with tiny FASTA fixtures and golden JSON outputs.
+9. Keep conformance tests with tiny FASTA fixtures and golden JSON outputs current.
 10. Add an MCP or tool-server layer later, after the CLI contract is stable.
 11. Add compare-mode outputs that make many FASTA files easy for agents to rank, filter, and route.
 12. Keep generated LLM summaries optional, local-metrics-only, and traceable back to structured fields.
@@ -119,8 +119,8 @@ Example fields that make FastaGuard easier for machines and LLM agents to consum
 Make this a core product principle, but keep the first implementation boring:
 
 ```text
-current: stable JSON, finding IDs, JSON Schema, finding catalog, machine_summary, actions, scope, provenance
-next: golden conformance fixtures and richer evidence tables
+current: stable JSON, finding IDs, JSON Schema, finding catalog, machine_summary, actions, scope, provenance, golden conformance fixtures
+next: richer evidence tables
 later: MCP/tool-agent interface and optional local summaries
 ```
 

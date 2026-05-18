@@ -177,6 +177,16 @@ fastaguard --explain-finding high_n_rate
 
 These commands are intended for workflow engines, agentic tools, documentation generators, and validation layers. They provide the current report schema, the complete finding catalog, and a single finding definition by stable ID.
 
+## Conformance Fixtures
+
+Golden JSON fixtures live in `tests/golden/` and cover:
+
+- a passing assembly FASTA
+- an assembly FASTA with QC failures
+- a structurally invalid FASTA
+
+These fixtures are part of the machine-readable contract. If they change, the change should be intentional and reviewed as schema or semantics drift.
+
 ## TSV Contract
 
 The TSV should be easy to parse with shell tools and workflow engines.

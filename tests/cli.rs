@@ -1,6 +1,7 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
 use serde_json::{json, Value};
+use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
 #[test]
@@ -159,6 +160,31 @@ fn valid_report_includes_machine_summary_scope_and_provenance() {
 }
 
 #[test]
+fn valid_assembly_json_matches_golden_contract() {
+    let paths = golden_output_paths("valid_assembly");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--min-contig-length",
+        "1",
+        "--out",
+    ])
+    .arg(&paths.html)
+    .arg("--json")
+    .arg(&paths.json)
+    .arg("--tsv")
+    .arg(&paths.tsv)
+    .arg("--multiqc")
+    .arg(&paths.multiqc)
+    .assert()
+    .success()
+    .stderr(predicate::str::is_empty());
+
+    assert_json_matches_golden(&paths.json, "tests/golden/valid_assembly.json");
+}
+
+#[test]
 fn problem_assembly_returns_failure_for_default_critical_findings() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "problem");
@@ -177,6 +203,26 @@ fn problem_assembly_returns_failure_for_default_critical_findings() {
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     assert_all_outputs_exist(&outputs);
+}
+
+#[test]
+fn problem_assembly_json_matches_golden_contract() {
+    let paths = golden_output_paths("problem_assembly");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["testdata/problem_assembly.fa", "--out"])
+        .arg(&paths.html)
+        .arg("--json")
+        .arg(&paths.json)
+        .arg("--tsv")
+        .arg(&paths.tsv)
+        .arg("--multiqc")
+        .arg(&paths.multiqc)
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("fastaguard error:").not());
+
+    assert_json_matches_golden(&paths.json, "tests/golden/problem_assembly.json");
 }
 
 #[test]
@@ -221,6 +267,27 @@ fn problem_report_includes_structured_finding_actions() {
         duplicate_ids["actions"][0]["recommended_tool"],
         json!("seqkit")
     );
+}
+
+#[test]
+fn invalid_fasta_json_matches_golden_contract() {
+    let paths = golden_output_paths("invalid_empty_record");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("testdata/invalid_empty_record.fa")
+        .arg("--out")
+        .arg(&paths.html)
+        .arg("--json")
+        .arg(&paths.json)
+        .arg("--tsv")
+        .arg(&paths.tsv)
+        .arg("--multiqc")
+        .arg(&paths.multiqc)
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("fastaguard error:").not());
+
+    assert_json_matches_golden(&paths.json, "tests/golden/invalid_empty_record.json");
 }
 
 #[test]
@@ -342,8 +409,33 @@ fn assert_all_outputs_exist(outputs: &OutputPaths) {
     );
 }
 
-fn read_json(path: &std::path::Path) -> Value {
+fn golden_output_paths(stem: &str) -> OutputPaths {
+    let dir = Path::new("target").join("fastaguard-golden-runtime");
+    std::fs::create_dir_all(&dir).unwrap();
+    OutputPaths {
+        html: dir.join(format!("{stem}.html")),
+        json: dir.join(format!("{stem}.json")),
+        tsv: dir.join(format!("{stem}.tsv")),
+        multiqc: dir.join(format!("{stem}_multiqc.json")),
+    }
+}
+
+fn read_json(path: &Path) -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn assert_json_matches_golden(actual_path: &Path, golden_path: &str) {
+    let actual = read_json(actual_path);
+    let golden_path = PathBuf::from(golden_path);
+    let golden = read_json(&golden_path);
+
+    assert_eq!(
+        actual,
+        golden,
+        "actual JSON at {} differed from golden {}",
+        actual_path.display(),
+        golden_path.display()
+    );
 }
 
 fn finding_by_id<'a>(report: &'a Value, id: &str) -> &'a Value {

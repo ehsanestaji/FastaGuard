@@ -1,0 +1,107 @@
+{
+  "schema_version": "0.1.0",
+  "tool": {
+    "name": "FastaGuard",
+    "version": "0.1.0"
+  },
+  "input": {
+    "path": "testdata/invalid_empty_record.fa",
+    "profile": "assembly",
+    "compressed": false
+  },
+  "verdict": {
+    "status": "FAIL",
+    "reasons": [
+      "invalid_fasta_structure"
+    ]
+  },
+  "machine_summary": {
+    "verdict": "FAIL",
+    "safe_for_downstream": false,
+    "top_findings": [
+      "invalid_fasta_structure"
+    ],
+    "recommended_next_tools": [
+      {
+        "tool": "parser-aware cleanup script",
+        "reason": "Every record needs a valid header and sequence data before downstream tools can consume it safely."
+      }
+    ]
+  },
+  "scope": {
+    "level": "fasta_preflight",
+    "can_conclude": [
+      "FASTA parse validity",
+      "duplicate identifiers",
+      "invalid sequence symbols",
+      "basic structural statistics",
+      "sequence composition red flags"
+    ],
+    "cannot_conclude": [
+      "biological completeness",
+      "taxonomic contamination",
+      "whole-assembly accuracy",
+      "misassembly status without alignment evidence"
+    ]
+  },
+  "provenance": {
+    "profile": "assembly",
+    "threads": 1,
+    "fail_on": [],
+    "thresholds": {
+      "high_n_sequence_fraction": 0.2,
+      "high_global_n_fraction": 0.05,
+      "min_contig_length": 200,
+      "max_gap_run": 100,
+      "gc_outlier_zscore": 3.0
+    }
+  },
+  "summary": {
+    "sequence_count": 0,
+    "total_length": 0,
+    "min_length": 0,
+    "max_length": 0,
+    "mean_length": 0.0,
+    "median_length": 0.0,
+    "n50": 0,
+    "n90": 0,
+    "l50": 0,
+    "l90": 0,
+    "gc_percent": 0.0,
+    "at_percent": 0.0,
+    "n_percent": 0.0,
+    "ambiguity_percent": 0.0,
+    "duplicate_id_count": 0,
+    "duplicate_sequence_count": 0,
+    "invalid_sequence_count": 0,
+    "high_n_sequence_count": 0,
+    "tiny_contig_count": 0,
+    "max_gap_run": 0
+  },
+  "findings": [
+    {
+      "id": "invalid_fasta_structure",
+      "severity": "critical",
+      "profile": "assembly",
+      "affected_count": 0,
+      "affected_fraction": 0.0,
+      "message": "empty FASTA record for empty at line 1",
+      "why_it_matters": "Structurally invalid FASTA cannot be parsed reliably by downstream tools.",
+      "suggested_next_step": "Fix FASTA headers and ensure every record has sequence data before rerunning FastaGuard.",
+      "actions": [
+        {
+          "action_type": "repair_fasta_structure",
+          "target": "FASTA headers and records",
+          "reason": "Every record needs a valid header and sequence data before downstream tools can consume it safely.",
+          "recommended_tool": "parser-aware cleanup script",
+          "requires_external_database": false
+        }
+      ]
+    }
+  ],
+  "artifacts": {
+    "html": "target/fastaguard-golden-runtime/invalid_empty_record.html",
+    "tsv": "target/fastaguard-golden-runtime/invalid_empty_record.tsv",
+    "multiqc": "target/fastaguard-golden-runtime/invalid_empty_record_multiqc.json"
+  }
+}
