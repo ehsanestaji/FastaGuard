@@ -89,6 +89,13 @@ impl Cli {
         if self.threads == 0 {
             return Err(anyhow!("--threads must be at least 1"));
         }
+        if let Some(max_n_rate) = self.max_n_rate {
+            if !max_n_rate.is_finite() || !(0.0..=1.0).contains(&max_n_rate) {
+                return Err(anyhow!(
+                    "--max-n-rate must be finite and between 0.0 and 1.0 inclusive"
+                ));
+            }
+        }
 
         Ok(RunConfig {
             input: self.input.clone(),
@@ -120,4 +127,49 @@ fn normalize_rules(values: &[String]) -> BTreeSet<String> {
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned)
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn cli_with_max_n_rate(max_n_rate: Option<f64>) -> Cli {
+        Cli {
+            input: PathBuf::from("input.fa"),
+            profile: "assembly".to_string(),
+            out: PathBuf::from("fastaguard_report.html"),
+            json: PathBuf::from("fastaguard.json"),
+            tsv: PathBuf::from("fastaguard.tsv"),
+            multiqc: PathBuf::from("fastaguard_multiqc.json"),
+            fail_on: Vec::new(),
+            warn_on: Vec::new(),
+            max_n_rate,
+            min_contig_length: None,
+            threads: 1,
+        }
+    }
+
+    #[test]
+    fn max_n_rate_accepts_inclusive_fraction_bounds() {
+        for max_n_rate in [0.0, 0.5, 1.0] {
+            let config = cli_with_max_n_rate(Some(max_n_rate))
+                .to_run_config()
+                .unwrap();
+
+            assert_eq!(config.thresholds.max_n_rate, Some(max_n_rate));
+        }
+    }
+
+    #[test]
+    fn max_n_rate_rejects_non_fraction_values() {
+        for max_n_rate in [-0.1, 1.1, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let error = cli_with_max_n_rate(Some(max_n_rate))
+                .to_run_config()
+                .unwrap_err();
+
+            assert!(error
+                .to_string()
+                .contains("--max-n-rate must be finite and between 0.0 and 1.0"));
+        }
+    }
 }
