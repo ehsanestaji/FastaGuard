@@ -370,7 +370,7 @@ The report should have three layers:
    QUAST, BUSCO, BlobToolKit, CheckM, seqkit
 ```
 
-The HTML report should be self-contained, static, and shareable. It should embed plots and the summary JSON directly so it can be opened without a server.
+The HTML report should be self-contained, static, and shareable. In v0.1 it should embed the summary JSON directly so it can be opened without a server; plots can be added after the first report contract is stable.
 
 ## Testing Strategy
 

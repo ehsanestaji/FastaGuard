@@ -23,10 +23,15 @@ Capabilities:
 - high-N scaffolds
 - gap runs
 - tiny contig heuristics
-- length and composition outliers
 - PASS / WARN / FAIL verdict
 - JSON, TSV, HTML, and MultiQC-compatible outputs
 - deterministic exit codes
+
+## Later Assembly Enhancements
+
+- length and composition outliers
+- length histogram data
+- GC-vs-length anomaly data and plots
 
 ## v0.2: Transcriptome Profile
 

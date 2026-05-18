@@ -152,8 +152,10 @@ Report layers:
    PASS / WARN / FAIL with profile-aware reasons
 
 2. Evidence
-   plots, tables, outlier lists, and sequence-level details
+   summary tables, finding details, and embedded JSON
 
 3. Actions
    suggested next tools and remediation steps
 ```
+
+Outlier lists, histograms, and GC-vs-length plots are planned beyond the v0.1 report contract.
