@@ -136,7 +136,7 @@ Pipeline controls:
 
 ```bash
 fastaguard sample.fa \
-  --fail-on duplicate_ids,invalid_chars,high_n,gap_runs \
+  --fail-on duplicate_ids,invalid_chars,high_n_rate,gap_runs \
   --warn-on tiny_contigs,gc_outliers \
   --max-n-rate 0.05 \
   --min-contig-length 200 \

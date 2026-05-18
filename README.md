@@ -31,7 +31,7 @@ Run the assembly preflight check:
 Pipeline gate example:
 
 ```bash
-fastaguard sample.fa --fail-on duplicate_ids,invalid_chars,high_n_rate
+./target/release/fastaguard sample.fa --fail-on duplicate_ids,invalid_chars,high_n_rate
 ```
 
 Exit codes:
