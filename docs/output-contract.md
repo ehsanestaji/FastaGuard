@@ -37,6 +37,34 @@ Example v0.1 shape:
     "status": "WARN",
     "reasons": ["high_n_rate", "duplicate_ids"]
   },
+  "machine_summary": {
+    "verdict": "WARN",
+    "safe_for_downstream": false,
+    "top_findings": ["high_n_rate", "duplicate_ids"],
+    "recommended_next_tools": [
+      {
+        "tool": "QUAST",
+        "reason": "Assembly-level evaluation can show whether ambiguity affects broader assembly quality."
+      }
+    ]
+  },
+  "scope": {
+    "level": "fasta_preflight",
+    "can_conclude": ["FASTA parse validity", "duplicate identifiers"],
+    "cannot_conclude": ["biological completeness", "taxonomic contamination"]
+  },
+  "provenance": {
+    "profile": "assembly",
+    "threads": 1,
+    "fail_on": [],
+    "thresholds": {
+      "high_n_sequence_fraction": 0.2,
+      "high_global_n_fraction": 0.05,
+      "min_contig_length": 200,
+      "max_gap_run": 100,
+      "gc_outlier_zscore": 3.0
+    }
+  },
   "summary": {
     "sequence_count": 481,
     "total_length": 5042301,
@@ -68,7 +96,16 @@ Example v0.1 shape:
       "affected_fraction": 0.128,
       "message": "12.8% of sequences contain more than 20% Ns.",
       "why_it_matters": "High ambiguity can reduce annotation and mapping quality.",
-      "suggested_next_step": "Inspect high-N scaffolds or run gap closing/polishing."
+      "suggested_next_step": "Inspect high-N scaffolds or run gap closing/polishing.",
+      "actions": [
+        {
+          "action_type": "inspect_records",
+          "target": "high-N scaffolds",
+          "reason": "High ambiguity may indicate unresolved assembly regions or masking problems.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ]
     }
   ],
   "artifacts": {
@@ -89,6 +126,14 @@ Stable from v0.1:
 - `input.profile`
 - `verdict.status`
 - `verdict.reasons`
+- `machine_summary.verdict`
+- `machine_summary.safe_for_downstream`
+- `machine_summary.top_findings`
+- `scope.level`
+- `scope.can_conclude`
+- `scope.cannot_conclude`
+- `provenance.profile`
+- `provenance.thresholds`
 - `summary.sequence_count`
 - `summary.total_length`
 - `summary.n50`
@@ -102,6 +147,7 @@ Stable from v0.1:
 - `findings[].message`
 - `findings[].why_it_matters`
 - `findings[].suggested_next_step`
+- `findings[].actions`
 
 Fields can be added in later schema versions, but existing meanings should not drift casually.
 
@@ -117,7 +163,7 @@ An agent should be able to answer these questions without scraping HTML or logs:
 - what next action is safe?
 - what is outside FastaGuard's scope?
 
-Future schema versions should add structured `actions`, richer `provenance`, explicit `scope`, and a compact `machine_summary` while preserving the stable fields above.
+Current schema versions include structured `actions`, `provenance`, explicit `scope`, and a compact `machine_summary`. Future schema versions can add richer evidence fields while preserving the stable fields above.
 
 ## Contract Discovery Commands
 

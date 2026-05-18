@@ -69,12 +69,20 @@ Principles:
 - Reports should include provenance and scope limits so agents know what FastaGuard can and cannot conclude.
 - Optional LLM summaries must be local-metrics-only and traceable back to structured fields.
 
-Recommended product sequence:
+Current foundation:
 
 ```text
-v0.1: stable JSON and finding IDs
-v0.2: JSON Schema and finding catalog
-v0.3: structured actions, provenance, and scope
+stable JSON and finding IDs
+JSON Schema and finding catalog
+machine_summary, structured finding actions, provenance, and scope
+contract discovery commands: --schema, --finding-catalog, --explain-finding
+```
+
+Recommended next sequence:
+
+```text
+next: golden JSON conformance fixtures
+next: richer per-record evidence tables
 later: MCP/tool-agent interface and optional local summaries
 ```
 

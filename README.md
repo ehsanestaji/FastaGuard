@@ -93,6 +93,7 @@ The MVP focuses on:
 - gap runs
 - suspicious tiny contigs
 - explainable PASS / WARN / FAIL verdicts
+- machine-readable summaries, actions, scope, and provenance
 - stable JSON, TSV, HTML, and MultiQC-compatible outputs
 
 Planned after v0.1:

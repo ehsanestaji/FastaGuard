@@ -30,15 +30,19 @@ pub fn run(cli: Cli) -> Result<i32> {
     let metrics = match metrics::AssemblyMetrics::from_path(&config.input, &profile) {
         Ok(metrics) => metrics,
         Err(error) if parser::is_structural_fasta_error(&error) => {
-            let output =
-                models::FastaguardReport::from_invalid_fasta(config.clone(), error.to_string());
+            let output = models::FastaguardReport::from_invalid_fasta(
+                config.clone(),
+                &profile,
+                error.to_string(),
+            );
             report::write_all(&output, &config.outputs)?;
             return Ok(output.exit_code());
         }
         Err(error) => return Err(error),
     };
     let analysis = findings::analyze(&metrics, &profile, &config.rules);
-    let output = models::FastaguardReport::from_analysis(config.clone(), metrics, analysis);
+    let output =
+        models::FastaguardReport::from_analysis(config.clone(), &profile, metrics, analysis);
     report::write_all(&output, &config.outputs)?;
     Ok(output.exit_code())
 }

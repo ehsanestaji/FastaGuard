@@ -1,6 +1,6 @@
 use crate::cli::RuleConfig;
 use crate::metrics::AssemblyMetrics;
-use crate::models::{Finding, Severity, VerdictStatus};
+use crate::models::{finding_actions, Finding, Severity, VerdictStatus};
 use crate::profile::ProfileConfig;
 
 #[derive(Debug, Clone)]
@@ -180,6 +180,7 @@ fn finding(
         message: text.message,
         why_it_matters: text.why_it_matters.to_string(),
         suggested_next_step: text.suggested_next_step.to_string(),
+        actions: finding_actions(id),
     }
 }
 

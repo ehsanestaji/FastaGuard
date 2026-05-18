@@ -9,6 +9,9 @@
     "tool",
     "input",
     "verdict",
+    "machine_summary",
+    "scope",
+    "provenance",
     "summary",
     "findings",
     "artifacts"
@@ -59,6 +62,111 @@
             "type": "string"
           },
           "uniqueItems": true
+        }
+      }
+    },
+    "machine_summary": {
+      "type": "object",
+      "required": [
+        "verdict",
+        "safe_for_downstream",
+        "top_findings",
+        "recommended_next_tools"
+      ],
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": ["PASS", "WARN", "FAIL"]
+        },
+        "safe_for_downstream": {
+          "type": "boolean"
+        },
+        "top_findings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "recommended_next_tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/recommended_tool"
+          }
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "required": ["level", "can_conclude", "cannot_conclude"],
+      "properties": {
+        "level": {
+          "const": "fasta_preflight"
+        },
+        "can_conclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cannot_conclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["profile", "threads", "fail_on", "thresholds"],
+      "properties": {
+        "profile": {
+          "type": "string"
+        },
+        "threads": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fail_on": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "thresholds": {
+          "type": "object",
+          "required": [
+            "high_n_sequence_fraction",
+            "high_global_n_fraction",
+            "min_contig_length",
+            "max_gap_run",
+            "gc_outlier_zscore"
+          ],
+          "properties": {
+            "high_n_sequence_fraction": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "high_global_n_fraction": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "min_contig_length": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_gap_run": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "gc_outlier_zscore": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
         }
       }
     },
@@ -206,7 +314,8 @@
         "affected_fraction",
         "message",
         "why_it_matters",
-        "suggested_next_step"
+        "suggested_next_step",
+        "actions"
       ],
       "properties": {
         "id": {
@@ -235,6 +344,51 @@
           "type": "string"
         },
         "suggested_next_step": {
+          "type": "string"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding_action"
+          }
+        }
+      }
+    },
+    "finding_action": {
+      "type": "object",
+      "required": [
+        "action_type",
+        "target",
+        "reason",
+        "recommended_tool",
+        "requires_external_database"
+      ],
+      "properties": {
+        "action_type": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "recommended_tool": {
+          "type": "string"
+        },
+        "requires_external_database": {
+          "type": "boolean"
+        }
+      }
+    },
+    "recommended_tool": {
+      "type": "object",
+      "required": ["tool", "reason"],
+      "properties": {
+        "tool": {
+          "type": "string"
+        },
+        "reason": {
           "type": "string"
         }
       }

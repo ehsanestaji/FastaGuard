@@ -110,7 +110,8 @@ mod tests {
 
     use super::*;
     use crate::models::{
-        Artifacts, FastaguardReport, InputInfo, Summary, ToolInfo, Verdict, VerdictStatus,
+        Artifacts, FastaguardReport, InputInfo, MachineSummary, Provenance, ProvenanceThresholds,
+        Scope, Summary, ToolInfo, Verdict, VerdictStatus,
     };
 
     #[test]
@@ -270,6 +271,29 @@ mod tests {
             verdict: Verdict {
                 status: VerdictStatus::Pass,
                 reasons: Vec::new(),
+            },
+            machine_summary: MachineSummary {
+                verdict: VerdictStatus::Pass,
+                safe_for_downstream: true,
+                top_findings: Vec::new(),
+                recommended_next_tools: Vec::new(),
+            },
+            scope: Scope {
+                level: "fasta_preflight".to_string(),
+                can_conclude: Vec::new(),
+                cannot_conclude: Vec::new(),
+            },
+            provenance: Provenance {
+                profile: "assembly".to_string(),
+                threads: 1,
+                fail_on: Vec::new(),
+                thresholds: ProvenanceThresholds {
+                    high_n_sequence_fraction: 0.2,
+                    high_global_n_fraction: 0.05,
+                    min_contig_length: 200,
+                    max_gap_run: 100,
+                    gc_outlier_zscore: 3.0,
+                },
             },
             summary: Summary {
                 sequence_count: 2,

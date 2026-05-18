@@ -19,6 +19,7 @@
           "action_type": "rename_records",
           "target": "duplicate FASTA identifiers",
           "reason": "Downstream tools often assume FASTA identifiers are unique.",
+          "recommended_tool": "seqkit",
           "requires_external_database": false
         }
       ],
@@ -43,6 +44,7 @@
           "action_type": "correct_symbols",
           "target": "records with invalid sequence symbols",
           "reason": "Invalid sequence symbols should be corrected or intentionally recoded before downstream analysis.",
+          "recommended_tool": "seqkit",
           "requires_external_database": false
         }
       ],
@@ -72,12 +74,14 @@
           "action_type": "inspect_records",
           "target": "high-N scaffolds",
           "reason": "High ambiguity may indicate unresolved assembly regions or masking problems.",
+          "recommended_tool": "seqkit",
           "requires_external_database": false
         },
         {
           "action_type": "consider_polishing_or_gap_closing",
           "target": "assembly workflow",
           "reason": "Gap closing or polishing may reduce ambiguity before annotation or mapping.",
+          "recommended_tool": "QUAST",
           "requires_external_database": false
         }
       ],
@@ -106,6 +110,7 @@
           "action_type": "filter_or_review_records",
           "target": "tiny contigs",
           "reason": "Short records may be noise, but should be reviewed before automatic removal.",
+          "recommended_tool": "seqkit",
           "requires_external_database": false
         }
       ],
@@ -130,6 +135,7 @@
           "action_type": "inspect_gap_regions",
           "target": "scaffolds with long N runs",
           "reason": "Long gaps may require gap closing, masking review, or scaffold-level inspection.",
+          "recommended_tool": "QUAST",
           "requires_external_database": false
         }
       ],
@@ -154,6 +160,7 @@
           "action_type": "deduplicate_or_confirm",
           "target": "duplicate sequence records",
           "reason": "Repeated sequence records may be expected in some contexts but should be explicit.",
+          "recommended_tool": "seqkit",
           "requires_external_database": false
         }
       ],
@@ -178,6 +185,7 @@
           "action_type": "repair_fasta_structure",
           "target": "FASTA headers and records",
           "reason": "Every record needs a valid header and sequence data before downstream tools can consume it safely.",
+          "recommended_tool": "parser-aware cleanup script",
           "requires_external_database": false
         }
       ],
