@@ -103,6 +103,20 @@ Stable from v0.1:
 
 Fields can be added in later schema versions, but existing meanings should not drift casually.
 
+## Machine-Actionable Contract
+
+The JSON output should become the source of truth for humans, workflow engines, dashboards, and future tool-using LLM agents.
+
+An agent should be able to answer these questions without scraping HTML or logs:
+
+- what was the verdict?
+- which findings drove that verdict?
+- what evidence and thresholds support each finding?
+- what next action is safe?
+- what is outside FastaGuard's scope?
+
+Future schema versions should add structured `actions`, richer `provenance`, explicit `scope`, and a compact `machine_summary` while preserving the stable fields above.
+
 ## TSV Contract
 
 The TSV should be easy to parse with shell tools and workflow engines.

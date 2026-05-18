@@ -100,3 +100,18 @@ Avoid external databases in v0.1. Later releases can explore:
 - AI-generated report summaries from local metrics only
 - browser-based interactive contig filtering
 - WASM report viewer
+
+## LLM And Tool-Agent Readiness
+
+FastaGuard should prepare for a future where machines talk to QC tools directly. The near-term path is not a chatbot feature; it is a cleaner contract.
+
+Recommended sequence:
+
+- publish `schema/fastaguard.schema.json`
+- document a stable finding catalog
+- add structured `actions[]` records to findings
+- add richer provenance for command, thresholds, timestamps, and input metadata
+- add explicit scope fields for what FastaGuard can and cannot conclude
+- add `--schema` and `--explain-finding <id>` commands
+- add golden JSON conformance tests
+- explore an MCP or tool-server interface after the CLI schema is stable

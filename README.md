@@ -114,6 +114,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [Product thesis](docs/product-thesis.md)
 - [MVP spec](docs/mvp-spec.md)
 - [Output contract](docs/output-contract.md)
+- [LLM and tooling vision](docs/llm-tooling-vision.md)
 - [Roadmap](docs/roadmap.md)
 - [First-release design](docs/superpowers/specs/2026-05-18-fastaguard-first-release-design.md)
 

@@ -67,6 +67,15 @@ fastaguard_multiqc.json
 
 The product is not only a nice report. It is a stable, versioned schema that pipelines can depend on.
 
+That contract should also be designed for future tool-using LLM agents. Machines should be able to inspect FastaGuard output, understand the verdict, trace each finding to evidence, and choose safe next steps without scraping HTML or logs.
+
+In that sense, FastaGuard is also a machine-actionable FASTA QC layer:
+
+```text
+Human-readable reports for scientists.
+Stable structured outputs for pipelines and agents.
+```
+
 ## Positioning Language
 
 Use:
