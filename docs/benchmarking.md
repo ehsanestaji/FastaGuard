@@ -80,3 +80,25 @@ Use it to answer:
 - does the tool still behave well on large record counts?
 
 Do not use it to claim performance on contaminated assemblies, highly ambiguous assemblies, or compressed FASTA until separate fixtures cover those cases.
+
+## Evidence To Collect Next
+
+Use release binaries and public assemblies to build a small evidence table for the README and release notes:
+
+- bacterial assembly around 5 Mbp
+- fungal or small eukaryotic assembly around 30-50 Mbp
+- large fragmented assembly with many contigs
+- gzipped FASTA input
+- intentionally problematic FASTA fixture with duplicate IDs and high-N scaffolds
+
+For each run, record:
+
+- FastaGuard version
+- platform
+- input size and sequence count
+- elapsed seconds
+- peak memory if measured externally
+- verdict and top findings
+- whether downstream tools would have been blocked or recommended
+
+This evidence matters more than synthetic speed alone because it shows the wedge: cheap FASTA preflight before expensive downstream QC.

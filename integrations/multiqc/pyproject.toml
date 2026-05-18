@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "multiqc-fastaguard"
+version = "0.1.0"
+description = "MultiQC module for FastaGuard FASTA preflight reports"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+  "multiqc>=1.28",
+]
+
+[project.entry-points."multiqc.modules.v1"]
+fastaguard = "fastaguard_multiqc:MultiqcModule"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fastaguard_multiqc"]
