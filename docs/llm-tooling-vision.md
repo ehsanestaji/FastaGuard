@@ -122,3 +122,15 @@ later: MCP/tool-agent interface and optional local summaries
 ```
 
 That lets FastaGuard become useful to machines without weakening the current promise: fast, explainable FASTA preflight QC.
+
+## Current Contract Commands
+
+The first contract-discovery commands are:
+
+```bash
+fastaguard --schema
+fastaguard --finding-catalog
+fastaguard --explain-finding high_n_rate
+```
+
+These are the first practical bridge from "nice report" to "tool-readable QC contract."

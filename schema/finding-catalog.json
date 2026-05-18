@@ -1,0 +1,193 @@
+{
+  "schema_version": "0.1.0",
+  "catalog_version": "0.1.0",
+  "tool": {
+    "name": "FastaGuard"
+  },
+  "scope": "fasta_preflight",
+  "findings": [
+    {
+      "id": "duplicate_ids",
+      "profile": "assembly",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "Two or more FASTA records share the same identifier.",
+      "why_it_matters": "Duplicate IDs can break indexing, annotation, mapping, and workflow joins.",
+      "evidence_fields": ["summary.duplicate_id_count", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "rename_records",
+          "target": "duplicate FASTA identifiers",
+          "reason": "Downstream tools often assume FASTA identifiers are unique.",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "inspect and rename duplicate records"
+        }
+      ],
+      "cannot_conclude": ["biological duplication", "assembly correctness"]
+    },
+    {
+      "id": "invalid_chars",
+      "profile": "assembly",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "One or more sequences contain symbols outside the nucleotide/IUPAC alphabet accepted by the assembly profile.",
+      "why_it_matters": "Invalid characters can make parsers, aligners, or annotation tools fail or misinterpret records.",
+      "evidence_fields": ["summary.invalid_sequence_count", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "correct_symbols",
+          "target": "records with invalid sequence symbols",
+          "reason": "Invalid sequence symbols should be corrected or intentionally recoded before downstream analysis.",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "inspect affected records"
+        }
+      ],
+      "cannot_conclude": ["sequencing error source", "taxonomic origin"]
+    },
+    {
+      "id": "high_n_rate",
+      "profile": "assembly",
+      "default_severity": "major",
+      "default_verdict_effect": "warn",
+      "meaning": "Global or per-sequence N content exceeds the assembly profile threshold.",
+      "why_it_matters": "High N content can reduce mapping confidence and fragment annotation or polishing steps.",
+      "evidence_fields": [
+        "summary.n_percent",
+        "summary.high_n_sequence_count",
+        "findings[].affected_count",
+        "findings[].affected_fraction"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "inspect_records",
+          "target": "high-N scaffolds",
+          "reason": "High ambiguity may indicate unresolved assembly regions or masking problems.",
+          "requires_external_database": false
+        },
+        {
+          "action_type": "consider_polishing_or_gap_closing",
+          "target": "assembly workflow",
+          "reason": "Gap closing or polishing may reduce ambiguity before annotation or mapping.",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "QUAST",
+          "role": "assembly-level evaluation after FASTA validity issues are handled"
+        },
+        {
+          "tool": "BUSCO",
+          "role": "biological completeness after structural preflight checks"
+        }
+      ],
+      "cannot_conclude": ["biological completeness", "misassembly status", "taxonomic contamination"]
+    },
+    {
+      "id": "tiny_contigs",
+      "profile": "assembly",
+      "default_severity": "minor",
+      "default_verdict_effect": "warn",
+      "meaning": "One or more contigs are shorter than the assembly profile minimum length.",
+      "why_it_matters": "Very short contigs often add noise to assembly statistics and downstream annotation.",
+      "evidence_fields": ["summary.tiny_contig_count", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "filter_or_review_records",
+          "target": "tiny contigs",
+          "reason": "Short records may be noise, but should be reviewed before automatic removal.",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "filter or inspect short records"
+        }
+      ],
+      "cannot_conclude": ["whether a tiny contig is biologically real"]
+    },
+    {
+      "id": "gap_runs",
+      "profile": "assembly",
+      "default_severity": "major",
+      "default_verdict_effect": "warn",
+      "meaning": "The longest contiguous N gap run exceeds the assembly profile limit.",
+      "why_it_matters": "Long gap runs can indicate unresolved assembly regions and may disrupt mapping or annotation.",
+      "evidence_fields": ["summary.max_gap_run", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "inspect_gap_regions",
+          "target": "scaffolds with long N runs",
+          "reason": "Long gaps may require gap closing, masking review, or scaffold-level inspection.",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "QUAST",
+          "role": "assembly-level gap and scaffold evaluation"
+        }
+      ],
+      "cannot_conclude": ["gap correctness", "misassembly status without alignment evidence"]
+    },
+    {
+      "id": "duplicate_sequences",
+      "profile": "assembly",
+      "default_severity": "minor",
+      "default_verdict_effect": "warn",
+      "meaning": "Two or more FASTA records contain identical sequence strings.",
+      "why_it_matters": "Duplicate sequences can inflate assembly metrics and confuse record-level comparisons.",
+      "evidence_fields": ["summary.duplicate_sequence_count", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "deduplicate_or_confirm",
+          "target": "duplicate sequence records",
+          "reason": "Repeated sequence records may be expected in some contexts but should be explicit.",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "deduplicate or inspect repeated sequences"
+        }
+      ],
+      "cannot_conclude": ["biological repeat structure", "copy number accuracy"]
+    },
+    {
+      "id": "invalid_fasta_structure",
+      "profile": "assembly",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "The input file could not be parsed as structurally valid FASTA.",
+      "why_it_matters": "Structurally invalid FASTA cannot be parsed reliably by downstream tools.",
+      "evidence_fields": ["verdict.reasons", "findings[].message"],
+      "suggested_actions": [
+        {
+          "action_type": "repair_fasta_structure",
+          "target": "FASTA headers and records",
+          "reason": "Every record needs a valid header and sequence data before downstream tools can consume it safely.",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "text editor or parser-aware cleanup script",
+          "role": "repair malformed FASTA before rerunning FastaGuard"
+        }
+      ],
+      "cannot_conclude": ["sequence quality", "assembly quality", "biological completeness"]
+    }
+  ]
+}

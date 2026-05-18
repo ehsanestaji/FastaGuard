@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fastaguard.dev/schema/fastaguard.schema.json",
+  "title": "FastaguardReport",
+  "description": "Machine-readable FastaGuard FASTA preflight QC report.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "tool",
+    "input",
+    "verdict",
+    "summary",
+    "findings",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of the FastaGuard report schema."
+    },
+    "tool": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "const": "FastaGuard"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "required": ["path", "profile", "compressed"],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "compressed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "required": ["status", "reasons"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["PASS", "WARN", "FAIL"]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "sequence_count",
+        "total_length",
+        "min_length",
+        "max_length",
+        "mean_length",
+        "median_length",
+        "n50",
+        "n90",
+        "l50",
+        "l90",
+        "gc_percent",
+        "at_percent",
+        "n_percent",
+        "ambiguity_percent",
+        "duplicate_id_count",
+        "duplicate_sequence_count",
+        "invalid_sequence_count",
+        "high_n_sequence_count",
+        "tiny_contig_count",
+        "max_gap_run"
+      ],
+      "properties": {
+        "sequence_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mean_length": {
+          "type": "number",
+          "minimum": 0
+        },
+        "median_length": {
+          "type": "number",
+          "minimum": 0
+        },
+        "n50": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "n90": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "l50": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "l90": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "gc_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "at_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "n_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "ambiguity_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "duplicate_id_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate_sequence_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "invalid_sequence_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "high_n_sequence_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tiny_contig_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_gap_run": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "required": ["html", "tsv", "multiqc"],
+      "properties": {
+        "html": {
+          "type": "string"
+        },
+        "tsv": {
+          "type": "string"
+        },
+        "multiqc": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": [
+        "id",
+        "severity",
+        "profile",
+        "affected_count",
+        "affected_fraction",
+        "message",
+        "why_it_matters",
+        "suggested_next_step"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "minor", "major", "critical"]
+        },
+        "profile": {
+          "type": "string"
+        },
+        "affected_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "affected_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "message": {
+          "type": "string"
+        },
+        "why_it_matters": {
+          "type": "string"
+        },
+        "suggested_next_step": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

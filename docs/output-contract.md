@@ -13,6 +13,8 @@ fastaguard.json
 fastaguard.tsv
 fastaguard_report.html
 fastaguard_multiqc.json
+schema/fastaguard.schema.json
+schema/finding-catalog.json
 ```
 
 ## JSON Contract
@@ -116,6 +118,18 @@ An agent should be able to answer these questions without scraping HTML or logs:
 - what is outside FastaGuard's scope?
 
 Future schema versions should add structured `actions`, richer `provenance`, explicit `scope`, and a compact `machine_summary` while preserving the stable fields above.
+
+## Contract Discovery Commands
+
+FastaGuard exposes its machine-readable contract without requiring an input FASTA:
+
+```bash
+fastaguard --schema
+fastaguard --finding-catalog
+fastaguard --explain-finding high_n_rate
+```
+
+These commands are intended for workflow engines, agentic tools, documentation generators, and validation layers. They provide the current report schema, the complete finding catalog, and a single finding definition by stable ID.
 
 ## TSV Contract
 

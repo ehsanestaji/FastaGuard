@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use clap::Parser;
+use clap::{ArgGroup, Parser};
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
@@ -9,9 +9,26 @@ use crate::profile::ThresholdOverrides;
 #[command(name = "fastaguard")]
 #[command(version)]
 #[command(about = "FASTA preflight QC for assembly pipelines")]
+#[command(group(
+    ArgGroup::new("contract")
+        .args(["schema", "finding_catalog", "explain_finding"])
+        .multiple(false)
+))]
 pub struct Cli {
     /// Input FASTA file. Plain .fa/.fasta and gzipped .gz files are supported.
-    pub input: PathBuf,
+    pub input: Option<PathBuf>,
+
+    /// Print the FastaGuard JSON Schema and exit.
+    #[arg(long)]
+    pub schema: bool,
+
+    /// Print the machine-readable finding catalog and exit.
+    #[arg(long)]
+    pub finding_catalog: bool,
+
+    /// Print the catalog entry for one finding ID and exit.
+    #[arg(long, value_name = "ID")]
+    pub explain_finding: Option<String>,
 
     /// QC profile. v0.1 supports assembly.
     #[arg(long, default_value = "assembly")]
@@ -75,6 +92,9 @@ pub struct RuleConfig {
 
 impl Cli {
     pub fn to_run_config(&self) -> Result<RunConfig> {
+        let input = self.input.clone().ok_or_else(|| {
+            anyhow!("input FASTA is required unless a contract discovery flag is used")
+        })?;
         if self.profile != "assembly" {
             return Err(anyhow!(
                 "unsupported profile '{}'; v0.1 supports assembly",
@@ -93,7 +113,7 @@ impl Cli {
         }
 
         Ok(RunConfig {
-            input: self.input.clone(),
+            input,
             profile: self.profile.clone(),
             outputs: OutputPaths {
                 html: self.out.clone(),
@@ -129,7 +149,10 @@ mod tests {
 
     fn cli_with_max_n_rate(max_n_rate: Option<f64>) -> Cli {
         Cli {
-            input: PathBuf::from("input.fa"),
+            input: Some(PathBuf::from("input.fa")),
+            schema: false,
+            finding_catalog: false,
+            explain_finding: None,
             profile: "assembly".to_string(),
             out: PathBuf::from("fastaguard_report.html"),
             json: PathBuf::from("fastaguard.json"),

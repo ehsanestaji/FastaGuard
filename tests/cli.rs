@@ -22,6 +22,52 @@ fn help_does_not_advertise_removed_warning_flag() {
 }
 
 #[test]
+fn contract_schema_can_be_printed_without_input() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("--schema")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(r#""$schema""#))
+        .stdout(predicate::str::contains(r#""FastaguardReport""#))
+        .stderr(predicate::str::is_empty());
+}
+
+#[test]
+fn contract_finding_catalog_can_be_printed_without_input() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("--finding-catalog")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(r#""schema_version": "0.1.0""#))
+        .stdout(predicate::str::contains(r#""duplicate_ids""#))
+        .stdout(predicate::str::contains(r#""invalid_fasta_structure""#))
+        .stderr(predicate::str::is_empty());
+}
+
+#[test]
+fn contract_explain_finding_prints_single_catalog_entry() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["--explain-finding", "high_n_rate"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(r#""id": "high_n_rate""#))
+        .stdout(predicate::str::contains(r#""recommended_next_tools""#))
+        .stdout(predicate::str::contains(r#""id": "duplicate_ids""#).not())
+        .stderr(predicate::str::is_empty());
+}
+
+#[test]
+fn contract_unknown_finding_is_tool_error() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["--explain-finding", "unknown_rule"])
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains(
+            "unknown finding id 'unknown_rule'",
+        ));
+}
+
+#[test]
 fn valid_assembly_writes_all_outputs_and_passes() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "valid");

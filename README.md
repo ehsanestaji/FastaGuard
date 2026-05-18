@@ -34,6 +34,14 @@ Pipeline gate example:
 ./target/release/fastaguard sample.fa --fail-on duplicate_ids,invalid_chars,high_n_rate
 ```
 
+Inspect the machine-readable contract:
+
+```bash
+./target/release/fastaguard --schema
+./target/release/fastaguard --finding-catalog
+./target/release/fastaguard --explain-finding high_n_rate
+```
+
 Exit codes:
 
 ```text
