@@ -1,3 +1,4 @@
+import re
 import tomllib
 import unittest
 from pathlib import Path
@@ -21,6 +22,13 @@ class ReleaseMetadataTest(unittest.TestCase):
         text = notes.read_text()
         self.assertIn("FastaGuard v0.1.1", text)
         self.assertIn("packaging metadata", text)
+
+    def test_bioconda_recipe_sha256_is_real_hash(self):
+        recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
+
+        match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
+        self.assertIsNotNone(match, recipe)
+        self.assertNotIn("REPLACE_WITH_PUBLIC_SOURCE_ARCHIVE_SHA256", recipe)
 
 
 if __name__ == "__main__":

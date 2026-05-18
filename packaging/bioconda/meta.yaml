@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/ehsanestaji/FastaGuard/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: REPLACE_WITH_PUBLIC_SOURCE_ARCHIVE_SHA256
+  sha256: 10a5520e54d7e7884aa4cdfec5108cd7183c6033053e7839f969b9dcd9d73a17
 
 build:
   number: 0
