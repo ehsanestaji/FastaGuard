@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 use std::path::Path;
 
-use crate::parser::{self, FastaRecord};
+use crate::parser::{self, FastaEvent, FastaRecord};
 use crate::profile::ProfileConfig;
 use crate::stats::composition::{fraction, percent, round2};
 use crate::stats::nxx::nx_lx;
@@ -51,15 +51,21 @@ impl AssemblyMetrics {
     pub fn from_records(records: Vec<FastaRecord>, profile: &ProfileConfig) -> Self {
         let mut accumulator = MetricsAccumulator::new(profile);
         for record in records {
-            accumulator.add_record(record);
+            accumulator.start_record(record.id);
+            accumulator.add_sequence_bytes(&record.sequence);
+            accumulator.end_record();
         }
         accumulator.finish()
     }
 
     pub fn from_path(path: &Path, profile: &ProfileConfig) -> Result<Self> {
         let mut accumulator = MetricsAccumulator::new(profile);
-        parser::for_each_fasta_record(path, |record| {
-            accumulator.add_record(record);
+        parser::for_each_fasta_event(path, |event| {
+            match event {
+                FastaEvent::StartRecord { id, .. } => accumulator.start_record(id),
+                FastaEvent::SequenceLine { bytes, .. } => accumulator.add_sequence_bytes(bytes),
+                FastaEvent::EndRecord => accumulator.end_record(),
+            }
             Ok(())
         })?;
 
@@ -74,14 +80,15 @@ struct MetricsAccumulator<'a> {
     duplicate_id_count: u64,
     duplicate_sequence_count: u64,
     lengths: Vec<u64>,
-    gc_total: u64,
-    at_total: u64,
-    n_total: u64,
-    ambiguity_total: u64,
+    gc_total: u128,
+    at_total: u128,
+    n_total: u128,
+    ambiguity_total: u128,
     invalid_sequence_count: u64,
     high_n_sequence_count: u64,
     tiny_contig_count: u64,
     max_gap_run: u64,
+    current_sequence: Option<SequenceSummaryBuilder>,
     sequences: Vec<SequenceSummary>,
 }
 
@@ -102,28 +109,40 @@ impl<'a> MetricsAccumulator<'a> {
             high_n_sequence_count: 0,
             tiny_contig_count: 0,
             max_gap_run: 0,
+            current_sequence: None,
             sequences: Vec::new(),
         }
     }
 
-    fn add_record(&mut self, record: FastaRecord) {
-        if !self.seen_ids.insert(record.id.clone()) {
+    fn start_record(&mut self, id: String) {
+        if !self.seen_ids.insert(id.clone()) {
             self.duplicate_id_count += 1;
         }
 
-        if !self
-            .seen_sequence_hashes
-            .insert(sequence_hash(&record.sequence))
-        {
+        self.current_sequence = Some(SequenceSummaryBuilder::new(id));
+    }
+
+    fn add_sequence_bytes(&mut self, bytes: &[u8]) {
+        if let Some(current_sequence) = &mut self.current_sequence {
+            current_sequence.add_bytes(bytes);
+        }
+    }
+
+    fn end_record(&mut self) {
+        let Some(current_sequence) = self.current_sequence.take() else {
+            return;
+        };
+
+        let (summary, sequence_hash) = current_sequence.finish();
+        if !self.seen_sequence_hashes.insert(sequence_hash) {
             self.duplicate_sequence_count += 1;
         }
 
-        let summary = summarize_sequence(record);
         self.lengths.push(summary.length);
-        self.gc_total += summary.gc_count;
-        self.at_total += summary.at_count;
-        self.n_total += summary.n_count;
-        self.ambiguity_total += summary.ambiguity_count;
+        self.gc_total += u128::from(summary.gc_count);
+        self.at_total += u128::from(summary.at_count);
+        self.n_total += u128::from(summary.n_count);
+        self.ambiguity_total += u128::from(summary.ambiguity_count);
         if summary.invalid_count > 0 {
             self.invalid_sequence_count += 1;
         }
@@ -141,13 +160,17 @@ impl<'a> MetricsAccumulator<'a> {
         self.lengths.sort_unstable();
 
         let sequence_count = self.lengths.len() as u64;
-        let total_length = self.lengths.iter().sum();
+        let total_length_u128 = self
+            .lengths
+            .iter()
+            .fold(0_u128, |total, length| total + u128::from(*length));
+        let total_length = saturating_u128_to_u64(total_length_u128);
         let min_length = self.lengths.first().copied().unwrap_or(0);
         let max_length = self.lengths.last().copied().unwrap_or(0);
         let mean_length = if sequence_count == 0 {
             0.0
         } else {
-            round2(total_length as f64 / sequence_count as f64)
+            round2(total_length_u128 as f64 / sequence_count as f64)
         };
         let median_length = median(&self.lengths);
         let n50 = nx_lx(&self.lengths, 0.50);
@@ -164,10 +187,10 @@ impl<'a> MetricsAccumulator<'a> {
             n90: n90.nx,
             l50: n50.lx,
             l90: n90.lx,
-            gc_percent: percent(self.gc_total, total_length),
-            at_percent: percent(self.at_total, total_length),
-            n_percent: percent(self.n_total, total_length),
-            ambiguity_percent: percent(self.ambiguity_total, total_length),
+            gc_percent: percent(saturating_u128_to_u64(self.gc_total), total_length),
+            at_percent: percent(saturating_u128_to_u64(self.at_total), total_length),
+            n_percent: percent(saturating_u128_to_u64(self.n_total), total_length),
+            ambiguity_percent: percent(saturating_u128_to_u64(self.ambiguity_total), total_length),
             duplicate_id_count: self.duplicate_id_count,
             duplicate_sequence_count: self.duplicate_sequence_count,
             invalid_sequence_count: self.invalid_sequence_count,
@@ -179,64 +202,88 @@ impl<'a> MetricsAccumulator<'a> {
     }
 }
 
-fn summarize_sequence(record: FastaRecord) -> SequenceSummary {
-    let mut gc_count = 0;
-    let mut at_count = 0;
-    let mut n_count = 0;
-    let mut ambiguity_count = 0;
-    let mut invalid_count = 0;
-    let mut current_gap_run = 0;
-    let mut max_gap_run = 0;
+struct SequenceSummaryBuilder {
+    id: String,
+    hasher: Sha256,
+    length: u64,
+    gc_count: u64,
+    at_count: u64,
+    n_count: u64,
+    ambiguity_count: u64,
+    invalid_count: u64,
+    current_gap_run: u64,
+    max_gap_run: u64,
+}
 
-    for byte in &record.sequence {
-        match byte.to_ascii_uppercase() {
-            b'G' | b'C' => {
-                gc_count += 1;
-                current_gap_run = 0;
-            }
-            b'A' | b'T' | b'U' => {
-                at_count += 1;
-                current_gap_run = 0;
-            }
-            b'N' => {
-                n_count += 1;
-                ambiguity_count += 1;
-                current_gap_run += 1;
-                max_gap_run = max_gap_run.max(current_gap_run);
-            }
-            b'M' | b'R' | b'W' | b'S' | b'Y' | b'K' | b'V' | b'H' | b'D' | b'B' => {
-                ambiguity_count += 1;
-                current_gap_run = 0;
-            }
-            _ => {
-                invalid_count += 1;
-                current_gap_run = 0;
+impl SequenceSummaryBuilder {
+    fn new(id: String) -> Self {
+        Self {
+            id,
+            hasher: Sha256::new(),
+            length: 0,
+            gc_count: 0,
+            at_count: 0,
+            n_count: 0,
+            ambiguity_count: 0,
+            invalid_count: 0,
+            current_gap_run: 0,
+            max_gap_run: 0,
+        }
+    }
+
+    fn add_bytes(&mut self, bytes: &[u8]) {
+        for byte in bytes {
+            let upper = byte.to_ascii_uppercase();
+            self.hasher.update([upper]);
+            self.length = self.length.saturating_add(1);
+
+            match upper {
+                b'G' | b'C' => {
+                    self.gc_count += 1;
+                    self.current_gap_run = 0;
+                }
+                b'A' | b'T' | b'U' => {
+                    self.at_count += 1;
+                    self.current_gap_run = 0;
+                }
+                b'N' => {
+                    self.n_count += 1;
+                    self.ambiguity_count += 1;
+                    self.current_gap_run += 1;
+                    self.max_gap_run = self.max_gap_run.max(self.current_gap_run);
+                }
+                b'M' | b'R' | b'W' | b'S' | b'Y' | b'K' | b'V' | b'H' | b'D' | b'B' => {
+                    self.ambiguity_count += 1;
+                    self.current_gap_run = 0;
+                }
+                _ => {
+                    self.invalid_count += 1;
+                    self.current_gap_run = 0;
+                }
             }
         }
     }
 
-    let length = record.sequence.len() as u64;
+    fn finish(self) -> (SequenceSummary, [u8; 32]) {
+        let summary = SequenceSummary {
+            id: self.id,
+            length: self.length,
+            gc_count: self.gc_count,
+            at_count: self.at_count,
+            n_count: self.n_count,
+            ambiguity_count: self.ambiguity_count,
+            invalid_count: self.invalid_count,
+            max_gap_run: self.max_gap_run,
+            n_fraction: fraction(self.n_count, self.length),
+            gc_percent: percent(self.gc_count, self.length),
+        };
 
-    SequenceSummary {
-        id: record.id,
-        length,
-        gc_count,
-        at_count,
-        n_count,
-        ambiguity_count,
-        invalid_count,
-        max_gap_run,
-        n_fraction: fraction(n_count, length),
-        gc_percent: percent(gc_count, length),
+        (summary, self.hasher.finalize().into())
     }
 }
 
-fn sequence_hash(sequence: &[u8]) -> [u8; 32] {
-    let mut hasher = Sha256::new();
-    for byte in sequence {
-        hasher.update([byte.to_ascii_uppercase()]);
-    }
-    hasher.finalize().into()
+fn saturating_u128_to_u64(value: u128) -> u64 {
+    value.try_into().unwrap_or(u64::MAX)
 }
 
 fn median(lengths: &[u64]) -> f64 {
@@ -248,7 +295,7 @@ fn median(lengths: &[u64]) -> f64 {
     if lengths.len() % 2 == 1 {
         lengths[midpoint] as f64
     } else {
-        round2((lengths[midpoint - 1] as f64 + lengths[midpoint] as f64) / 2.0)
+        round2((lengths[midpoint - 1] as f64 / 2.0) + (lengths[midpoint] as f64 / 2.0))
     }
 }
 
@@ -323,12 +370,17 @@ mod tests {
     }
 
     #[test]
-    fn streams_metrics_from_path_without_retaining_sequence_bodies() {
+    fn streams_metrics_from_path_with_event_parser() {
         let metrics =
             AssemblyMetrics::from_path(Path::new("testdata/problem_assembly.fa"), &profile())
                 .unwrap();
 
         assert_eq!(metrics.duplicate_id_count, 1);
         assert_eq!(metrics.invalid_sequence_count, 1);
+    }
+
+    #[test]
+    fn median_handles_large_even_lengths_without_overflow() {
+        assert_eq!(median(&[u64::MAX, u64::MAX]), u64::MAX as f64);
     }
 }

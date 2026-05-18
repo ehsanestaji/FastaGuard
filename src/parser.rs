@@ -11,8 +11,22 @@ pub struct FastaRecord {
     pub sequence: Vec<u8>,
 }
 
-// Convenience collector for tests and early internal use. Production orchestration should
-// prefer `for_each_fasta_record` to avoid retaining every record in memory.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FastaEvent<'a> {
+    StartRecord {
+        id: String,
+        header: String,
+        line_number: usize,
+    },
+    SequenceLine {
+        bytes: &'a [u8],
+        line_number: usize,
+    },
+    EndRecord,
+}
+
+// Convenience collector for tests and early internal use. Production orchestration should prefer
+// `for_each_fasta_record`, or `for_each_fasta_event` when it must avoid per-record sequence bodies.
 pub fn read_fasta(path: &Path) -> Result<Vec<FastaRecord>> {
     let mut records = Vec::new();
     for_each_fasta_record(path, |record| {
@@ -26,6 +40,19 @@ pub fn for_each_fasta_record<F>(path: &Path, visitor: F) -> Result<()>
 where
     F: FnMut(FastaRecord) -> Result<()>,
 {
+    let reader = open_fasta_reader(path)?;
+    parse_records_from_events(reader, visitor)
+}
+
+pub fn for_each_fasta_event<F>(path: &Path, visitor: F) -> Result<()>
+where
+    F: for<'a> FnMut(FastaEvent<'a>) -> Result<()>,
+{
+    let reader = open_fasta_reader(path)?;
+    parse_events(reader, visitor)
+}
+
+fn open_fasta_reader(path: &Path) -> Result<BufReader<Box<dyn Read>>> {
     let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
     let reader: Box<dyn Read> = if path
         .extension()
@@ -38,18 +65,46 @@ where
         Box::new(file)
     };
 
-    parse_reader(BufReader::new(reader), visitor)
+    Ok(BufReader::new(reader))
 }
 
-fn parse_reader<R, F>(reader: R, mut visitor: F) -> Result<()>
+fn parse_records_from_events<R, F>(reader: R, mut visitor: F) -> Result<()>
 where
     R: BufRead,
     F: FnMut(FastaRecord) -> Result<()>,
 {
-    let mut current_header: Option<String> = None;
-    let mut current_id: Option<String> = None;
+    let mut current_id = String::new();
+    let mut current_header = String::new();
     let mut current_sequence: Vec<u8> = Vec::new();
+
+    parse_events(reader, |event| {
+        match event {
+            FastaEvent::StartRecord { id, header, .. } => {
+                current_id = id;
+                current_header = header;
+            }
+            FastaEvent::SequenceLine { bytes, .. } => current_sequence.extend(bytes),
+            FastaEvent::EndRecord => {
+                visitor(FastaRecord {
+                    id: std::mem::take(&mut current_id),
+                    header: std::mem::take(&mut current_header),
+                    sequence: std::mem::take(&mut current_sequence),
+                })?;
+            }
+        }
+
+        Ok(())
+    })
+}
+
+fn parse_events<R, F>(reader: R, mut visitor: F) -> Result<()>
+where
+    R: BufRead,
+    F: for<'a> FnMut(FastaEvent<'a>) -> Result<()>,
+{
+    let mut current_id: Option<String> = None;
     let mut current_header_line: Option<usize> = None;
+    let mut current_has_sequence = false;
     let mut record_count = 0usize;
 
     for (line_index, line_result) in reader.lines().enumerate() {
@@ -58,16 +113,13 @@ where
         let trimmed = line.trim_end_matches('\r');
 
         if let Some(header_text) = trimmed.strip_prefix('>') {
-            if let Some(header) = current_header.take() {
-                emit_record(
-                    current_id.take().unwrap(),
-                    header,
-                    std::mem::take(&mut current_sequence),
-                    current_header_line.take().unwrap(),
-                    &mut record_count,
-                    &mut visitor,
-                )?;
-            }
+            close_current_event_record(
+                &mut current_id,
+                current_header_line.take(),
+                &mut current_has_sequence,
+                &mut record_count,
+                &mut visitor,
+            )?;
 
             let header = header_text.trim().to_string();
             if header.is_empty() {
@@ -78,31 +130,36 @@ where
                 .next()
                 .ok_or_else(|| anyhow!("empty FASTA header at line {line_number}"))?
                 .to_string();
-            current_header = Some(header);
             current_id = Some(id);
             current_header_line = Some(line_number);
+            visitor(FastaEvent::StartRecord {
+                id: current_id.as_ref().unwrap().clone(),
+                header,
+                line_number,
+            })?;
         } else if trimmed.is_empty() {
             continue;
         } else {
-            if current_header.is_none() {
+            if current_id.is_none() {
                 return Err(anyhow!(
                     "sequence before first header at line {line_number}"
                 ));
             }
-            current_sequence.extend(trimmed.as_bytes());
+            current_has_sequence = true;
+            visitor(FastaEvent::SequenceLine {
+                bytes: trimmed.as_bytes(),
+                line_number,
+            })?;
         }
     }
 
-    if let Some(header) = current_header.take() {
-        emit_record(
-            current_id.take().unwrap(),
-            header,
-            current_sequence,
-            current_header_line.take().unwrap(),
-            &mut record_count,
-            &mut visitor,
-        )?;
-    }
+    close_current_event_record(
+        &mut current_id,
+        current_header_line.take(),
+        &mut current_has_sequence,
+        &mut record_count,
+        &mut visitor,
+    )?;
 
     if record_count == 0 {
         return Err(anyhow!("input contains no FASTA records"));
@@ -111,27 +168,28 @@ where
     Ok(())
 }
 
-fn emit_record<F>(
-    id: String,
-    header: String,
-    sequence: Vec<u8>,
-    header_line: usize,
+fn close_current_event_record<F>(
+    current_id: &mut Option<String>,
+    current_header_line: Option<usize>,
+    current_has_sequence: &mut bool,
     record_count: &mut usize,
     visitor: &mut F,
 ) -> Result<()>
 where
-    F: FnMut(FastaRecord) -> Result<()>,
+    F: for<'a> FnMut(FastaEvent<'a>) -> Result<()>,
 {
-    if sequence.is_empty() {
+    let Some(id) = current_id.take() else {
+        return Ok(());
+    };
+
+    if !*current_has_sequence {
+        let header_line = current_header_line.unwrap_or_default();
         return Err(anyhow!("empty FASTA record for {id} at line {header_line}"));
     }
 
-    visitor(FastaRecord {
-        id,
-        header,
-        sequence,
-    })?;
+    visitor(FastaEvent::EndRecord)?;
     *record_count += 1;
+    *current_has_sequence = false;
 
     Ok(())
 }
@@ -162,6 +220,60 @@ mod tests {
         .unwrap();
 
         assert_eq!(ids, ["contig_1", "contig_2", "contig_3"]);
+    }
+
+    #[test]
+    fn streams_fasta_events_without_collecting_sequence_records() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("events.fa");
+        std::fs::write(&path, ">first description\n ACGT\t\r\n\nNN\n>second\nUU\n").unwrap();
+
+        let mut events = Vec::new();
+        for_each_fasta_event(&path, |event| {
+            match event {
+                FastaEvent::StartRecord {
+                    id,
+                    header,
+                    line_number,
+                } => events.push(format!("start:{id}:{header}:{line_number}")),
+                FastaEvent::SequenceLine { bytes, line_number } => {
+                    events.push(format!(
+                        "seq:{}:{line_number}",
+                        String::from_utf8_lossy(bytes)
+                    ));
+                }
+                FastaEvent::EndRecord => events.push("end".to_string()),
+            }
+            Ok(())
+        })
+        .unwrap();
+
+        assert_eq!(
+            events,
+            [
+                "start:first:first description:1",
+                "seq: ACGT\t:2",
+                "seq:NN:4",
+                "end",
+                "start:second:second:5",
+                "seq:UU:6",
+                "end",
+            ]
+        );
+    }
+
+    #[test]
+    fn event_parser_rejects_empty_records() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("empty.fa");
+        std::fs::write(&path, ">first\n>second\nACGT\n").unwrap();
+
+        let error = for_each_fasta_event(&path, |_| Ok(()))
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("empty FASTA record"));
+        assert!(error.contains("first"));
     }
 
     #[test]
