@@ -315,6 +315,7 @@
         "message",
         "why_it_matters",
         "suggested_next_step",
+        "evidence",
         "actions"
       ],
       "properties": {
@@ -346,11 +347,72 @@
         "suggested_next_step": {
           "type": "string"
         },
+        "evidence": {
+          "$ref": "#/$defs/finding_evidence"
+        },
         "actions": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/finding_action"
           }
+        }
+      }
+    },
+    "finding_evidence": {
+      "type": "object",
+      "required": ["total_records", "truncated", "records"],
+      "properties": {
+        "total_records": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence_record"
+          }
+        }
+      }
+    },
+    "evidence_record": {
+      "type": "object",
+      "required": ["id", "length", "reason"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reason": {
+          "type": "string"
+        },
+        "invalid_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "n_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "n_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "max_gap_run": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "gc_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
         }
       }
     },

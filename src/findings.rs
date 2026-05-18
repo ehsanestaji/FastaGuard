@@ -1,7 +1,11 @@
 use crate::cli::RuleConfig;
 use crate::metrics::AssemblyMetrics;
-use crate::models::{finding_actions, Finding, Severity, VerdictStatus};
+use crate::metrics::SequenceSummary;
+use crate::models::{
+    finding_actions, EvidenceRecord, Finding, FindingEvidence, Severity, VerdictStatus,
+};
 use crate::profile::ProfileConfig;
+use crate::stats::composition::round2;
 
 #[derive(Debug, Clone)]
 pub struct Analysis {
@@ -32,6 +36,15 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
             profile,
             metrics.duplicate_id_count,
             affected_fraction(metrics.duplicate_id_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.duplicate_id_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.duplicate_id),
+                "duplicate FASTA identifier",
+                EvidenceKind::DuplicateId,
+            ),
             FindingText {
                 message: format!(
                     "{} duplicate FASTA IDs were found.",
@@ -52,6 +65,15 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
             profile,
             metrics.invalid_sequence_count,
             affected_fraction(metrics.invalid_sequence_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.invalid_sequence_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.invalid_count > 0),
+                "invalid sequence symbols",
+                EvidenceKind::InvalidChars,
+            ),
             FindingText {
                 message: format!(
                     "{} sequences contain invalid FASTA characters.",
@@ -87,6 +109,7 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
             profile,
             affected_count,
             affected_fraction,
+            high_n_evidence(metrics, profile, affected_count),
             FindingText {
                 message: format!(
                     "Global N is {:.2}% (threshold {:.2}%), and {} sequences exceed the per-sequence N threshold.",
@@ -107,6 +130,15 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
             profile,
             metrics.tiny_contig_count,
             affected_fraction(metrics.tiny_contig_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.tiny_contig_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.length < profile.min_contig_length),
+                "shorter than profile minimum contig length",
+                EvidenceKind::TinyContig,
+            ),
             FindingText {
                 message: format!(
                     "{} contigs are shorter than the {} bp profile minimum.",
@@ -121,12 +153,28 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
     }
 
     if metrics.max_gap_run > profile.max_gap_run {
+        let gap_run_count = metrics
+            .sequences
+            .iter()
+            .filter(|sequence| sequence.max_gap_run > profile.max_gap_run)
+            .count() as u64;
+        let affected_count = gap_run_count.max(1);
+
         findings.push(finding(
             "gap_runs",
             Severity::Major,
             profile,
-            1,
-            affected_fraction(1, metrics.sequence_count),
+            affected_count,
+            affected_fraction(affected_count, metrics.sequence_count),
+            evidence_for_sequences(
+                gap_run_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.max_gap_run > profile.max_gap_run),
+                "long N gap run",
+                EvidenceKind::GapRun,
+            ),
             FindingText {
                 message: format!(
                     "The longest N gap run is {} bp, above the {} bp profile limit.",
@@ -147,6 +195,15 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
             profile,
             metrics.duplicate_sequence_count,
             affected_fraction(metrics.duplicate_sequence_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.duplicate_sequence_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.duplicate_sequence),
+                "duplicate sequence content",
+                EvidenceKind::DuplicateSequence,
+            ),
             FindingText {
                 message: format!(
                     "{} duplicate sequence records were found.",
@@ -169,6 +226,7 @@ fn finding(
     profile: &ProfileConfig,
     affected_count: u64,
     affected_fraction: f64,
+    evidence: FindingEvidence,
     text: FindingText<'_>,
 ) -> Finding {
     Finding {
@@ -180,6 +238,7 @@ fn finding(
         message: text.message,
         why_it_matters: text.why_it_matters.to_string(),
         suggested_next_step: text.suggested_next_step.to_string(),
+        evidence,
         actions: finding_actions(id),
     }
 }
@@ -196,6 +255,96 @@ fn affected_fraction(affected_count: u64, sequence_count: u64) -> f64 {
     } else {
         affected_count as f64 / sequence_count as f64
     }
+}
+
+const MAX_EVIDENCE_RECORDS: usize = 20;
+
+#[derive(Debug, Clone, Copy)]
+enum EvidenceKind {
+    DuplicateId,
+    DuplicateSequence,
+    InvalidChars,
+    HighN,
+    TinyContig,
+    GapRun,
+}
+
+fn high_n_evidence(
+    metrics: &AssemblyMetrics,
+    profile: &ProfileConfig,
+    affected_count: u64,
+) -> FindingEvidence {
+    let high_n_sequences: Vec<&SequenceSummary> = metrics
+        .sequences
+        .iter()
+        .filter(|sequence| sequence.n_fraction >= profile.high_n_sequence_fraction)
+        .collect();
+
+    if high_n_sequences.is_empty() {
+        return evidence_for_sequences(
+            affected_count,
+            metrics.sequences.iter(),
+            "included because global N rate exceeded threshold",
+            EvidenceKind::HighN,
+        );
+    }
+
+    evidence_for_sequences(
+        affected_count,
+        high_n_sequences.into_iter(),
+        "per-sequence N fraction exceeded threshold",
+        EvidenceKind::HighN,
+    )
+}
+
+fn evidence_for_sequences<'a>(
+    total_records: u64,
+    sequences: impl Iterator<Item = &'a SequenceSummary>,
+    reason: &str,
+    kind: EvidenceKind,
+) -> FindingEvidence {
+    let records: Vec<EvidenceRecord> = sequences
+        .take(MAX_EVIDENCE_RECORDS)
+        .map(|sequence| evidence_record(sequence, reason, kind))
+        .collect();
+
+    FindingEvidence {
+        total_records,
+        truncated: total_records > records.len() as u64,
+        records,
+    }
+}
+
+fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind) -> EvidenceRecord {
+    let mut record = EvidenceRecord {
+        id: sequence.id.clone(),
+        length: sequence.length,
+        reason: reason.to_string(),
+        invalid_count: None,
+        n_fraction: None,
+        n_percent: None,
+        max_gap_run: None,
+        gc_percent: None,
+    };
+
+    match kind {
+        EvidenceKind::InvalidChars => {
+            record.invalid_count = Some(sequence.invalid_count);
+        }
+        EvidenceKind::HighN => {
+            record.n_fraction = Some(round2(sequence.n_fraction));
+            record.n_percent = Some(round2(sequence.n_fraction * 100.0));
+        }
+        EvidenceKind::GapRun => {
+            record.max_gap_run = Some(sequence.max_gap_run);
+        }
+        EvidenceKind::TinyContig => {
+            record.gc_percent = Some(sequence.gc_percent);
+        }
+        EvidenceKind::DuplicateId | EvidenceKind::DuplicateSequence => {}
+    }
+
+    record
 }
 
 fn global_n_fraction(metrics: &AssemblyMetrics) -> f64 {
@@ -309,6 +458,8 @@ mod tests {
     fn sequence_summary(length: u64, n_count: u64) -> SequenceSummary {
         SequenceSummary {
             id: "seq1".to_string(),
+            duplicate_id: false,
+            duplicate_sequence: false,
             length,
             gc_count: 0,
             at_count: length.saturating_sub(n_count),

@@ -75,6 +75,7 @@ Current foundation:
 stable JSON and finding IDs
 JSON Schema and finding catalog
 machine_summary, structured finding actions, provenance, and scope
+per-record finding evidence with bounded affected-record lists
 contract discovery commands: --schema, --finding-catalog, --explain-finding
 golden JSON conformance fixtures for pass, fail, and invalid FASTA cases
 ```
@@ -82,7 +83,7 @@ golden JSON conformance fixtures for pass, fail, and invalid FASTA cases
 Recommended next sequence:
 
 ```text
-next: richer per-record evidence tables
+next: richer evidence tables for additional profiles and compare mode
 later: MCP/tool-agent interface and optional local summaries
 ```
 

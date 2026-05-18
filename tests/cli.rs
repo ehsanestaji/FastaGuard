@@ -33,6 +33,7 @@ fn contract_schema_can_be_printed_without_input() {
         .stdout(predicate::str::contains(r#""FastaguardReport""#))
         .stdout(predicate::str::contains(r#""machine_summary""#))
         .stdout(predicate::str::contains(r#""provenance""#))
+        .stdout(predicate::str::contains(r#""evidence""#))
         .stdout(predicate::str::contains(r#""actions""#))
         .stderr(predicate::str::is_empty());
 }
@@ -270,6 +271,61 @@ fn problem_report_includes_structured_finding_actions() {
 }
 
 #[test]
+fn problem_report_includes_per_record_evidence() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "problem_evidence");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["testdata/problem_assembly.fa", "--out"])
+        .arg(&outputs.html)
+        .arg("--json")
+        .arg(&outputs.json)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let report = read_json(&outputs.json);
+    let duplicate_ids = finding_by_id(&report, "duplicate_ids");
+    assert_eq!(duplicate_ids["evidence"]["total_records"], json!(1));
+    assert_eq!(duplicate_ids["evidence"]["truncated"], json!(false));
+    assert_eq!(duplicate_ids["evidence"]["records"][0]["id"], json!("dup"));
+    assert_eq!(
+        duplicate_ids["evidence"]["records"][0]["reason"],
+        json!("duplicate FASTA identifier")
+    );
+
+    let invalid_chars = finding_by_id(&report, "invalid_chars");
+    assert_eq!(
+        invalid_chars["evidence"]["records"][0]["id"],
+        json!("bad_chars")
+    );
+    assert_eq!(
+        invalid_chars["evidence"]["records"][0]["invalid_count"],
+        json!(2)
+    );
+
+    let high_n_rate = finding_by_id(&report, "high_n_rate");
+    assert!(array_contains_record_id(
+        &high_n_rate["evidence"]["records"],
+        "gap_rich"
+    ));
+    assert_eq!(
+        high_n_rate["evidence"]["records"][0]["n_fraction"],
+        json!(1.0)
+    );
+
+    let gap_runs = finding_by_id(&report, "gap_runs");
+    assert_eq!(
+        gap_runs["evidence"]["records"][0]["max_gap_run"],
+        json!(101)
+    );
+}
+
+#[test]
 fn invalid_fasta_json_matches_golden_contract() {
     let paths = golden_output_paths("invalid_empty_record");
 
@@ -461,4 +517,12 @@ fn array_contains_tool(value: &Value, expected: &str) -> bool {
         .unwrap()
         .iter()
         .any(|item| item["tool"] == json!(expected))
+}
+
+fn array_contains_record_id(value: &Value, expected: &str) -> bool {
+    value
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["id"] == json!(expected))
 }

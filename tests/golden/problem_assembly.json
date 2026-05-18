@@ -97,6 +97,17 @@
       "message": "1 duplicate FASTA IDs were found.",
       "why_it_matters": "Duplicate IDs can break indexing, annotation, mapping, and workflow joins.",
       "suggested_next_step": "Rename records so every FASTA identifier is unique before running downstream tools.",
+      "evidence": {
+        "total_records": 1,
+        "truncated": false,
+        "records": [
+          {
+            "id": "dup",
+            "length": 16,
+            "reason": "duplicate FASTA identifier"
+          }
+        ]
+      },
       "actions": [
         {
           "action_type": "rename_records",
@@ -116,6 +127,18 @@
       "message": "1 sequences contain invalid FASTA characters.",
       "why_it_matters": "Invalid characters can make parsers, aligners, or annotation tools fail or misinterpret records.",
       "suggested_next_step": "Inspect and correct non-IUPAC sequence symbols before continuing the workflow.",
+      "evidence": {
+        "total_records": 1,
+        "truncated": false,
+        "records": [
+          {
+            "id": "bad_chars",
+            "length": 7,
+            "reason": "invalid sequence symbols",
+            "invalid_count": 2
+          }
+        ]
+      },
       "actions": [
         {
           "action_type": "correct_symbols",
@@ -135,6 +158,26 @@
       "message": "Global N is 80.69% (threshold 5.00%), and 2 sequences exceed the per-sequence N threshold.",
       "why_it_matters": "High N content can reduce mapping confidence and fragment annotation or polishing steps.",
       "suggested_next_step": "Review assembly masking, coverage, and contigs with high N content before downstream analysis.",
+      "evidence": {
+        "total_records": 2,
+        "truncated": false,
+        "records": [
+          {
+            "id": "dup",
+            "length": 16,
+            "reason": "per-sequence N fraction exceeded threshold",
+            "n_fraction": 1.0,
+            "n_percent": 100.0
+          },
+          {
+            "id": "gap_rich",
+            "length": 110,
+            "reason": "per-sequence N fraction exceeded threshold",
+            "n_fraction": 0.92,
+            "n_percent": 91.82
+          }
+        ]
+      },
       "actions": [
         {
           "action_type": "inspect_records",
@@ -161,6 +204,42 @@
       "message": "5 contigs are shorter than the 200 bp profile minimum.",
       "why_it_matters": "Very short contigs often add noise to assembly statistics and downstream annotation.",
       "suggested_next_step": "Filter or review tiny contigs before using the assembly in production workflows.",
+      "evidence": {
+        "total_records": 5,
+        "truncated": false,
+        "records": [
+          {
+            "id": "dup",
+            "length": 8,
+            "reason": "shorter than profile minimum contig length",
+            "gc_percent": 50.0
+          },
+          {
+            "id": "dup",
+            "length": 16,
+            "reason": "shorter than profile minimum contig length",
+            "gc_percent": 0.0
+          },
+          {
+            "id": "tiny",
+            "length": 4,
+            "reason": "shorter than profile minimum contig length",
+            "gc_percent": 50.0
+          },
+          {
+            "id": "bad_chars",
+            "length": 7,
+            "reason": "shorter than profile minimum contig length",
+            "gc_percent": 28.57
+          },
+          {
+            "id": "gap_rich",
+            "length": 110,
+            "reason": "shorter than profile minimum contig length",
+            "gc_percent": 3.64
+          }
+        ]
+      },
       "actions": [
         {
           "action_type": "filter_or_review_records",
@@ -180,6 +259,18 @@
       "message": "The longest N gap run is 101 bp, above the 100 bp profile limit.",
       "why_it_matters": "Long gap runs can indicate unresolved assembly regions and may disrupt mapping or annotation.",
       "suggested_next_step": "Inspect scaffolds with long N runs and consider gap closing or masking review.",
+      "evidence": {
+        "total_records": 1,
+        "truncated": false,
+        "records": [
+          {
+            "id": "gap_rich",
+            "length": 110,
+            "reason": "long N gap run",
+            "max_gap_run": 101
+          }
+        ]
+      },
       "actions": [
         {
           "action_type": "inspect_gap_regions",

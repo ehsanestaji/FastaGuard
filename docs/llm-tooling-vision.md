@@ -43,6 +43,7 @@ Let humans, pipelines, and agents decide the next step confidently.
 - Every important human-readable finding should map to a stable machine-readable field.
 - Finding IDs should be stable, documented, and safe for workflow conditions.
 - Verdicts, severity, evidence, thresholds, and suggested actions should be explicit fields.
+- Findings should include bounded per-record evidence where FastaGuard can identify affected records.
 - Reports should include provenance: tool version, schema version, profile, thresholds, command context, and input metadata.
 - LLM-facing summaries must only summarize local FastaGuard metrics and findings.
 - FastaGuard should clearly state scope limits, especially when a next tool is needed for biological completeness, assembly quality, or contamination analysis.
@@ -87,6 +88,18 @@ Example fields that make FastaGuard easier for machines and LLM agents to consum
   "findings": [
     {
       "id": "high_n_rate",
+      "evidence": {
+        "total_records": 2,
+        "truncated": false,
+        "records": [
+          {
+            "id": "scaffold_42",
+            "length": 18004,
+            "reason": "per-sequence N fraction exceeded threshold",
+            "n_percent": 37.0
+          }
+        ]
+      },
       "actions": [
         {
           "action_type": "inspect_records",
@@ -119,8 +132,8 @@ Example fields that make FastaGuard easier for machines and LLM agents to consum
 Make this a core product principle, but keep the first implementation boring:
 
 ```text
-current: stable JSON, finding IDs, JSON Schema, finding catalog, machine_summary, actions, scope, provenance, golden conformance fixtures
-next: richer evidence tables
+current: stable JSON, finding IDs, JSON Schema, finding catalog, machine_summary, actions, bounded record evidence, scope, provenance, golden conformance fixtures
+next: richer evidence tables for additional profiles and compare mode
 later: MCP/tool-agent interface and optional local summaries
 ```
 

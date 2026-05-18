@@ -143,8 +143,9 @@ mod tests {
 
     use super::*;
     use crate::models::{
-        Artifacts, FastaguardReport, Finding, InputInfo, MachineSummary, Provenance,
-        ProvenanceThresholds, Scope, Severity, Summary, ToolInfo, Verdict, VerdictStatus,
+        empty_evidence, Artifacts, FastaguardReport, Finding, InputInfo, MachineSummary,
+        Provenance, ProvenanceThresholds, Scope, Severity, Summary, ToolInfo, Verdict,
+        VerdictStatus,
     };
 
     #[test]
@@ -159,6 +160,7 @@ mod tests {
             message: "contains <script>alert(\"x\")</script> & more".to_string(),
             why_it_matters: "breaks <downstream> reports".to_string(),
             suggested_next_step: "replace \"bad\" bases".to_string(),
+            evidence: empty_evidence(),
             actions: Vec::new(),
         });
         let file = NamedTempFile::new().unwrap();

@@ -97,6 +97,19 @@ Example v0.1 shape:
       "message": "12.8% of sequences contain more than 20% Ns.",
       "why_it_matters": "High ambiguity can reduce annotation and mapping quality.",
       "suggested_next_step": "Inspect high-N scaffolds or run gap closing/polishing.",
+      "evidence": {
+        "total_records": 62,
+        "truncated": true,
+        "records": [
+          {
+            "id": "scaffold_42",
+            "length": 18004,
+            "reason": "per-sequence N fraction exceeded threshold",
+            "n_fraction": 0.37,
+            "n_percent": 37.0
+          }
+        ]
+      },
       "actions": [
         {
           "action_type": "inspect_records",
@@ -147,6 +160,7 @@ Stable from v0.1:
 - `findings[].message`
 - `findings[].why_it_matters`
 - `findings[].suggested_next_step`
+- `findings[].evidence`
 - `findings[].actions`
 
 Fields can be added in later schema versions, but existing meanings should not drift casually.
@@ -160,10 +174,11 @@ An agent should be able to answer these questions without scraping HTML or logs:
 - what was the verdict?
 - which findings drove that verdict?
 - what evidence and thresholds support each finding?
+- which records triggered each finding?
 - what next action is safe?
 - what is outside FastaGuard's scope?
 
-Current schema versions include structured `actions`, `provenance`, explicit `scope`, and a compact `machine_summary`. Future schema versions can add richer evidence fields while preserving the stable fields above.
+Current schema versions include structured `actions`, bounded per-record `evidence`, `provenance`, explicit `scope`, and a compact `machine_summary`. Future schema versions can add richer evidence fields while preserving the stable fields above.
 
 ## Contract Discovery Commands
 

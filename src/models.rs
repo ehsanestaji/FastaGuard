@@ -109,7 +109,32 @@ pub struct Finding {
     pub message: String,
     pub why_it_matters: String,
     pub suggested_next_step: String,
+    pub evidence: FindingEvidence,
     pub actions: Vec<FindingAction>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FindingEvidence {
+    pub total_records: u64,
+    pub truncated: bool,
+    pub records: Vec<EvidenceRecord>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EvidenceRecord {
+    pub id: String,
+    pub length: u64,
+    pub reason: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub invalid_count: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub n_fraction: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub n_percent: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_gap_run: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gc_percent: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -222,6 +247,7 @@ impl FastaguardReport {
             suggested_next_step:
                 "Fix FASTA headers and ensure every record has sequence data before rerunning FastaGuard."
                     .to_string(),
+            evidence: empty_evidence(),
             actions: finding_actions("invalid_fasta_structure"),
         }];
 
@@ -344,6 +370,14 @@ pub fn finding_actions(id: &str) -> Vec<FindingAction> {
             false,
         )],
         _ => Vec::new(),
+    }
+}
+
+pub fn empty_evidence() -> FindingEvidence {
+    FindingEvidence {
+        total_records: 0,
+        truncated: false,
+        records: Vec::new(),
     }
 }
 

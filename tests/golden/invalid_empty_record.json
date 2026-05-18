@@ -88,6 +88,11 @@
       "message": "empty FASTA record for empty at line 1",
       "why_it_matters": "Structurally invalid FASTA cannot be parsed reliably by downstream tools.",
       "suggested_next_step": "Fix FASTA headers and ensure every record has sequence data before rerunning FastaGuard.",
+      "evidence": {
+        "total_records": 0,
+        "truncated": false,
+        "records": []
+      },
       "actions": [
         {
           "action_type": "repair_fasta_structure",

@@ -110,6 +110,7 @@ Completed foundation:
 - publish `schema/fastaguard.schema.json`
 - document a stable finding catalog
 - add structured `actions[]` records to findings
+- add bounded per-record evidence to findings
 - add provenance for profile, thresholds, fail rules, and thread count
 - add explicit scope fields for what FastaGuard can and cannot conclude
 - add `--schema`, `--finding-catalog`, and `--explain-finding <id>` commands
@@ -117,6 +118,6 @@ Completed foundation:
 
 Recommended next sequence:
 
-- add per-record evidence tables for affected IDs
+- extend evidence tables across future transcriptome, protein, reference, and compare modes
 - enrich provenance with command, timestamps, input size, and checksums
 - explore an MCP or tool-server interface after the CLI schema is stable

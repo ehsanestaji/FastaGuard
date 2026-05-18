@@ -11,6 +11,8 @@ use crate::stats::nxx::nx_lx;
 #[derive(Debug, Clone)]
 pub struct SequenceSummary {
     pub id: String,
+    pub duplicate_id: bool,
+    pub duplicate_sequence: bool,
     pub length: u64,
     pub gc_count: u64,
     pub at_count: u64,
@@ -115,11 +117,12 @@ impl<'a> MetricsAccumulator<'a> {
     }
 
     fn start_record(&mut self, id: String) {
-        if !self.seen_ids.insert(id.clone()) {
+        let duplicate_id = !self.seen_ids.insert(id.clone());
+        if duplicate_id {
             self.duplicate_id_count += 1;
         }
 
-        self.current_sequence = Some(SequenceSummaryBuilder::new(id));
+        self.current_sequence = Some(SequenceSummaryBuilder::new(id, duplicate_id));
     }
 
     fn add_sequence_bytes(&mut self, bytes: &[u8]) {
@@ -133,9 +136,11 @@ impl<'a> MetricsAccumulator<'a> {
             return;
         };
 
-        let (summary, sequence_hash) = current_sequence.finish();
-        if !self.seen_sequence_hashes.insert(sequence_hash) {
+        let (mut summary, sequence_hash) = current_sequence.finish();
+        let duplicate_sequence = !self.seen_sequence_hashes.insert(sequence_hash);
+        if duplicate_sequence {
             self.duplicate_sequence_count += 1;
+            summary.duplicate_sequence = true;
         }
 
         self.lengths.push(summary.length);
@@ -204,6 +209,7 @@ impl<'a> MetricsAccumulator<'a> {
 
 struct SequenceSummaryBuilder {
     id: String,
+    duplicate_id: bool,
     hasher: Sha256,
     length: u64,
     gc_count: u64,
@@ -216,9 +222,10 @@ struct SequenceSummaryBuilder {
 }
 
 impl SequenceSummaryBuilder {
-    fn new(id: String) -> Self {
+    fn new(id: String, duplicate_id: bool) -> Self {
         Self {
             id,
+            duplicate_id,
             hasher: Sha256::new(),
             length: 0,
             gc_count: 0,
@@ -267,6 +274,8 @@ impl SequenceSummaryBuilder {
     fn finish(self) -> (SequenceSummary, [u8; 32]) {
         let summary = SequenceSummary {
             id: self.id,
+            duplicate_id: self.duplicate_id,
+            duplicate_sequence: false,
             length: self.length,
             gc_count: self.gc_count,
             at_count: self.at_count,
@@ -367,6 +376,9 @@ mod tests {
         assert_eq!(metrics.invalid_sequence_count, 1);
         assert_eq!(metrics.tiny_contig_count, 3);
         assert_eq!(metrics.max_gap_run, 5);
+        assert!(metrics.sequences[1].duplicate_id);
+        assert!(metrics.sequences[1].duplicate_sequence);
+        assert_eq!(metrics.sequences[2].invalid_count, 2);
     }
 
     #[test]
