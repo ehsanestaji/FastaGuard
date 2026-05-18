@@ -30,6 +30,17 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIsNotNone(match, recipe)
         self.assertNotIn("REPLACE_WITH_PUBLIC_SOURCE_ARCHIVE_SHA256", recipe)
 
+    def test_bioconda_recipe_avoids_unneeded_runtime_zlib(self):
+        recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
+
+        self.assertNotIn("    - zlib", recipe)
+
+    def test_bioconda_build_script_uses_portable_install(self):
+        script = (ROOT / "packaging" / "bioconda" / "build.sh").read_text()
+
+        self.assertIn('mkdir -p "${PREFIX}/share/${PKG_NAME}/schema"', script)
+        self.assertNotIn("install -D", script)
+
 
 if __name__ == "__main__":
     unittest.main()
