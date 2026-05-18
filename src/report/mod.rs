@@ -63,13 +63,25 @@ fn validate_output_paths(outputs: &OutputPaths) -> Result<()> {
 }
 
 fn normalize_path_lexically(path: &Path) -> PathBuf {
-    let mut normalized = PathBuf::new();
+    let mut components = Vec::new();
 
     for component in path.components() {
         match component {
             Component::CurDir => {}
-            _ => normalized.push(component.as_os_str()),
+            Component::ParentDir => match components.last() {
+                Some(Component::Normal(_)) => {
+                    components.pop();
+                }
+                Some(Component::RootDir) | Some(Component::Prefix(_)) => {}
+                _ => components.push(component),
+            },
+            _ => components.push(component),
         }
+    }
+
+    let mut normalized = PathBuf::new();
+    for component in components {
+        normalized.push(component.as_os_str());
     }
 
     if normalized.as_os_str().is_empty() {
@@ -165,6 +177,29 @@ mod tests {
             html: "report.html".into(),
             json: "report.json".into(),
             tsv: "./report.json".into(),
+            multiqc: "multiqc.json".into(),
+        };
+
+        let result = write_all(&test_report(), &outputs);
+        std::env::set_current_dir(current_dir).unwrap();
+
+        let error = result.unwrap_err();
+        assert!(error.to_string().contains("duplicate output paths"));
+        assert!(!temp_dir.path().join("report.html").exists());
+        assert!(!temp_dir.path().join("report.json").exists());
+        assert!(!temp_dir.path().join("multiqc.json").exists());
+    }
+
+    #[test]
+    fn duplicate_output_paths_detect_equivalent_parent_relative_paths() {
+        let temp_dir = TempDir::new().unwrap();
+        fs::create_dir(temp_dir.path().join("subdir")).unwrap();
+        let current_dir = std::env::current_dir().unwrap();
+        std::env::set_current_dir(temp_dir.path()).unwrap();
+        let outputs = OutputPaths {
+            html: "report.html".into(),
+            json: "report.json".into(),
+            tsv: "subdir/../report.json".into(),
             multiqc: "multiqc.json".into(),
         };
 
