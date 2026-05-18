@@ -1,0 +1,13 @@
+metric	value
+schema_version	0.1.0
+profile	assembly
+verdict	FAIL
+sequence_count	5
+total_length	145
+n50	110
+n90	8
+l50	1
+l90	3
+gc_percent	8.28
+n_percent	80.69
+finding_count	5

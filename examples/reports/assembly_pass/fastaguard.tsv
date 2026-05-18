@@ -1,0 +1,13 @@
+metric	value
+schema_version	0.1.0
+profile	assembly
+verdict	PASS
+sequence_count	3
+total_length	47
+n50	16
+n90	15
+l50	2
+l90	3
+gc_percent	34.04
+n_percent	2.13
+finding_count	0

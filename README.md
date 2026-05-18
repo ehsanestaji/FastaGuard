@@ -14,7 +14,7 @@ Run FastaGuard first.
 Build locally:
 
 ```bash
-cargo build --release
+cargo build --release --locked
 ```
 
 Run the assembly preflight check:
@@ -40,6 +40,18 @@ Inspect the machine-readable contract:
 ./target/release/fastaguard --schema
 ./target/release/fastaguard --finding-catalog
 ./target/release/fastaguard --explain-finding high_n_rate
+```
+
+Build and run the Docker image:
+
+```bash
+docker build -t fastaguard:local .
+docker run --rm -v "$PWD:/data" fastaguard:local /data/sample.fa \
+  --profile assembly \
+  --out /data/fastaguard_report.html \
+  --json /data/fastaguard.json \
+  --tsv /data/fastaguard.tsv \
+  --multiqc /data/fastaguard_multiqc.json
 ```
 
 Exit codes:
@@ -120,10 +132,13 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 ## Documentation
 
+- [Example reports](examples/reports/README.md)
 - [Product thesis](docs/product-thesis.md)
 - [MVP spec](docs/mvp-spec.md)
 - [Output contract](docs/output-contract.md)
 - [LLM and tooling vision](docs/llm-tooling-vision.md)
+- [Benchmarking](docs/benchmarking.md)
+- [Packaging](docs/packaging.md)
 - [Roadmap](docs/roadmap.md)
 - [First-release design](docs/superpowers/specs/2026-05-18-fastaguard-first-release-design.md)
 

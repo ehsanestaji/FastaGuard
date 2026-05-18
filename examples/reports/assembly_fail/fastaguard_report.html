@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FastaGuard Report</title>
+<style>
+:root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; }
+body { margin: 0; background: #f7f7f4; color: #202124; }
+main { max-width: 980px; margin: 0 auto; padding: 32px 20px 48px; }
+h1 { margin: 0 0 8px; font-size: 34px; }
+h2 { margin-top: 32px; border-bottom: 1px solid #d8d8d2; padding-bottom: 8px; }
+h3 { margin-top: 0; }
+h4 { margin: 18px 0 8px; }
+table { width: 100%; border-collapse: collapse; background: #ffffff; }
+th, td { border: 1px solid #d8d8d2; padding: 10px 12px; text-align: left; }
+th { background: #ecece6; }
+.verdict { display: inline-block; margin: 12px 0; padding: 6px 10px; font-weight: 700; border: 1px solid #202124; }
+.positioning { color: #4f565c; margin: 0 0 24px; }
+.finding { background: #ffffff; border: 1px solid #d8d8d2; padding: 16px; margin: 14px 0; }
+.finding h3 { margin: 0 0 10px; font-size: 18px; }
+.label { font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.panel { background: #ffffff; border: 1px solid #d8d8d2; padding: 14px; }
+.muted { color: #596066; }
+.nowrap { white-space: nowrap; }
+.table-scroll { overflow-x: auto; }
+.table-scroll table { min-width: 760px; }
+pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
+</style>
+</head>
+<body>
+<main>
+<h1>FastaGuard Report</h1>
+<div class="verdict">Verdict: FAIL</div>
+<p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
+<h2>Machine Summary</h2>
+<div class="grid">
+<section class="panel">
+<h3>Verdict</h3>
+<p><span class="label">Machine verdict:</span> FAIL</p>
+<p><span class="label">Safe for downstream:</span> No</p>
+<p><span class="label">Top findings:</span> duplicate_ids, invalid_chars, high_n_rate, tiny_contigs, gap_runs</p>
+</section>
+<section class="panel">
+<h3>Recommended Next Tools</h3>
+<table>
+<thead><tr><th>Tool</th><th>Reason</th></tr></thead>
+<tbody><tr><td>seqkit</td><td>Downstream tools often assume FASTA identifiers are unique.</td></tr>
+<tr><td>QUAST</td><td>Assembly-level evaluation can show whether ambiguity affects broader assembly quality.</td></tr></tbody>
+</table>
+</section>
+</div>
+<h2>Summary</h2>
+<table>
+<thead><tr><th>Metric</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Sequences</td><td>5</td></tr>
+<tr><td>Total length</td><td>145</td></tr>
+<tr><td>N50</td><td>110</td></tr>
+<tr><td>N90</td><td>8</td></tr>
+<tr><td>GC%</td><td>8.28</td></tr>
+<tr><td>N%</td><td>80.69</td></tr>
+</tbody>
+</table>
+<h2>Scope</h2>
+<div class="grid">
+<section class="panel">
+<h3>Can Conclude</h3>
+<ul><li>FASTA parse validity</li>
+<li>duplicate identifiers</li>
+<li>invalid sequence symbols</li>
+<li>basic structural statistics</li>
+<li>sequence composition red flags</li></ul>
+</section>
+<section class="panel">
+<h3>Cannot Conclude</h3>
+<ul><li>biological completeness</li>
+<li>taxonomic contamination</li>
+<li>whole-assembly accuracy</li>
+<li>misassembly status without alignment evidence</li></ul>
+</section>
+</div>
+<h2>Findings</h2>
+<section class="finding">
+<h3>duplicate_ids</h3>
+<p><span class="label">Severity:</span> critical</p>
+<p><span class="label">Message:</span> 1 duplicate FASTA IDs were found.</p>
+<p><span class="label">Why it matters:</span> Duplicate IDs can break indexing, annotation, mapping, and workflow joins.</p>
+<p><span class="label">Suggested next step:</span> Rename records so every FASTA identifier is unique before running downstream tools.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 1 of 1 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>dup</td>
+<td class="nowrap">16</td>
+<td>duplicate FASTA identifier</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>rename_records</td>
+<td>duplicate FASTA identifiers</td>
+<td>Downstream tools often assume FASTA identifiers are unique.</td>
+<td>seqkit</td>
+<td>no</td>
+</tr></tbody>
+</table>
+</div>
+</section>
+<section class="finding">
+<h3>invalid_chars</h3>
+<p><span class="label">Severity:</span> critical</p>
+<p><span class="label">Message:</span> 1 sequences contain invalid FASTA characters.</p>
+<p><span class="label">Why it matters:</span> Invalid characters can make parsers, aligners, or annotation tools fail or misinterpret records.</p>
+<p><span class="label">Suggested next step:</span> Inspect and correct non-IUPAC sequence symbols before continuing the workflow.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 1 of 1 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>bad_chars</td>
+<td class="nowrap">7</td>
+<td>invalid sequence symbols</td>
+<td class="nowrap">2</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>correct_symbols</td>
+<td>records with invalid sequence symbols</td>
+<td>Invalid sequence symbols should be corrected or intentionally recoded before downstream analysis.</td>
+<td>seqkit</td>
+<td>no</td>
+</tr></tbody>
+</table>
+</div>
+</section>
+<section class="finding">
+<h3>high_n_rate</h3>
+<p><span class="label">Severity:</span> major</p>
+<p><span class="label">Message:</span> Global N is 80.69% (threshold 5.00%), and 2 sequences exceed the per-sequence N threshold.</p>
+<p><span class="label">Why it matters:</span> High N content can reduce mapping confidence and fragment annotation or polishing steps.</p>
+<p><span class="label">Suggested next step:</span> Review assembly masking, coverage, and contigs with high N content before downstream analysis.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 2 of 2 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>dup</td>
+<td class="nowrap">16</td>
+<td>per-sequence N fraction exceeded threshold</td>
+<td class="nowrap">-</td>
+<td class="nowrap">100.00</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+</tr>
+<tr>
+<td>gap_rich</td>
+<td class="nowrap">110</td>
+<td>per-sequence N fraction exceeded threshold</td>
+<td class="nowrap">-</td>
+<td class="nowrap">91.82</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>inspect_records</td>
+<td>high-N scaffolds</td>
+<td>High ambiguity may indicate unresolved assembly regions or masking problems.</td>
+<td>seqkit</td>
+<td>no</td>
+</tr>
+<tr>
+<td>run_assembly_qc</td>
+<td>assembly after FASTA preflight</td>
+<td>Assembly-level evaluation can show whether ambiguity affects broader assembly quality.</td>
+<td>QUAST</td>
+<td>no</td>
+</tr></tbody>
+</table>
+</div>
+</section>
+<section class="finding">
+<h3>tiny_contigs</h3>
+<p><span class="label">Severity:</span> minor</p>
+<p><span class="label">Message:</span> 5 contigs are shorter than the 200 bp profile minimum.</p>
+<p><span class="label">Why it matters:</span> Very short contigs often add noise to assembly statistics and downstream annotation.</p>
+<p><span class="label">Suggested next step:</span> Filter or review tiny contigs before using the assembly in production workflows.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 5 of 5 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>dup</td>
+<td class="nowrap">8</td>
+<td>shorter than profile minimum contig length</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">50.00</td>
+</tr>
+<tr>
+<td>dup</td>
+<td class="nowrap">16</td>
+<td>shorter than profile minimum contig length</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">0.00</td>
+</tr>
+<tr>
+<td>tiny</td>
+<td class="nowrap">4</td>
+<td>shorter than profile minimum contig length</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">50.00</td>
+</tr>
+<tr>
+<td>bad_chars</td>
+<td class="nowrap">7</td>
+<td>shorter than profile minimum contig length</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">28.57</td>
+</tr>
+<tr>
+<td>gap_rich</td>
+<td class="nowrap">110</td>
+<td>shorter than profile minimum contig length</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">3.64</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>filter_or_review_records</td>
+<td>tiny contigs</td>
+<td>Short records may be noise, but should be reviewed before automatic removal.</td>
+<td>seqkit</td>
+<td>no</td>
+</tr></tbody>
+</table>
+</div>
+</section>
+<section class="finding">
+<h3>gap_runs</h3>
+<p><span class="label">Severity:</span> major</p>
+<p><span class="label">Message:</span> The longest N gap run is 101 bp, above the 100 bp profile limit.</p>
+<p><span class="label">Why it matters:</span> Long gap runs can indicate unresolved assembly regions and may disrupt mapping or annotation.</p>
+<p><span class="label">Suggested next step:</span> Inspect scaffolds with long N runs and consider gap closing or masking review.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 1 of 1 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>gap_rich</td>
+<td class="nowrap">110</td>
+<td>long N gap run</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">101</td>
+<td class="nowrap">-</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>inspect_gap_regions</td>
+<td>scaffolds with long N runs</td>
+<td>Long gaps may require gap closing, masking review, or scaffold-level inspection.</td>
+<td>QUAST</td>
+<td>no</td>
+</tr></tbody>
+</table>
+</div>
+</section>
+<h2>JSON</h2>
+<pre>{
+  &quot;schema_version&quot;: &quot;0.1.0&quot;,
+  &quot;tool&quot;: {
+    &quot;name&quot;: &quot;FastaGuard&quot;,
+    &quot;version&quot;: &quot;0.1.0&quot;
+  },
+  &quot;input&quot;: {
+    &quot;path&quot;: &quot;testdata/problem_assembly.fa&quot;,
+    &quot;profile&quot;: &quot;assembly&quot;,
+    &quot;compressed&quot;: false
+  },
+  &quot;verdict&quot;: {
+    &quot;status&quot;: &quot;FAIL&quot;,
+    &quot;reasons&quot;: [
+      &quot;duplicate_ids&quot;,
+      &quot;invalid_chars&quot;
+    ]
+  },
+  &quot;machine_summary&quot;: {
+    &quot;verdict&quot;: &quot;FAIL&quot;,
+    &quot;safe_for_downstream&quot;: false,
+    &quot;top_findings&quot;: [
+      &quot;duplicate_ids&quot;,
+      &quot;invalid_chars&quot;,
+      &quot;high_n_rate&quot;,
+      &quot;tiny_contigs&quot;,
+      &quot;gap_runs&quot;
+    ],
+    &quot;recommended_next_tools&quot;: [
+      {
+        &quot;tool&quot;: &quot;seqkit&quot;,
+        &quot;reason&quot;: &quot;Downstream tools often assume FASTA identifiers are unique.&quot;
+      },
+      {
+        &quot;tool&quot;: &quot;QUAST&quot;,
+        &quot;reason&quot;: &quot;Assembly-level evaluation can show whether ambiguity affects broader assembly quality.&quot;
+      }
+    ]
+  },
+  &quot;scope&quot;: {
+    &quot;level&quot;: &quot;fasta_preflight&quot;,
+    &quot;can_conclude&quot;: [
+      &quot;FASTA parse validity&quot;,
+      &quot;duplicate identifiers&quot;,
+      &quot;invalid sequence symbols&quot;,
+      &quot;basic structural statistics&quot;,
+      &quot;sequence composition red flags&quot;
+    ],
+    &quot;cannot_conclude&quot;: [
+      &quot;biological completeness&quot;,
+      &quot;taxonomic contamination&quot;,
+      &quot;whole-assembly accuracy&quot;,
+      &quot;misassembly status without alignment evidence&quot;
+    ]
+  },
+  &quot;provenance&quot;: {
+    &quot;profile&quot;: &quot;assembly&quot;,
+    &quot;threads&quot;: 1,
+    &quot;fail_on&quot;: [],
+    &quot;thresholds&quot;: {
+      &quot;high_n_sequence_fraction&quot;: 0.2,
+      &quot;high_global_n_fraction&quot;: 0.05,
+      &quot;min_contig_length&quot;: 200,
+      &quot;max_gap_run&quot;: 100,
+      &quot;gc_outlier_zscore&quot;: 3.0
+    }
+  },
+  &quot;summary&quot;: {
+    &quot;sequence_count&quot;: 5,
+    &quot;total_length&quot;: 145,
+    &quot;min_length&quot;: 4,
+    &quot;max_length&quot;: 110,
+    &quot;mean_length&quot;: 29.0,
+    &quot;median_length&quot;: 8.0,
+    &quot;n50&quot;: 110,
+    &quot;n90&quot;: 8,
+    &quot;l50&quot;: 1,
+    &quot;l90&quot;: 3,
+    &quot;gc_percent&quot;: 8.28,
+    &quot;at_percent&quot;: 8.97,
+    &quot;n_percent&quot;: 80.69,
+    &quot;ambiguity_percent&quot;: 81.38,
+    &quot;duplicate_id_count&quot;: 1,
+    &quot;duplicate_sequence_count&quot;: 0,
+    &quot;invalid_sequence_count&quot;: 1,
+    &quot;high_n_sequence_count&quot;: 2,
+    &quot;tiny_contig_count&quot;: 5,
+    &quot;max_gap_run&quot;: 101
+  },
+  &quot;findings&quot;: [
+    {
+      &quot;id&quot;: &quot;duplicate_ids&quot;,
+      &quot;severity&quot;: &quot;critical&quot;,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 1,
+      &quot;affected_fraction&quot;: 0.2,
+      &quot;message&quot;: &quot;1 duplicate FASTA IDs were found.&quot;,
+      &quot;why_it_matters&quot;: &quot;Duplicate IDs can break indexing, annotation, mapping, and workflow joins.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Rename records so every FASTA identifier is unique before running downstream tools.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 1,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;dup&quot;,
+            &quot;length&quot;: 16,
+            &quot;reason&quot;: &quot;duplicate FASTA identifier&quot;
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;rename_records&quot;,
+          &quot;target&quot;: &quot;duplicate FASTA identifiers&quot;,
+          &quot;reason&quot;: &quot;Downstream tools often assume FASTA identifiers are unique.&quot;,
+          &quot;recommended_tool&quot;: &quot;seqkit&quot;,
+          &quot;requires_external_database&quot;: false
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;invalid_chars&quot;,
+      &quot;severity&quot;: &quot;critical&quot;,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 1,
+      &quot;affected_fraction&quot;: 0.2,
+      &quot;message&quot;: &quot;1 sequences contain invalid FASTA characters.&quot;,
+      &quot;why_it_matters&quot;: &quot;Invalid characters can make parsers, aligners, or annotation tools fail or misinterpret records.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Inspect and correct non-IUPAC sequence symbols before continuing the workflow.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 1,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;bad_chars&quot;,
+            &quot;length&quot;: 7,
+            &quot;reason&quot;: &quot;invalid sequence symbols&quot;,
+            &quot;invalid_count&quot;: 2
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;correct_symbols&quot;,
+          &quot;target&quot;: &quot;records with invalid sequence symbols&quot;,
+          &quot;reason&quot;: &quot;Invalid sequence symbols should be corrected or intentionally recoded before downstream analysis.&quot;,
+          &quot;recommended_tool&quot;: &quot;seqkit&quot;,
+          &quot;requires_external_database&quot;: false
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;high_n_rate&quot;,
+      &quot;severity&quot;: &quot;major&quot;,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 2,
+      &quot;affected_fraction&quot;: 0.4,
+      &quot;message&quot;: &quot;Global N is 80.69% (threshold 5.00%), and 2 sequences exceed the per-sequence N threshold.&quot;,
+      &quot;why_it_matters&quot;: &quot;High N content can reduce mapping confidence and fragment annotation or polishing steps.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Review assembly masking, coverage, and contigs with high N content before downstream analysis.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 2,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;dup&quot;,
+            &quot;length&quot;: 16,
+            &quot;reason&quot;: &quot;per-sequence N fraction exceeded threshold&quot;,
+            &quot;n_fraction&quot;: 1.0,
+            &quot;n_percent&quot;: 100.0
+          },
+          {
+            &quot;id&quot;: &quot;gap_rich&quot;,
+            &quot;length&quot;: 110,
+            &quot;reason&quot;: &quot;per-sequence N fraction exceeded threshold&quot;,
+            &quot;n_fraction&quot;: 0.92,
+            &quot;n_percent&quot;: 91.82
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;inspect_records&quot;,
+          &quot;target&quot;: &quot;high-N scaffolds&quot;,
+          &quot;reason&quot;: &quot;High ambiguity may indicate unresolved assembly regions or masking problems.&quot;,
+          &quot;recommended_tool&quot;: &quot;seqkit&quot;,
+          &quot;requires_external_database&quot;: false
+        },
+        {
+          &quot;action_type&quot;: &quot;run_assembly_qc&quot;,
+          &quot;target&quot;: &quot;assembly after FASTA preflight&quot;,
+          &quot;reason&quot;: &quot;Assembly-level evaluation can show whether ambiguity affects broader assembly quality.&quot;,
+          &quot;recommended_tool&quot;: &quot;QUAST&quot;,
+          &quot;requires_external_database&quot;: false
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;tiny_contigs&quot;,
+      &quot;severity&quot;: &quot;minor&quot;,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 5,
+      &quot;affected_fraction&quot;: 1.0,
+      &quot;message&quot;: &quot;5 contigs are shorter than the 200 bp profile minimum.&quot;,
+      &quot;why_it_matters&quot;: &quot;Very short contigs often add noise to assembly statistics and downstream annotation.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Filter or review tiny contigs before using the assembly in production workflows.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 5,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;dup&quot;,
+            &quot;length&quot;: 8,
+            &quot;reason&quot;: &quot;shorter than profile minimum contig length&quot;,
+            &quot;gc_percent&quot;: 50.0
+          },
+          {
+            &quot;id&quot;: &quot;dup&quot;,
+            &quot;length&quot;: 16,
+            &quot;reason&quot;: &quot;shorter than profile minimum contig length&quot;,
+            &quot;gc_percent&quot;: 0.0
+          },
+          {
+            &quot;id&quot;: &quot;tiny&quot;,
+            &quot;length&quot;: 4,
+            &quot;reason&quot;: &quot;shorter than profile minimum contig length&quot;,
+            &quot;gc_percent&quot;: 50.0
+          },
+          {
+            &quot;id&quot;: &quot;bad_chars&quot;,
+            &quot;length&quot;: 7,
+            &quot;reason&quot;: &quot;shorter than profile minimum contig length&quot;,
+            &quot;gc_percent&quot;: 28.57
+          },
+          {
+            &quot;id&quot;: &quot;gap_rich&quot;,
+            &quot;length&quot;: 110,
+            &quot;reason&quot;: &quot;shorter than profile minimum contig length&quot;,
+            &quot;gc_percent&quot;: 3.64
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;filter_or_review_records&quot;,
+          &quot;target&quot;: &quot;tiny contigs&quot;,
+          &quot;reason&quot;: &quot;Short records may be noise, but should be reviewed before automatic removal.&quot;,
+          &quot;recommended_tool&quot;: &quot;seqkit&quot;,
+          &quot;requires_external_database&quot;: false
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;gap_runs&quot;,
+      &quot;severity&quot;: &quot;major&quot;,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 1,
+      &quot;affected_fraction&quot;: 0.2,
+      &quot;message&quot;: &quot;The longest N gap run is 101 bp, above the 100 bp profile limit.&quot;,
+      &quot;why_it_matters&quot;: &quot;Long gap runs can indicate unresolved assembly regions and may disrupt mapping or annotation.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Inspect scaffolds with long N runs and consider gap closing or masking review.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 1,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;gap_rich&quot;,
+            &quot;length&quot;: 110,
+            &quot;reason&quot;: &quot;long N gap run&quot;,
+            &quot;max_gap_run&quot;: 101
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;inspect_gap_regions&quot;,
+          &quot;target&quot;: &quot;scaffolds with long N runs&quot;,
+          &quot;reason&quot;: &quot;Long gaps may require gap closing, masking review, or scaffold-level inspection.&quot;,
+          &quot;recommended_tool&quot;: &quot;QUAST&quot;,
+          &quot;requires_external_database&quot;: false
+        }
+      ]
+    }
+  ],
+  &quot;artifacts&quot;: {
+    &quot;html&quot;: &quot;examples/reports/assembly_fail/fastaguard_report.html&quot;,
+    &quot;tsv&quot;: &quot;examples/reports/assembly_fail/fastaguard.tsv&quot;,
+    &quot;multiqc&quot;: &quot;examples/reports/assembly_fail/fastaguard_multiqc.json&quot;
+  }
+}</pre>
+</main>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FastaGuard Report</title>
+<style>
+:root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; }
+body { margin: 0; background: #f7f7f4; color: #202124; }
+main { max-width: 980px; margin: 0 auto; padding: 32px 20px 48px; }
+h1 { margin: 0 0 8px; font-size: 34px; }
+h2 { margin-top: 32px; border-bottom: 1px solid #d8d8d2; padding-bottom: 8px; }
+h3 { margin-top: 0; }
+h4 { margin: 18px 0 8px; }
+table { width: 100%; border-collapse: collapse; background: #ffffff; }
+th, td { border: 1px solid #d8d8d2; padding: 10px 12px; text-align: left; }
+th { background: #ecece6; }
+.verdict { display: inline-block; margin: 12px 0; padding: 6px 10px; font-weight: 700; border: 1px solid #202124; }
+.positioning { color: #4f565c; margin: 0 0 24px; }
+.finding { background: #ffffff; border: 1px solid #d8d8d2; padding: 16px; margin: 14px 0; }
+.finding h3 { margin: 0 0 10px; font-size: 18px; }
+.label { font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.panel { background: #ffffff; border: 1px solid #d8d8d2; padding: 14px; }
+.muted { color: #596066; }
+.nowrap { white-space: nowrap; }
+.table-scroll { overflow-x: auto; }
+.table-scroll table { min-width: 760px; }
+pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
+</style>
+</head>
+<body>
+<main>
+<h1>FastaGuard Report</h1>
+<div class="verdict">Verdict: PASS</div>
+<p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
+<h2>Machine Summary</h2>
+<div class="grid">
+<section class="panel">
+<h3>Verdict</h3>
+<p><span class="label">Machine verdict:</span> PASS</p>
+<p><span class="label">Safe for downstream:</span> Yes</p>
+<p><span class="label">Top findings:</span> None</p>
+</section>
+<section class="panel">
+<h3>Recommended Next Tools</h3>
+<table>
+<thead><tr><th>Tool</th><th>Reason</th></tr></thead>
+<tbody><tr><td>QUAST</td><td>assembly-level evaluation after FASTA preflight passes</td></tr>
+<tr><td>BUSCO</td><td>biological completeness after structural FASTA checks pass</td></tr>
+<tr><td>BlobToolKit</td><td>contamination and cobiont exploration after FASTA preflight passes</td></tr></tbody>
+</table>
+</section>
+</div>
+<h2>Summary</h2>
+<table>
+<thead><tr><th>Metric</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Sequences</td><td>3</td></tr>
+<tr><td>Total length</td><td>47</td></tr>
+<tr><td>N50</td><td>16</td></tr>
+<tr><td>N90</td><td>15</td></tr>
+<tr><td>GC%</td><td>34.04</td></tr>
+<tr><td>N%</td><td>2.13</td></tr>
+</tbody>
+</table>
+<h2>Scope</h2>
+<div class="grid">
+<section class="panel">
+<h3>Can Conclude</h3>
+<ul><li>FASTA parse validity</li>
+<li>duplicate identifiers</li>
+<li>invalid sequence symbols</li>
+<li>basic structural statistics</li>
+<li>sequence composition red flags</li></ul>
+</section>
+<section class="panel">
+<h3>Cannot Conclude</h3>
+<ul><li>biological completeness</li>
+<li>taxonomic contamination</li>
+<li>whole-assembly accuracy</li>
+<li>misassembly status without alignment evidence</li></ul>
+</section>
+</div>
+<h2>Findings</h2>
+<p>No findings.</p>
+<h2>JSON</h2>
+<pre>{
+  &quot;schema_version&quot;: &quot;0.1.0&quot;,
+  &quot;tool&quot;: {
+    &quot;name&quot;: &quot;FastaGuard&quot;,
+    &quot;version&quot;: &quot;0.1.0&quot;
+  },
+  &quot;input&quot;: {
+    &quot;path&quot;: &quot;testdata/valid_assembly.fa&quot;,
+    &quot;profile&quot;: &quot;assembly&quot;,
+    &quot;compressed&quot;: false
+  },
+  &quot;verdict&quot;: {
+    &quot;status&quot;: &quot;PASS&quot;,
+    &quot;reasons&quot;: []
+  },
+  &quot;machine_summary&quot;: {
+    &quot;verdict&quot;: &quot;PASS&quot;,
+    &quot;safe_for_downstream&quot;: true,
+    &quot;top_findings&quot;: [],
+    &quot;recommended_next_tools&quot;: [
+      {
+        &quot;tool&quot;: &quot;QUAST&quot;,
+        &quot;reason&quot;: &quot;assembly-level evaluation after FASTA preflight passes&quot;
+      },
+      {
+        &quot;tool&quot;: &quot;BUSCO&quot;,
+        &quot;reason&quot;: &quot;biological completeness after structural FASTA checks pass&quot;
+      },
+      {
+        &quot;tool&quot;: &quot;BlobToolKit&quot;,
+        &quot;reason&quot;: &quot;contamination and cobiont exploration after FASTA preflight passes&quot;
+      }
+    ]
+  },
+  &quot;scope&quot;: {
+    &quot;level&quot;: &quot;fasta_preflight&quot;,
+    &quot;can_conclude&quot;: [
+      &quot;FASTA parse validity&quot;,
+      &quot;duplicate identifiers&quot;,
+      &quot;invalid sequence symbols&quot;,
+      &quot;basic structural statistics&quot;,
+      &quot;sequence composition red flags&quot;
+    ],
+    &quot;cannot_conclude&quot;: [
+      &quot;biological completeness&quot;,
+      &quot;taxonomic contamination&quot;,
+      &quot;whole-assembly accuracy&quot;,
+      &quot;misassembly status without alignment evidence&quot;
+    ]
+  },
+  &quot;provenance&quot;: {
+    &quot;profile&quot;: &quot;assembly&quot;,
+    &quot;threads&quot;: 1,
+    &quot;fail_on&quot;: [],
+    &quot;thresholds&quot;: {
+      &quot;high_n_sequence_fraction&quot;: 0.2,
+      &quot;high_global_n_fraction&quot;: 0.05,
+      &quot;min_contig_length&quot;: 1,
+      &quot;max_gap_run&quot;: 100,
+      &quot;gc_outlier_zscore&quot;: 3.0
+    }
+  },
+  &quot;summary&quot;: {
+    &quot;sequence_count&quot;: 3,
+    &quot;total_length&quot;: 47,
+    &quot;min_length&quot;: 15,
+    &quot;max_length&quot;: 16,
+    &quot;mean_length&quot;: 15.67,
+    &quot;median_length&quot;: 16.0,
+    &quot;n50&quot;: 16,
+    &quot;n90&quot;: 15,
+    &quot;l50&quot;: 2,
+    &quot;l90&quot;: 3,
+    &quot;gc_percent&quot;: 34.04,
+    &quot;at_percent&quot;: 42.55,
+    &quot;n_percent&quot;: 2.13,
+    &quot;ambiguity_percent&quot;: 23.4,
+    &quot;duplicate_id_count&quot;: 0,
+    &quot;duplicate_sequence_count&quot;: 0,
+    &quot;invalid_sequence_count&quot;: 0,
+    &quot;high_n_sequence_count&quot;: 0,
+    &quot;tiny_contig_count&quot;: 0,
+    &quot;max_gap_run&quot;: 1
+  },
+  &quot;findings&quot;: [],
+  &quot;artifacts&quot;: {
+    &quot;html&quot;: &quot;examples/reports/assembly_pass/fastaguard_report.html&quot;,
+    &quot;tsv&quot;: &quot;examples/reports/assembly_pass/fastaguard.tsv&quot;,
+    &quot;multiqc&quot;: &quot;examples/reports/assembly_pass/fastaguard_multiqc.json&quot;
+  }
+}</pre>
+</main>
+</body>
+</html>

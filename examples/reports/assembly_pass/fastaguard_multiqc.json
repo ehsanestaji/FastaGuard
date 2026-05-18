@@ -1,0 +1,96 @@
+{
+  "id": "fastaguard",
+  "section_name": "FastaGuard",
+  "description": "FASTA preflight QC summary",
+  "report": {
+    "schema_version": "0.1.0",
+    "tool": {
+      "name": "FastaGuard",
+      "version": "0.1.0"
+    },
+    "input": {
+      "path": "testdata/valid_assembly.fa",
+      "profile": "assembly",
+      "compressed": false
+    },
+    "verdict": {
+      "status": "PASS",
+      "reasons": []
+    },
+    "machine_summary": {
+      "verdict": "PASS",
+      "safe_for_downstream": true,
+      "top_findings": [],
+      "recommended_next_tools": [
+        {
+          "tool": "QUAST",
+          "reason": "assembly-level evaluation after FASTA preflight passes"
+        },
+        {
+          "tool": "BUSCO",
+          "reason": "biological completeness after structural FASTA checks pass"
+        },
+        {
+          "tool": "BlobToolKit",
+          "reason": "contamination and cobiont exploration after FASTA preflight passes"
+        }
+      ]
+    },
+    "scope": {
+      "level": "fasta_preflight",
+      "can_conclude": [
+        "FASTA parse validity",
+        "duplicate identifiers",
+        "invalid sequence symbols",
+        "basic structural statistics",
+        "sequence composition red flags"
+      ],
+      "cannot_conclude": [
+        "biological completeness",
+        "taxonomic contamination",
+        "whole-assembly accuracy",
+        "misassembly status without alignment evidence"
+      ]
+    },
+    "provenance": {
+      "profile": "assembly",
+      "threads": 1,
+      "fail_on": [],
+      "thresholds": {
+        "high_n_sequence_fraction": 0.2,
+        "high_global_n_fraction": 0.05,
+        "min_contig_length": 1,
+        "max_gap_run": 100,
+        "gc_outlier_zscore": 3.0
+      }
+    },
+    "summary": {
+      "sequence_count": 3,
+      "total_length": 47,
+      "min_length": 15,
+      "max_length": 16,
+      "mean_length": 15.67,
+      "median_length": 16.0,
+      "n50": 16,
+      "n90": 15,
+      "l50": 2,
+      "l90": 3,
+      "gc_percent": 34.04,
+      "at_percent": 42.55,
+      "n_percent": 2.13,
+      "ambiguity_percent": 23.4,
+      "duplicate_id_count": 0,
+      "duplicate_sequence_count": 0,
+      "invalid_sequence_count": 0,
+      "high_n_sequence_count": 0,
+      "tiny_contig_count": 0,
+      "max_gap_run": 1
+    },
+    "findings": [],
+    "artifacts": {
+      "html": "examples/reports/assembly_pass/fastaguard_report.html",
+      "tsv": "examples/reports/assembly_pass/fastaguard.tsv",
+      "multiqc": "examples/reports/assembly_pass/fastaguard_multiqc.json"
+    }
+  }
+}

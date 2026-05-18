@@ -1,0 +1,295 @@
+{
+  "id": "fastaguard",
+  "section_name": "FastaGuard",
+  "description": "FASTA preflight QC summary",
+  "report": {
+    "schema_version": "0.1.0",
+    "tool": {
+      "name": "FastaGuard",
+      "version": "0.1.0"
+    },
+    "input": {
+      "path": "testdata/problem_assembly.fa",
+      "profile": "assembly",
+      "compressed": false
+    },
+    "verdict": {
+      "status": "FAIL",
+      "reasons": [
+        "duplicate_ids",
+        "invalid_chars"
+      ]
+    },
+    "machine_summary": {
+      "verdict": "FAIL",
+      "safe_for_downstream": false,
+      "top_findings": [
+        "duplicate_ids",
+        "invalid_chars",
+        "high_n_rate",
+        "tiny_contigs",
+        "gap_runs"
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "reason": "Downstream tools often assume FASTA identifiers are unique."
+        },
+        {
+          "tool": "QUAST",
+          "reason": "Assembly-level evaluation can show whether ambiguity affects broader assembly quality."
+        }
+      ]
+    },
+    "scope": {
+      "level": "fasta_preflight",
+      "can_conclude": [
+        "FASTA parse validity",
+        "duplicate identifiers",
+        "invalid sequence symbols",
+        "basic structural statistics",
+        "sequence composition red flags"
+      ],
+      "cannot_conclude": [
+        "biological completeness",
+        "taxonomic contamination",
+        "whole-assembly accuracy",
+        "misassembly status without alignment evidence"
+      ]
+    },
+    "provenance": {
+      "profile": "assembly",
+      "threads": 1,
+      "fail_on": [],
+      "thresholds": {
+        "high_n_sequence_fraction": 0.2,
+        "high_global_n_fraction": 0.05,
+        "min_contig_length": 200,
+        "max_gap_run": 100,
+        "gc_outlier_zscore": 3.0
+      }
+    },
+    "summary": {
+      "sequence_count": 5,
+      "total_length": 145,
+      "min_length": 4,
+      "max_length": 110,
+      "mean_length": 29.0,
+      "median_length": 8.0,
+      "n50": 110,
+      "n90": 8,
+      "l50": 1,
+      "l90": 3,
+      "gc_percent": 8.28,
+      "at_percent": 8.97,
+      "n_percent": 80.69,
+      "ambiguity_percent": 81.38,
+      "duplicate_id_count": 1,
+      "duplicate_sequence_count": 0,
+      "invalid_sequence_count": 1,
+      "high_n_sequence_count": 2,
+      "tiny_contig_count": 5,
+      "max_gap_run": 101
+    },
+    "findings": [
+      {
+        "id": "duplicate_ids",
+        "severity": "critical",
+        "profile": "assembly",
+        "affected_count": 1,
+        "affected_fraction": 0.2,
+        "message": "1 duplicate FASTA IDs were found.",
+        "why_it_matters": "Duplicate IDs can break indexing, annotation, mapping, and workflow joins.",
+        "suggested_next_step": "Rename records so every FASTA identifier is unique before running downstream tools.",
+        "evidence": {
+          "total_records": 1,
+          "truncated": false,
+          "records": [
+            {
+              "id": "dup",
+              "length": 16,
+              "reason": "duplicate FASTA identifier"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "action_type": "rename_records",
+            "target": "duplicate FASTA identifiers",
+            "reason": "Downstream tools often assume FASTA identifiers are unique.",
+            "recommended_tool": "seqkit",
+            "requires_external_database": false
+          }
+        ]
+      },
+      {
+        "id": "invalid_chars",
+        "severity": "critical",
+        "profile": "assembly",
+        "affected_count": 1,
+        "affected_fraction": 0.2,
+        "message": "1 sequences contain invalid FASTA characters.",
+        "why_it_matters": "Invalid characters can make parsers, aligners, or annotation tools fail or misinterpret records.",
+        "suggested_next_step": "Inspect and correct non-IUPAC sequence symbols before continuing the workflow.",
+        "evidence": {
+          "total_records": 1,
+          "truncated": false,
+          "records": [
+            {
+              "id": "bad_chars",
+              "length": 7,
+              "reason": "invalid sequence symbols",
+              "invalid_count": 2
+            }
+          ]
+        },
+        "actions": [
+          {
+            "action_type": "correct_symbols",
+            "target": "records with invalid sequence symbols",
+            "reason": "Invalid sequence symbols should be corrected or intentionally recoded before downstream analysis.",
+            "recommended_tool": "seqkit",
+            "requires_external_database": false
+          }
+        ]
+      },
+      {
+        "id": "high_n_rate",
+        "severity": "major",
+        "profile": "assembly",
+        "affected_count": 2,
+        "affected_fraction": 0.4,
+        "message": "Global N is 80.69% (threshold 5.00%), and 2 sequences exceed the per-sequence N threshold.",
+        "why_it_matters": "High N content can reduce mapping confidence and fragment annotation or polishing steps.",
+        "suggested_next_step": "Review assembly masking, coverage, and contigs with high N content before downstream analysis.",
+        "evidence": {
+          "total_records": 2,
+          "truncated": false,
+          "records": [
+            {
+              "id": "dup",
+              "length": 16,
+              "reason": "per-sequence N fraction exceeded threshold",
+              "n_fraction": 1.0,
+              "n_percent": 100.0
+            },
+            {
+              "id": "gap_rich",
+              "length": 110,
+              "reason": "per-sequence N fraction exceeded threshold",
+              "n_fraction": 0.92,
+              "n_percent": 91.82
+            }
+          ]
+        },
+        "actions": [
+          {
+            "action_type": "inspect_records",
+            "target": "high-N scaffolds",
+            "reason": "High ambiguity may indicate unresolved assembly regions or masking problems.",
+            "recommended_tool": "seqkit",
+            "requires_external_database": false
+          },
+          {
+            "action_type": "run_assembly_qc",
+            "target": "assembly after FASTA preflight",
+            "reason": "Assembly-level evaluation can show whether ambiguity affects broader assembly quality.",
+            "recommended_tool": "QUAST",
+            "requires_external_database": false
+          }
+        ]
+      },
+      {
+        "id": "tiny_contigs",
+        "severity": "minor",
+        "profile": "assembly",
+        "affected_count": 5,
+        "affected_fraction": 1.0,
+        "message": "5 contigs are shorter than the 200 bp profile minimum.",
+        "why_it_matters": "Very short contigs often add noise to assembly statistics and downstream annotation.",
+        "suggested_next_step": "Filter or review tiny contigs before using the assembly in production workflows.",
+        "evidence": {
+          "total_records": 5,
+          "truncated": false,
+          "records": [
+            {
+              "id": "dup",
+              "length": 8,
+              "reason": "shorter than profile minimum contig length",
+              "gc_percent": 50.0
+            },
+            {
+              "id": "dup",
+              "length": 16,
+              "reason": "shorter than profile minimum contig length",
+              "gc_percent": 0.0
+            },
+            {
+              "id": "tiny",
+              "length": 4,
+              "reason": "shorter than profile minimum contig length",
+              "gc_percent": 50.0
+            },
+            {
+              "id": "bad_chars",
+              "length": 7,
+              "reason": "shorter than profile minimum contig length",
+              "gc_percent": 28.57
+            },
+            {
+              "id": "gap_rich",
+              "length": 110,
+              "reason": "shorter than profile minimum contig length",
+              "gc_percent": 3.64
+            }
+          ]
+        },
+        "actions": [
+          {
+            "action_type": "filter_or_review_records",
+            "target": "tiny contigs",
+            "reason": "Short records may be noise, but should be reviewed before automatic removal.",
+            "recommended_tool": "seqkit",
+            "requires_external_database": false
+          }
+        ]
+      },
+      {
+        "id": "gap_runs",
+        "severity": "major",
+        "profile": "assembly",
+        "affected_count": 1,
+        "affected_fraction": 0.2,
+        "message": "The longest N gap run is 101 bp, above the 100 bp profile limit.",
+        "why_it_matters": "Long gap runs can indicate unresolved assembly regions and may disrupt mapping or annotation.",
+        "suggested_next_step": "Inspect scaffolds with long N runs and consider gap closing or masking review.",
+        "evidence": {
+          "total_records": 1,
+          "truncated": false,
+          "records": [
+            {
+              "id": "gap_rich",
+              "length": 110,
+              "reason": "long N gap run",
+              "max_gap_run": 101
+            }
+          ]
+        },
+        "actions": [
+          {
+            "action_type": "inspect_gap_regions",
+            "target": "scaffolds with long N runs",
+            "reason": "Long gaps may require gap closing, masking review, or scaffold-level inspection.",
+            "recommended_tool": "QUAST",
+            "requires_external_database": false
+          }
+        ]
+      }
+    ],
+    "artifacts": {
+      "html": "examples/reports/assembly_fail/fastaguard_report.html",
+      "tsv": "examples/reports/assembly_fail/fastaguard.tsv",
+      "multiqc": "examples/reports/assembly_fail/fastaguard_multiqc.json"
+    }
+  }
+}
