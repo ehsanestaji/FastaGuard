@@ -1,0 +1,120 @@
+use anyhow::{Context, Result};
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::path::Path;
+
+use crate::models::{FastaguardReport, VerdictStatus};
+
+pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
+    let file =
+        File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
+    let mut writer = BufWriter::new(file);
+
+    writeln!(writer, "metric\tvalue")?;
+    write_metric(&mut writer, "schema_version", &report.schema_version)?;
+    write_metric(&mut writer, "profile", &report.input.profile)?;
+    write_metric(
+        &mut writer,
+        "verdict",
+        verdict_status(report.verdict.status),
+    )?;
+    write_metric(&mut writer, "sequence_count", report.summary.sequence_count)?;
+    write_metric(&mut writer, "total_length", report.summary.total_length)?;
+    write_metric(&mut writer, "n50", report.summary.n50)?;
+    write_metric(&mut writer, "n90", report.summary.n90)?;
+    write_metric(&mut writer, "l50", report.summary.l50)?;
+    write_metric(&mut writer, "l90", report.summary.l90)?;
+    write_metric(&mut writer, "gc_percent", report.summary.gc_percent)?;
+    write_metric(&mut writer, "n_percent", report.summary.n_percent)?;
+    write_metric(&mut writer, "finding_count", report.findings.len())?;
+
+    writer
+        .flush()
+        .with_context(|| format!("failed to write TSV report {}", path.display()))
+}
+
+fn write_metric(
+    writer: &mut impl Write,
+    metric: &str,
+    value: impl std::fmt::Display,
+) -> std::io::Result<()> {
+    writeln!(writer, "{metric}\t{value}")
+}
+
+fn verdict_status(status: VerdictStatus) -> &'static str {
+    match status {
+        VerdictStatus::Pass => "PASS",
+        VerdictStatus::Warn => "WARN",
+        VerdictStatus::Fail => "FAIL",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use tempfile::NamedTempFile;
+
+    use super::*;
+    use crate::models::{
+        Artifacts, FastaguardReport, InputInfo, Summary, ToolInfo, Verdict, VerdictStatus,
+    };
+
+    #[test]
+    fn writes_verdict_status_as_uppercase_schema_value() {
+        let report = test_report(VerdictStatus::Warn);
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(output.contains("verdict\tWARN\n"), "{output}");
+    }
+
+    fn test_report(status: VerdictStatus) -> FastaguardReport {
+        FastaguardReport {
+            schema_version: "0.1.0".to_string(),
+            tool: ToolInfo {
+                name: "FastaGuard".to_string(),
+                version: "0.1.0".to_string(),
+            },
+            input: InputInfo {
+                path: "input.fa".to_string(),
+                profile: "assembly".to_string(),
+                compressed: false,
+            },
+            verdict: Verdict {
+                status,
+                reasons: Vec::new(),
+            },
+            summary: Summary {
+                sequence_count: 2,
+                total_length: 100,
+                min_length: 40,
+                max_length: 60,
+                mean_length: 50.0,
+                median_length: 50.0,
+                n50: 60,
+                n90: 40,
+                l50: 1,
+                l90: 2,
+                gc_percent: 48.5,
+                at_percent: 50.0,
+                n_percent: 1.5,
+                ambiguity_percent: 1.5,
+                duplicate_id_count: 0,
+                duplicate_sequence_count: 0,
+                invalid_sequence_count: 0,
+                high_n_sequence_count: 0,
+                tiny_contig_count: 0,
+                max_gap_run: 1,
+            },
+            findings: Vec::new(),
+            artifacts: Artifacts {
+                html: "fastaguard_report.html".to_string(),
+                tsv: "fastaguard.tsv".to_string(),
+                multiqc: "fastaguard_multiqc.json".to_string(),
+            },
+        }
+    }
+}
