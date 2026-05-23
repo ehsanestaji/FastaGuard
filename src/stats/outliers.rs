@@ -98,9 +98,9 @@ mod tests {
 
     #[test]
     fn iqr_finds_low_and_high_length_outliers() {
-        let values = vec![100, 101, 102, 103, 104, 105, 10_000];
+        let values = vec![1, 100, 101, 102, 103, 104, 105, 10_000];
         let outliers = iqr_outlier_indices(&values, 1.5);
-        assert_eq!(outliers, vec![6]);
+        assert_eq!(outliers, vec![0, 7]);
     }
 
     #[test]
