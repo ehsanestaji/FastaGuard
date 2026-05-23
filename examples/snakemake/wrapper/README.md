@@ -14,6 +14,12 @@ Run from this directory with a `sample.fa` input:
 snakemake -s Snakefile --cores 1
 ```
 
+The wrapper also includes a Conda environment:
+
+```bash
+snakemake -s Snakefile --cores 1 --use-conda
+```
+
 The wrapper emits:
 
 - `fastaguard_report.html`

@@ -72,6 +72,17 @@ class AdoptionAssetsTest(unittest.TestCase):
             nfcore_readme,
         )
 
+    def test_snakemake_wrapper_declares_bioconda_environment(self):
+        environment = (
+            ROOT / "examples" / "snakemake" / "wrapper" / "environment.yaml"
+        )
+
+        self.assertTrue(environment.exists())
+        text = environment.read_text()
+        self.assertIn("bioconda", text)
+        self.assertIn("conda-forge", text)
+        self.assertIn("fastaguard=0.1.1", text)
+
 
 if __name__ == "__main__":
     unittest.main()
