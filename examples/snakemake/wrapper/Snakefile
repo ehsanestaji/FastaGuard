@@ -9,5 +9,6 @@ rule fastaguard_wrapped:
     params:
         profile="assembly",
         extra=""
+    conda: "environment.yaml"
     wrapper:
         "file:wrapper/fastaguard"

@@ -76,12 +76,21 @@ class AdoptionAssetsTest(unittest.TestCase):
         environment = (
             ROOT / "examples" / "snakemake" / "wrapper" / "environment.yaml"
         )
+        snakefile = (ROOT / "examples" / "snakemake" / "wrapper" / "Snakefile")
 
         self.assertTrue(environment.exists())
         text = environment.read_text()
-        self.assertIn("bioconda", text)
-        self.assertIn("conda-forge", text)
-        self.assertIn("fastaguard=0.1.1", text)
+        self.assertEqual(
+            text.splitlines(),
+            [
+                "channels:",
+                "  - conda-forge",
+                "  - bioconda",
+                "dependencies:",
+                "  - fastaguard=0.1.1",
+            ],
+        )
+        self.assertIn('conda: "environment.yaml"', snakefile.read_text())
 
 
 if __name__ == "__main__":
