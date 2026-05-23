@@ -19,6 +19,17 @@ multiqc .
 The plugin looks for `*fastaguard_mqc.json` files and reads the same custom
 content contract emitted by the CLI.
 
+## Verification
+
+Run the plugin against example reports in strict mode:
+
+```bash
+cd integrations/multiqc
+python -m pip install -e .
+cd ../..
+multiqc --strict examples/reports
+```
+
 ## Current Scope
 
 - Parse FastaGuard custom-content JSON.

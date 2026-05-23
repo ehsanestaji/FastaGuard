@@ -15,6 +15,14 @@ SUMMARY_FIELDS = (
     "n90",
     "gc_percent",
     "n_percent",
+    "duplicate_id_count",
+    "invalid_sequence_count",
+    "high_n_sequence_count",
+    "tiny_contig_count",
+    "max_gap_run",
+    "gc_outlier_count",
+    "length_outlier_count",
+    "composite_anomaly_count",
     "finding_count",
 )
 

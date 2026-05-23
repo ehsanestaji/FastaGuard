@@ -65,7 +65,14 @@ class MultiqcModule(BaseMultiqcModule):
 
     @staticmethod
     def _general_stats_data(data_by_sample: dict[str, dict]) -> dict[str, dict]:
-        visible_fields = ("finding_count", "n50", "n_percent")
+        visible_fields = (
+            "finding_count",
+            "gc_outlier_count",
+            "length_outlier_count",
+            "composite_anomaly_count",
+            "n50",
+            "n_percent",
+        )
         return {
             sample_name: {
                 field: row.get(field)
@@ -83,6 +90,24 @@ class MultiqcModule(BaseMultiqcModule):
                 "description": "Number of FastaGuard findings",
                 "min": 0,
                 "scale": "OrRd",
+            },
+            "gc_outlier_count": {
+                "title": "FG GC outliers",
+                "description": "Number of records flagged as GC composition outliers",
+                "min": 0,
+                "scale": "OrRd",
+            },
+            "length_outlier_count": {
+                "title": "FG length outliers",
+                "description": "Number of records flagged as length distribution outliers",
+                "min": 0,
+                "scale": "YlOrBr",
+            },
+            "composite_anomaly_count": {
+                "title": "FG composite anomalies",
+                "description": "Number of records flagged by composite anomaly checks",
+                "min": 0,
+                "scale": "Reds",
             },
             "n50": {
                 "title": "FG N50",

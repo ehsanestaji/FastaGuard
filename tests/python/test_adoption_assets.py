@@ -22,6 +22,64 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertEqual(summary["valid_assembly"]["sequence_count"], 3)
         self.assertEqual(summary["valid_assembly"]["n50"], 16)
 
+    def test_multiqc_parser_reads_expanded_summary_fields(self):
+        with TemporaryDirectory() as temp_dir:
+            fixture = Path(temp_dir) / "fastaguard_mqc.json"
+            fixture.write_text(
+                json.dumps(
+                    {
+                        "id": "fastaguard",
+                        "section_name": "FastaGuard",
+                        "description": "FASTA preflight QC summary",
+                        "plot_type": "table",
+                        "pconfig": {"id": "fastaguard_summary", "title": "FastaGuard"},
+                        "data": {
+                            "sample": {
+                                "verdict": "WARN",
+                                "sequence_count": 8,
+                                "total_length": 2000,
+                                "n50": 500,
+                                "n90": 100,
+                                "gc_percent": 50.0,
+                                "n_percent": 2.5,
+                                "duplicate_id_count": 1,
+                                "invalid_sequence_count": 0,
+                                "high_n_sequence_count": 2,
+                                "tiny_contig_count": 1,
+                                "max_gap_run": 120,
+                                "gc_outlier_count": 1,
+                                "length_outlier_count": 1,
+                                "composite_anomaly_count": 1,
+                                "finding_count": 4,
+                            }
+                        },
+                    }
+                )
+            )
+
+            summary = load_custom_content_summary(fixture)
+            row = summary["sample"]
+
+            for field in (
+                "verdict",
+                "sequence_count",
+                "total_length",
+                "n50",
+                "n90",
+                "gc_percent",
+                "n_percent",
+                "duplicate_id_count",
+                "invalid_sequence_count",
+                "high_n_sequence_count",
+                "tiny_contig_count",
+                "max_gap_run",
+                "gc_outlier_count",
+                "length_outlier_count",
+                "composite_anomaly_count",
+                "finding_count",
+            ):
+                self.assertIn(field, row)
+
     def test_multiqc_parser_rejects_non_fastaguard_custom_content(self):
         with TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "other_mqc.json"
