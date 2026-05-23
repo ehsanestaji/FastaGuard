@@ -592,6 +592,7 @@ mod tests {
                     max_gap_run: Some(240),
                     gc_percent: None,
                     gc_zscore: None,
+                    signals: Vec::new(),
                 }],
             },
             actions: vec![FindingAction {

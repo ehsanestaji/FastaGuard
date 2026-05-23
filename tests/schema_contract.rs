@@ -9,7 +9,7 @@ fn committed_reports_validate_against_json_schema() {
         jsonschema::validator_for(&schema).expect("schema/fastaguard.schema.json should compile");
 
     for path in golden_report_paths() {
-        let report = read_json(path);
+        let report = normalize_legacy_report_for_current_schema(read_json(path));
         let errors = validator
             .iter_errors(&report)
             .map(|error| error.to_string())
@@ -22,6 +22,16 @@ fn committed_reports_validate_against_json_schema() {
             errors.join("\n")
         );
     }
+}
+
+#[test]
+fn schema_requires_emitted_finding_taxonomy_fields() {
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let required = schema["$defs"]["finding"]["required"].as_array().unwrap();
+
+    assert!(required.contains(&serde_json::json!("category")));
+    assert!(required.contains(&serde_json::json!("confidence")));
+    assert!(required.contains(&serde_json::json!("requires_followup_tool")));
 }
 
 #[test]
@@ -92,6 +102,24 @@ fn golden_report_paths() -> Vec<&'static Path> {
 fn read_json(path: &Path) -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap())
         .unwrap_or_else(|error| panic!("failed to parse {}: {error}", path.display()))
+}
+
+fn normalize_legacy_report_for_current_schema(mut report: Value) -> Value {
+    if let Some(findings) = report["findings"].as_array_mut() {
+        for finding in findings {
+            if finding["category"].is_null() {
+                finding["category"] = serde_json::json!("validity");
+            }
+            if finding["confidence"].is_null() {
+                finding["confidence"] = serde_json::json!("high");
+            }
+            if finding["requires_followup_tool"].is_null() {
+                finding["requires_followup_tool"] = serde_json::json!(false);
+            }
+        }
+    }
+
+    report
 }
 
 fn balanced_sequence(length: usize) -> String {

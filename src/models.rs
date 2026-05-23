@@ -174,6 +174,8 @@ pub struct EvidenceRecord {
     pub gc_percent: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gc_zscore: Option<f64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub signals: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

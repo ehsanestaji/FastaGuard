@@ -295,15 +295,7 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
             profile,
             composite_anomaly_count,
             affected_fraction(composite_anomaly_count, metrics.sequence_count),
-            evidence_for_sequences(
-                composite_anomaly_count,
-                metrics
-                    .sequences
-                    .iter()
-                    .filter(|sequence| sequence.composite_anomaly),
-                "record has multiple assembly anomaly signals",
-                EvidenceKind::AssemblyOutlier,
-            ),
+            composite_anomaly_evidence(metrics, profile, composite_anomaly_count),
             FindingText {
                 message: format!(
                     "{} records have multiple assembly anomaly signals.",
@@ -488,6 +480,34 @@ fn evidence_for_sequences<'a>(
     }
 }
 
+fn composite_anomaly_evidence(
+    metrics: &AssemblyMetrics,
+    profile: &ProfileConfig,
+    total_records: u64,
+) -> FindingEvidence {
+    let records: Vec<EvidenceRecord> = metrics
+        .sequences
+        .iter()
+        .filter(|sequence| sequence.composite_anomaly)
+        .take(MAX_EVIDENCE_RECORDS)
+        .map(|sequence| {
+            let mut record = evidence_record(
+                sequence,
+                "record has multiple assembly anomaly signals",
+                EvidenceKind::AssemblyOutlier,
+            );
+            record.signals = composite_signals(sequence, profile);
+            record
+        })
+        .collect();
+
+    FindingEvidence {
+        total_records,
+        truncated: total_records > records.len() as u64,
+        records,
+    }
+}
+
 fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind) -> EvidenceRecord {
     let mut record = EvidenceRecord {
         id: sequence.id.clone(),
@@ -499,6 +519,7 @@ fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind)
         max_gap_run: None,
         gc_percent: None,
         gc_zscore: None,
+        signals: Vec::new(),
     };
 
     match kind {
@@ -525,6 +546,29 @@ fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind)
     }
 
     record
+}
+
+fn composite_signals(sequence: &SequenceSummary, profile: &ProfileConfig) -> Vec<String> {
+    let mut signals = Vec::new();
+    if sequence.gc_outlier {
+        signals.push("gc_outlier".to_string());
+    }
+    if sequence.n_fraction >= profile.high_n_sequence_fraction {
+        signals.push("high_n".to_string());
+    }
+    if sequence.length_outlier {
+        signals.push("length_outlier".to_string());
+    }
+    if sequence.duplicate_sequence {
+        signals.push("duplicate_sequence".to_string());
+    }
+    if sequence.invalid_count > 0 {
+        signals.push("invalid_chars".to_string());
+    }
+    if sequence.max_gap_run > profile.max_gap_run {
+        signals.push("gap_run".to_string());
+    }
+    signals
 }
 
 fn global_n_fraction(metrics: &AssemblyMetrics) -> f64 {

@@ -330,8 +330,7 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
             balanced_sequence(length)
         ));
     }
-    fasta.push_str(&format!(">high_gc\n{}\n", "G".repeat(1_000)));
-    fasta.push_str(&format!(">long_contig\n{}\n", balanced_sequence(10_000)));
+    fasta.push_str(&format!(">long_high_gc\n{}\n", "G".repeat(10_000)));
     std::fs::write(&input, fasta).unwrap();
     let outputs = output_paths(&temp_dir, "assembly_outliers");
 
@@ -361,15 +360,26 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
         &report["machine_summary"]["top_findings"],
         "length_outliers"
     ));
+    assert!(array_contains_string(
+        &report["machine_summary"]["top_findings"],
+        "composite_anomalies"
+    ));
 
     assert_finding_taxonomy(&report, "gc_outliers", "composition", "moderate", true);
     assert_finding_taxonomy(&report, "length_outliers", "structure", "moderate", false);
+    assert_finding_taxonomy(
+        &report,
+        "composite_anomalies",
+        "composition",
+        "moderate",
+        true,
+    );
 
     let gc_outliers = finding_by_id(&report, "gc_outliers");
     assert_eq!(gc_outliers["evidence"]["truncated"], json!(false));
     assert_eq!(
         gc_outliers["evidence"]["records"][0]["id"],
-        json!("high_gc")
+        json!("long_high_gc")
     );
     assert_eq!(
         gc_outliers["evidence"]["records"][0]["gc_percent"],
@@ -382,7 +392,7 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
     let length_outliers = finding_by_id(&report, "length_outliers");
     assert_eq!(
         length_outliers["evidence"]["records"][0]["id"],
-        json!("long_contig")
+        json!("long_high_gc")
     );
     assert_eq!(
         length_outliers["evidence"]["records"][0]["length"],
@@ -390,6 +400,18 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
     );
     assert!(length_outliers["evidence"]["records"][0]["gc_percent"].is_number());
     assert!(length_outliers["evidence"]["records"][0]["n_fraction"].is_number());
+
+    let composite_anomalies = finding_by_id(&report, "composite_anomalies");
+    let composite_record = &composite_anomalies["evidence"]["records"][0];
+    assert_eq!(composite_record["id"], json!("long_high_gc"));
+    assert!(array_contains_string(
+        &composite_record["signals"],
+        "gc_outlier"
+    ));
+    assert!(array_contains_string(
+        &composite_record["signals"],
+        "length_outlier"
+    ));
 }
 
 #[test]
