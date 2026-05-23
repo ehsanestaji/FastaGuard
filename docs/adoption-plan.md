@@ -21,7 +21,7 @@ Status: Bioconda is live for FastaGuard v0.1.1.
 - Keep Docker smoke tests passing.
 - Keep `packaging/bioconda/` aligned with the upstream Bioconda recipe.
 - Confirm BioContainers image/tag publication after the Bioconda merge;
-  current candidate tags are still pending in the registry.
+  current candidate tags are not yet visible in the registry.
 
 Done when:
 

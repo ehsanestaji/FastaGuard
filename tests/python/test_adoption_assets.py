@@ -67,9 +67,9 @@ class AdoptionAssetsTest(unittest.TestCase):
         install = "mamba install -c conda-forge -c bioconda fastaguard"
         self.assertIn(install, nfcore_readme)
         self.assertIn(install, snakemake_readme)
-        self.assertTrue(
-            "BioContainers image is confirmed" in nfcore_readme
-            or "Once a BioContainers image is confirmed" in nfcore_readme
+        self.assertIn(
+            "Once a BioContainers image is confirmed, the module can add a pinned container directive.",
+            nfcore_readme,
         )
 
 
