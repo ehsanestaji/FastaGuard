@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1.0",
-  "catalog_version": "0.1.0",
+  "schema_version": "0.2.0",
+  "catalog_version": "0.2.0",
   "tool": {
     "name": "FastaGuard"
   },
@@ -8,6 +8,9 @@
   "findings": [
     {
       "id": "duplicate_ids",
+      "category": "duplication",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "default_severity": "critical",
       "default_verdict_effect": "fail",
@@ -33,6 +36,9 @@
     },
     {
       "id": "invalid_chars",
+      "category": "validity",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "default_severity": "critical",
       "default_verdict_effect": "fail",
@@ -58,6 +64,9 @@
     },
     {
       "id": "high_n_rate",
+      "category": "composition",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "default_severity": "major",
       "default_verdict_effect": "warn",
@@ -99,6 +108,9 @@
     },
     {
       "id": "tiny_contigs",
+      "category": "structure",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "default_severity": "minor",
       "default_verdict_effect": "warn",
@@ -124,6 +136,9 @@
     },
     {
       "id": "gap_runs",
+      "category": "structure",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "default_severity": "major",
       "default_verdict_effect": "warn",
@@ -149,6 +164,9 @@
     },
     {
       "id": "duplicate_sequences",
+      "category": "duplication",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "default_severity": "minor",
       "default_verdict_effect": "warn",
@@ -174,6 +192,9 @@
     },
     {
       "id": "gc_outliers",
+      "category": "composition",
+      "confidence": "moderate",
+      "requires_followup_tool": true,
       "profile": "assembly",
       "default_severity": "major",
       "default_verdict_effect": "warn",
@@ -214,6 +235,9 @@
     },
     {
       "id": "length_outliers",
+      "category": "structure",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "default_severity": "minor",
       "default_verdict_effect": "warn",
@@ -243,6 +267,9 @@
     },
     {
       "id": "composite_anomalies",
+      "category": "composition",
+      "confidence": "moderate",
+      "requires_followup_tool": true,
       "profile": "assembly",
       "default_severity": "major",
       "default_verdict_effect": "warn",
@@ -252,7 +279,8 @@
         "findings[].affected_count",
         "findings[].evidence.records[].gc_percent",
         "findings[].evidence.records[].n_fraction",
-        "findings[].evidence.records[].gc_zscore"
+        "findings[].evidence.records[].gc_zscore",
+        "findings[].evidence.records[].signals"
       ],
       "suggested_actions": [
         {
@@ -273,6 +301,9 @@
     },
     {
       "id": "invalid_fasta_structure",
+      "category": "validity",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "default_severity": "critical",
       "default_verdict_effect": "fail",

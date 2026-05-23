@@ -44,7 +44,7 @@ fn contract_finding_catalog_can_be_printed_without_input() {
     cmd.arg("--finding-catalog")
         .assert()
         .success()
-        .stdout(predicate::str::contains(r#""schema_version": "0.1.0""#))
+        .stdout(predicate::str::contains(r#""schema_version": "0.2.0""#))
         .stdout(predicate::str::contains(r#""duplicate_ids""#))
         .stdout(predicate::str::contains(r#""invalid_fasta_structure""#))
         .stderr(predicate::str::is_empty());
@@ -73,6 +73,23 @@ fn contract_explain_finding_prints_outlier_catalog_entries() {
             .stdout(predicate::str::contains(r#""recommended_next_tools""#))
             .stderr(predicate::str::is_empty());
     }
+}
+
+#[test]
+fn contract_explain_composite_anomalies_includes_taxonomy_and_signals() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["--explain-finding", "composite_anomalies"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(r#""category": "composition""#))
+        .stdout(predicate::str::contains(r#""confidence": "moderate""#))
+        .stdout(predicate::str::contains(
+            r#""requires_followup_tool": true"#,
+        ))
+        .stdout(predicate::str::contains(
+            r#""findings[].evidence.records[].signals""#,
+        ))
+        .stderr(predicate::str::is_empty());
 }
 
 #[test]

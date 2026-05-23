@@ -46,6 +46,15 @@ mod tests {
         let finding = explain_finding_json("high_n_rate").unwrap();
 
         assert!(finding.contains(r#""id": "high_n_rate""#), "{finding}");
+        assert!(
+            finding.contains(r#""category": "composition""#),
+            "{finding}"
+        );
+        assert!(finding.contains(r#""confidence": "high""#), "{finding}");
+        assert!(
+            finding.contains(r#""requires_followup_tool": false"#),
+            "{finding}"
+        );
         assert!(finding.contains(r#""recommended_next_tools""#), "{finding}");
     }
 
