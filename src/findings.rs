@@ -218,6 +218,105 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
         ));
     }
 
+    let gc_outlier_count = metrics
+        .sequences
+        .iter()
+        .filter(|sequence| sequence.gc_outlier)
+        .count() as u64;
+    if gc_outlier_count > 0 {
+        findings.push(finding(
+            "gc_outliers",
+            Severity::Major,
+            profile,
+            gc_outlier_count,
+            affected_fraction(gc_outlier_count, metrics.sequence_count),
+            evidence_for_sequences(
+                gc_outlier_count,
+                metrics.sequences.iter().filter(|sequence| sequence.gc_outlier),
+                "GC composition far from assembly background",
+                EvidenceKind::CompositionOutlier,
+            ),
+            FindingText {
+                message: format!(
+                    "{} records have GC composition far from the assembly background.",
+                    gc_outlier_count
+                ),
+                why_it_matters:
+                    "GC outliers can reflect contamination, cobionts, plasmids, artifacts, or genuine biological variation and need context before interpretation.",
+                suggested_next_step:
+                    "Inspect the affected records; if the pattern is strong, compare coverage and taxonomy signals with BlobToolKit, sourmash, or Kraken.",
+            },
+        ));
+    }
+
+    let length_outlier_count = metrics
+        .sequences
+        .iter()
+        .filter(|sequence| sequence.length_outlier)
+        .count() as u64;
+    if length_outlier_count > 0 {
+        findings.push(finding(
+            "length_outliers",
+            Severity::Minor,
+            profile,
+            length_outlier_count,
+            affected_fraction(length_outlier_count, metrics.sequence_count),
+            evidence_for_sequences(
+                length_outlier_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.length_outlier),
+                "record length outside the assembly length distribution",
+                EvidenceKind::AssemblyOutlier,
+            ),
+            FindingText {
+                message: format!(
+                    "{} records have lengths outside the assembly length distribution.",
+                    length_outlier_count
+                ),
+                why_it_matters:
+                    "Length outliers can be expected in assemblies, but extreme records deserve inspection before downstream filtering or annotation.",
+                suggested_next_step:
+                    "Inspect the affected records and confirm whether their size is expected for this assembly.",
+            },
+        ));
+    }
+
+    let composite_anomaly_count = metrics
+        .sequences
+        .iter()
+        .filter(|sequence| sequence.composite_anomaly)
+        .count() as u64;
+    if composite_anomaly_count > 0 {
+        findings.push(finding(
+            "composite_anomalies",
+            Severity::Major,
+            profile,
+            composite_anomaly_count,
+            affected_fraction(composite_anomaly_count, metrics.sequence_count),
+            evidence_for_sequences(
+                composite_anomaly_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.composite_anomaly),
+                "record has multiple assembly anomaly signals",
+                EvidenceKind::AssemblyOutlier,
+            ),
+            FindingText {
+                message: format!(
+                    "{} records have multiple assembly anomaly signals.",
+                    composite_anomaly_count
+                ),
+                why_it_matters:
+                    "Multiple independent FASTA-level signals make a record more likely to need manual review before expensive downstream QC.",
+                suggested_next_step:
+                    "Prioritize these records for review and compare composition, coverage, and taxonomy context with BlobToolKit when available.",
+            },
+        ));
+    }
+
     findings
 }
 
@@ -265,13 +364,16 @@ fn finding_metadata(id: &str) -> FindingMetadata {
         "high_n_rate" => (Composition, High),
         "tiny_contigs" => (Structure, Moderate),
         "gap_runs" => (Structure, High),
+        "gc_outliers" => (Composition, Moderate),
+        "length_outliers" => (Structure, Moderate),
+        "composite_anomalies" => (Composition, Moderate),
         _ => unreachable!("unknown finding id: {id}"),
     };
 
     FindingMetadata {
         category,
         confidence,
-        requires_followup_tool: false,
+        requires_followup_tool: matches!(id, "gc_outliers" | "composite_anomalies"),
     }
 }
 
@@ -299,6 +401,16 @@ mod taxonomy_tests {
             finding_metadata("tiny_contigs").confidence,
             FindingConfidence::Moderate
         );
+        assert_eq!(
+            finding_metadata("gc_outliers").category,
+            FindingCategory::Composition
+        );
+        assert!(finding_metadata("gc_outliers").requires_followup_tool);
+        assert_eq!(
+            finding_metadata("length_outliers").category,
+            FindingCategory::Structure
+        );
+        assert!(finding_metadata("composite_anomalies").requires_followup_tool);
     }
 }
 
@@ -326,6 +438,8 @@ enum EvidenceKind {
     HighN,
     TinyContig,
     GapRun,
+    CompositionOutlier,
+    AssemblyOutlier,
 }
 
 fn high_n_evidence(
@@ -399,6 +513,11 @@ fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind)
         }
         EvidenceKind::TinyContig => {
             record.gc_percent = Some(sequence.gc_percent);
+        }
+        EvidenceKind::CompositionOutlier | EvidenceKind::AssemblyOutlier => {
+            record.gc_percent = Some(sequence.gc_percent);
+            record.n_fraction = Some(round2(sequence.n_fraction));
+            record.n_percent = Some(round2(sequence.n_fraction * 100.0));
         }
         EvidenceKind::DuplicateId | EvidenceKind::DuplicateSequence => {}
     }
@@ -532,6 +651,10 @@ mod tests {
                 n_count as f64 / length as f64
             },
             gc_percent: 0.0,
+            gc_outlier: false,
+            length_outlier: false,
+            composite_anomaly: false,
+            gc_zscore: None,
         }
     }
 

@@ -245,7 +245,7 @@ fn valid_report_includes_plot_contract() {
 }
 
 #[test]
-fn gc_outlier_plot_flags_do_not_change_verdict() {
+fn gc_outlier_plot_flags_are_backed_by_warning_finding() {
     let temp_dir = TempDir::new().unwrap();
     let input = temp_dir.path().join("gc_outlier.fa");
     std::fs::write(
@@ -281,11 +281,15 @@ fn gc_outlier_plot_flags_do_not_change_verdict() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .success()
+        .code(1)
         .stderr(predicate::str::is_empty());
 
     let report = read_json(&outputs.json);
-    assert_eq!(report["verdict"]["status"], json!("PASS"));
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert!(array_contains_string(
+        &report["machine_summary"]["top_findings"],
+        "gc_outliers"
+    ));
     let high_gc = report["plots"]["gc_length_plot"]
         .as_array()
         .unwrap()
@@ -294,6 +298,84 @@ fn gc_outlier_plot_flags_do_not_change_verdict() {
         .unwrap();
     assert!(array_contains_string(&high_gc["flags"], "gc_outlier"));
     assert!(high_gc["gc_zscore"].as_f64().unwrap() >= 3.0);
+}
+
+#[test]
+fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
+    let temp_dir = TempDir::new().unwrap();
+    let input = temp_dir.path().join("assembly_outliers.fa");
+    let mut fasta = String::new();
+    for (index, length) in [
+        900, 940, 980, 1_000, 1_020, 1_040, 1_060, 1_080, 1_100, 1_120, 1_140,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        fasta.push_str(&format!(
+            ">normal_{}\n{}\n",
+            index + 1,
+            balanced_sequence(length)
+        ));
+    }
+    fasta.push_str(&format!(">high_gc\n{}\n", "G".repeat(1_000)));
+    fasta.push_str(&format!(">long_contig\n{}\n", balanced_sequence(10_000)));
+    std::fs::write(&input, fasta).unwrap();
+    let outputs = output_paths(&temp_dir, "assembly_outliers");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg(&input)
+        .arg("--min-contig-length")
+        .arg("1")
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--json")
+        .arg(&outputs.json)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .code(1)
+        .stderr(predicate::str::is_empty());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert!(array_contains_string(
+        &report["machine_summary"]["top_findings"],
+        "gc_outliers"
+    ));
+    assert!(array_contains_string(
+        &report["machine_summary"]["top_findings"],
+        "length_outliers"
+    ));
+
+    assert_finding_taxonomy(&report, "gc_outliers", "composition", "moderate", true);
+    assert_finding_taxonomy(&report, "length_outliers", "structure", "moderate", false);
+
+    let gc_outliers = finding_by_id(&report, "gc_outliers");
+    assert_eq!(gc_outliers["evidence"]["truncated"], json!(false));
+    assert_eq!(
+        gc_outliers["evidence"]["records"][0]["id"],
+        json!("high_gc")
+    );
+    assert_eq!(
+        gc_outliers["evidence"]["records"][0]["gc_percent"],
+        json!(100.0)
+    );
+    assert!(gc_outliers["evidence"]["records"][0]["n_fraction"].is_number());
+    assert!(gc_outliers["evidence"]["records"][0]["n_percent"].is_number());
+
+    let length_outliers = finding_by_id(&report, "length_outliers");
+    assert_eq!(
+        length_outliers["evidence"]["records"][0]["id"],
+        json!("long_contig")
+    );
+    assert_eq!(
+        length_outliers["evidence"]["records"][0]["length"],
+        json!(10_000)
+    );
+    assert!(length_outliers["evidence"]["records"][0]["gc_percent"].is_number());
+    assert!(length_outliers["evidence"]["records"][0]["n_fraction"].is_number());
 }
 
 #[test]
@@ -642,6 +724,14 @@ fn read_json(path: &Path) -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 
+fn balanced_sequence(length: usize) -> String {
+    "ACGT"
+        .repeat(length.div_ceil(4))
+        .chars()
+        .take(length)
+        .collect()
+}
+
 fn assert_json_matches_golden(actual_path: &Path, golden_path: &str) {
     let actual = normalize_for_deferred_v0_2_golden_update(read_json(actual_path));
     let golden_path = PathBuf::from(golden_path);
@@ -672,11 +762,44 @@ fn normalize_for_deferred_v0_2_golden_update(mut report: Value) -> Value {
     }
 
     if let Some(findings) = report["findings"].as_array_mut() {
+        findings.retain(|finding| {
+            !matches!(
+                finding["id"].as_str(),
+                Some("gc_outliers" | "length_outliers" | "composite_anomalies")
+            )
+        });
         for finding in findings {
             if let Some(finding) = finding.as_object_mut() {
                 finding.remove("category");
                 finding.remove("confidence");
                 finding.remove("requires_followup_tool");
+            }
+        }
+    }
+
+    if let Some(top_findings) = report["machine_summary"]["top_findings"].as_array_mut() {
+        top_findings.retain(|finding| {
+            !matches!(
+                finding.as_str(),
+                Some("gc_outliers" | "length_outliers" | "composite_anomalies")
+            )
+        });
+    }
+
+    if report["verdict"]["status"] != json!("PASS") {
+        if let Some(recommended_next_tools) =
+            report["machine_summary"]["recommended_next_tools"].as_array_mut()
+        {
+            recommended_next_tools.retain(|tool| tool["tool"] != json!("BlobToolKit"));
+        }
+    }
+
+    if let Some(points) = report["plots"]["gc_length_plot"].as_array_mut() {
+        for point in points {
+            if let Some(flags) = point["flags"].as_array_mut() {
+                flags.retain(|flag| {
+                    !matches!(flag.as_str(), Some("length_outlier" | "composite_anomaly"))
+                });
             }
         }
     }

@@ -7,6 +7,7 @@ use crate::parser::{self, FastaEvent, FastaRecord};
 use crate::profile::ProfileConfig;
 use crate::stats::composition::{fraction, percent, round2};
 use crate::stats::nxx::nx_lx;
+use crate::stats::outliers::{iqr_outlier_indices, zscore_outlier_indices};
 
 #[derive(Debug, Clone)]
 pub struct SequenceSummary {
@@ -22,6 +23,10 @@ pub struct SequenceSummary {
     pub max_gap_run: u64,
     pub n_fraction: f64,
     pub gc_percent: f64,
+    pub gc_outlier: bool,
+    pub length_outlier: bool,
+    pub composite_anomaly: bool,
+    pub gc_zscore: Option<f64>,
 }
 
 #[derive(Debug, Clone)]
@@ -162,6 +167,7 @@ impl<'a> MetricsAccumulator<'a> {
     }
 
     fn finish(mut self) -> AssemblyMetrics {
+        self.mark_outlier_signals();
         self.lengths.sort_unstable();
 
         let sequence_count = self.lengths.len() as u64;
@@ -203,6 +209,49 @@ impl<'a> MetricsAccumulator<'a> {
             tiny_contig_count: self.tiny_contig_count,
             max_gap_run: self.max_gap_run,
             sequences: self.sequences,
+        }
+    }
+
+    fn mark_outlier_signals(&mut self) {
+        let gc_values = self
+            .sequences
+            .iter()
+            .map(|sequence| sequence.gc_percent)
+            .collect::<Vec<_>>();
+        let gc_zscores = gc_zscores(&gc_values);
+        for (sequence, zscore) in self.sequences.iter_mut().zip(gc_zscores) {
+            sequence.gc_zscore = zscore;
+        }
+        for index in zscore_outlier_indices(&gc_values, self.profile.gc_outlier_zscore) {
+            if let Some(sequence) = self.sequences.get_mut(index) {
+                sequence.gc_outlier = true;
+            }
+        }
+
+        let lengths_in_original_sequence_order = self
+            .sequences
+            .iter()
+            .map(|sequence| sequence.length)
+            .collect::<Vec<_>>();
+        for index in iqr_outlier_indices(&lengths_in_original_sequence_order, 1.5) {
+            if let Some(sequence) = self.sequences.get_mut(index) {
+                sequence.length_outlier = true;
+            }
+        }
+
+        for sequence in &mut self.sequences {
+            let signal_count = [
+                sequence.gc_outlier,
+                sequence.length_outlier,
+                sequence.n_fraction >= 0.20,
+                sequence.duplicate_sequence,
+                sequence.invalid_count > 0,
+                sequence.max_gap_run > 100,
+            ]
+            .into_iter()
+            .filter(|signal| *signal)
+            .count();
+            sequence.composite_anomaly = signal_count >= 2;
         }
     }
 }
@@ -285,10 +334,40 @@ impl SequenceSummaryBuilder {
             max_gap_run: self.max_gap_run,
             n_fraction: fraction(self.n_count, self.length),
             gc_percent: percent(self.gc_count, self.length),
+            gc_outlier: false,
+            length_outlier: false,
+            composite_anomaly: false,
+            gc_zscore: None,
         };
 
         (summary, self.hasher.finalize().into())
     }
+}
+
+fn gc_zscores(values: &[f64]) -> Vec<Option<f64>> {
+    if values.len() < 3 || values.iter().any(|value| !value.is_finite()) {
+        return vec![None; values.len()];
+    }
+
+    let mean = values.iter().sum::<f64>() / values.len() as f64;
+    let variance = values
+        .iter()
+        .map(|value| {
+            let delta = value - mean;
+            delta * delta
+        })
+        .sum::<f64>()
+        / values.len() as f64;
+    let stddev = variance.sqrt();
+
+    if stddev == 0.0 {
+        return vec![None; values.len()];
+    }
+
+    values
+        .iter()
+        .map(|value| Some(round2((value - mean).abs() / stddev)))
+        .collect()
 }
 
 fn saturating_u128_to_u64(value: u128) -> u64 {

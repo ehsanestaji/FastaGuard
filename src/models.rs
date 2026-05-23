@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::cli::RunConfig;
 use crate::findings::Analysis;
-use crate::metrics::{AssemblyMetrics, SequenceSummary};
+use crate::metrics::AssemblyMetrics;
 use crate::profile::ProfileConfig;
-use crate::stats::composition::{percent, round2};
+use crate::stats::composition::percent;
 
 pub const SCHEMA_VERSION: &str = "0.2.0";
 pub const TOOL_NAME: &str = "FastaGuard";
@@ -430,6 +430,36 @@ pub fn finding_actions(id: &str) -> Vec<FindingAction> {
             "seqkit",
             false,
         )],
+        "gc_outliers" => vec![
+            action(
+                "inspect_records",
+                "GC outlier records",
+                "Records with GC composition far from the assembly background should be inspected with coverage and taxonomy context.",
+                "BlobToolKit",
+                true,
+            ),
+            action(
+                "compare_kmers_or_taxonomy",
+                "GC outlier records",
+                "K-mer or taxonomy comparison can help distinguish artifacts from plausible biological variation.",
+                "sourmash",
+                true,
+            ),
+        ],
+        "length_outliers" => vec![action(
+            "inspect_records",
+            "length outlier records",
+            "Extreme record lengths should be reviewed before automatic filtering or annotation.",
+            "seqkit",
+            false,
+        )],
+        "composite_anomalies" => vec![action(
+            "prioritize_records",
+            "records with multiple anomaly signals",
+            "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.",
+            "BlobToolKit",
+            true,
+        )],
         "invalid_fasta_structure" => vec![action(
             "repair_fasta_structure",
             "FASTA headers and records",
@@ -614,13 +644,10 @@ fn build_length_histogram(metrics: &AssemblyMetrics) -> Vec<LengthHistogramBin> 
 }
 
 fn build_gc_length_plot(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<GcLengthPoint> {
-    let zscores = gc_zscores(&metrics.sequences);
     let mut points = metrics
         .sequences
         .iter()
-        .enumerate()
-        .map(|(index, sequence)| {
-            let gc_zscore = zscores.get(index).copied().flatten();
+        .map(|sequence| {
             let mut flags = Vec::new();
             if sequence.length < profile.min_contig_length {
                 flags.push("tiny_contig".to_string());
@@ -628,8 +655,14 @@ fn build_gc_length_plot(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> V
             if sequence.n_fraction >= profile.high_n_sequence_fraction {
                 flags.push("high_n".to_string());
             }
-            if gc_zscore.is_some_and(|zscore| zscore >= profile.gc_outlier_zscore) {
+            if sequence.gc_outlier {
                 flags.push("gc_outlier".to_string());
+            }
+            if sequence.length_outlier {
+                flags.push("length_outlier".to_string());
+            }
+            if sequence.composite_anomaly {
+                flags.push("composite_anomaly".to_string());
             }
 
             GcLengthPoint {
@@ -637,7 +670,7 @@ fn build_gc_length_plot(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> V
                 length: sequence.length,
                 gc_percent: sequence.gc_percent,
                 n_percent: percent(sequence.n_count, sequence.length),
-                gc_zscore,
+                gc_zscore: sequence.gc_zscore,
                 flags,
             }
         })
@@ -651,36 +684,6 @@ fn build_gc_length_plot(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> V
     });
     points.truncate(GC_LENGTH_POINT_LIMIT);
     points
-}
-
-fn gc_zscores(sequences: &[SequenceSummary]) -> Vec<Option<f64>> {
-    if sequences.len() < 3 {
-        return vec![None; sequences.len()];
-    }
-
-    let mean = sequences
-        .iter()
-        .map(|sequence| sequence.gc_percent)
-        .sum::<f64>()
-        / sequences.len() as f64;
-    let variance = sequences
-        .iter()
-        .map(|sequence| {
-            let delta = sequence.gc_percent - mean;
-            delta * delta
-        })
-        .sum::<f64>()
-        / sequences.len() as f64;
-    let stddev = variance.sqrt();
-
-    if stddev == 0.0 {
-        return vec![None; sequences.len()];
-    }
-
-    sequences
-        .iter()
-        .map(|sequence| Some(round2((sequence.gc_percent - mean).abs() / stddev)))
-        .collect()
 }
 
 fn path_is_gzip(path: &Path) -> bool {
