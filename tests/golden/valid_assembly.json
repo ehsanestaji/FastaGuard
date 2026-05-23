@@ -60,7 +60,7 @@
       "max_gap_run": 100,
       "gc_outlier_zscore": 3.0
     },
-    "command": "fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json",
+    "command": "fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out target/fastaguard-golden-runtime/valid_assembly.html --json target/fastaguard-golden-runtime/valid_assembly.json --tsv target/fastaguard-golden-runtime/valid_assembly.tsv --multiqc target/fastaguard-golden-runtime/valid_assembly_multiqc.json",
     "started_at": "2026-05-23T00:00:00Z",
     "completed_at": "2026-05-23T00:00:00Z",
     "duration_ms": 0,
@@ -132,8 +132,8 @@
   },
   "findings": [],
   "artifacts": {
-    "html": "examples/reports/assembly_pass/fastaguard_report.html",
-    "tsv": "examples/reports/assembly_pass/fastaguard.tsv",
-    "multiqc": "examples/reports/assembly_pass/fastaguard_mqc.json"
+    "html": "target/fastaguard-golden-runtime/valid_assembly.html",
+    "tsv": "target/fastaguard-golden-runtime/valid_assembly.tsv",
+    "multiqc": "target/fastaguard-golden-runtime/valid_assembly_multiqc.json"
   }
 }

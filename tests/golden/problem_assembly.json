@@ -71,7 +71,7 @@
       "max_gap_run": 100,
       "gc_outlier_zscore": 3.0
     },
-    "command": "fastaguard testdata/problem_assembly.fa --out examples/reports/assembly_fail/fastaguard_report.html --json examples/reports/assembly_fail/fastaguard.json --tsv examples/reports/assembly_fail/fastaguard.tsv --multiqc examples/reports/assembly_fail/fastaguard_mqc.json",
+    "command": "fastaguard testdata/problem_assembly.fa --out target/fastaguard-golden-runtime/problem_assembly.html --json target/fastaguard-golden-runtime/problem_assembly.json --tsv target/fastaguard-golden-runtime/problem_assembly.tsv --multiqc target/fastaguard-golden-runtime/problem_assembly_multiqc.json",
     "started_at": "2026-05-23T00:00:00Z",
     "completed_at": "2026-05-23T00:00:00Z",
     "duration_ms": 0,
@@ -509,8 +509,8 @@
     }
   ],
   "artifacts": {
-    "html": "examples/reports/assembly_fail/fastaguard_report.html",
-    "tsv": "examples/reports/assembly_fail/fastaguard.tsv",
-    "multiqc": "examples/reports/assembly_fail/fastaguard_mqc.json"
+    "html": "target/fastaguard-golden-runtime/problem_assembly.html",
+    "tsv": "target/fastaguard-golden-runtime/problem_assembly.tsv",
+    "multiqc": "target/fastaguard-golden-runtime/problem_assembly_multiqc.json"
   }
 }

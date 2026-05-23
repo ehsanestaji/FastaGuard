@@ -438,7 +438,7 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
 
 #[test]
 fn valid_assembly_json_matches_golden_contract() {
-    let paths = committed_golden_output_paths("valid_assembly");
+    let paths = golden_output_paths("valid_assembly");
     let provenance_command = golden_provenance_command("valid_assembly");
 
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
@@ -486,7 +486,7 @@ fn problem_assembly_returns_failure_for_default_critical_findings() {
 
 #[test]
 fn problem_assembly_json_matches_golden_contract() {
-    let paths = committed_golden_output_paths("problem_assembly");
+    let paths = golden_output_paths("problem_assembly");
     let provenance_command = golden_provenance_command("problem_assembly");
 
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
@@ -633,7 +633,7 @@ fn problem_report_includes_per_record_evidence() {
 
 #[test]
 fn invalid_fasta_json_matches_golden_contract() {
-    let paths = committed_golden_output_paths("invalid_empty_record");
+    let paths = golden_output_paths("invalid_empty_record");
     let provenance_command = golden_provenance_command("invalid_empty_record");
 
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
@@ -746,6 +746,18 @@ fn unsupported_profile_is_tool_error() {
         .stderr(predicate::str::contains("unsupported profile"));
 }
 
+#[test]
+fn invalid_provenance_timestamp_override_is_tool_error() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.env("FASTAGUARD_PROVENANCE_TIMESTAMP", "now")
+        .arg("testdata/valid_assembly.fa")
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains(
+            "FASTAGUARD_PROVENANCE_TIMESTAMP must be a valid RFC3339 date-time",
+        ));
+}
+
 struct OutputPaths {
     html: std::path::PathBuf,
     json: std::path::PathBuf,
@@ -784,32 +796,8 @@ fn golden_output_paths(stem: &str) -> OutputPaths {
     }
 }
 
-fn committed_golden_output_paths(stem: &str) -> OutputPaths {
-    match stem {
-        "valid_assembly" => OutputPaths {
-            html: PathBuf::from("examples/reports/assembly_pass/fastaguard_report.html"),
-            json: PathBuf::from("examples/reports/assembly_pass/fastaguard.json"),
-            tsv: PathBuf::from("examples/reports/assembly_pass/fastaguard.tsv"),
-            multiqc: PathBuf::from("examples/reports/assembly_pass/fastaguard_mqc.json"),
-        },
-        "problem_assembly" => OutputPaths {
-            html: PathBuf::from("examples/reports/assembly_fail/fastaguard_report.html"),
-            json: PathBuf::from("examples/reports/assembly_fail/fastaguard.json"),
-            tsv: PathBuf::from("examples/reports/assembly_fail/fastaguard.tsv"),
-            multiqc: PathBuf::from("examples/reports/assembly_fail/fastaguard_mqc.json"),
-        },
-        "invalid_empty_record" => {
-            let mut paths = golden_output_paths(stem);
-            paths.html = PathBuf::from("/tmp/fastaguard_invalid.html");
-            paths.tsv = PathBuf::from("/tmp/fastaguard_invalid.tsv");
-            paths.multiqc = PathBuf::from("/tmp/fastaguard_invalid_mqc.json");
-            paths
-        }
-        _ => golden_output_paths(stem),
-    }
-}
-
 fn with_golden_provenance(cmd: &mut Command, command: &str) {
+    // Fixture-only deterministic provenance; not intended as security-grade audit data.
     cmd.env("FASTAGUARD_PROVENANCE_COMMAND", command).env(
         "FASTAGUARD_PROVENANCE_TIMESTAMP",
         GOLDEN_PROVENANCE_TIMESTAMP,
@@ -819,13 +807,13 @@ fn with_golden_provenance(cmd: &mut Command, command: &str) {
 fn golden_provenance_command(stem: &str) -> &'static str {
     match stem {
         "valid_assembly" => {
-            "fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json"
+            "fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out target/fastaguard-golden-runtime/valid_assembly.html --json target/fastaguard-golden-runtime/valid_assembly.json --tsv target/fastaguard-golden-runtime/valid_assembly.tsv --multiqc target/fastaguard-golden-runtime/valid_assembly_multiqc.json"
         }
         "problem_assembly" => {
-            "fastaguard testdata/problem_assembly.fa --out examples/reports/assembly_fail/fastaguard_report.html --json examples/reports/assembly_fail/fastaguard.json --tsv examples/reports/assembly_fail/fastaguard.tsv --multiqc examples/reports/assembly_fail/fastaguard_mqc.json"
+            "fastaguard testdata/problem_assembly.fa --out target/fastaguard-golden-runtime/problem_assembly.html --json target/fastaguard-golden-runtime/problem_assembly.json --tsv target/fastaguard-golden-runtime/problem_assembly.tsv --multiqc target/fastaguard-golden-runtime/problem_assembly_multiqc.json"
         }
         "invalid_empty_record" => {
-            "fastaguard testdata/invalid_empty_record.fa --json tests/golden/invalid_empty_record.json --out /tmp/fastaguard_invalid.html --tsv /tmp/fastaguard_invalid.tsv --multiqc /tmp/fastaguard_invalid_mqc.json"
+            "fastaguard testdata/invalid_empty_record.fa --out target/fastaguard-golden-runtime/invalid_empty_record.html --json target/fastaguard-golden-runtime/invalid_empty_record.json --tsv target/fastaguard-golden-runtime/invalid_empty_record.tsv --multiqc target/fastaguard-golden-runtime/invalid_empty_record_multiqc.json"
         }
         _ => "fastaguard",
     }

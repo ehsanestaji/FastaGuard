@@ -56,7 +56,7 @@
       "max_gap_run": 100,
       "gc_outlier_zscore": 3.0
     },
-    "command": "fastaguard testdata/invalid_empty_record.fa --json tests/golden/invalid_empty_record.json --out /tmp/fastaguard_invalid.html --tsv /tmp/fastaguard_invalid.tsv --multiqc /tmp/fastaguard_invalid_mqc.json",
+    "command": "fastaguard testdata/invalid_empty_record.fa --out target/fastaguard-golden-runtime/invalid_empty_record.html --json target/fastaguard-golden-runtime/invalid_empty_record.json --tsv target/fastaguard-golden-runtime/invalid_empty_record.tsv --multiqc target/fastaguard-golden-runtime/invalid_empty_record_multiqc.json",
     "started_at": "2026-05-23T00:00:00Z",
     "completed_at": "2026-05-23T00:00:00Z",
     "duration_ms": 0,
@@ -118,8 +118,8 @@
     }
   ],
   "artifacts": {
-    "html": "/tmp/fastaguard_invalid.html",
-    "tsv": "/tmp/fastaguard_invalid.tsv",
-    "multiqc": "/tmp/fastaguard_invalid_mqc.json"
+    "html": "target/fastaguard-golden-runtime/invalid_empty_record.html",
+    "tsv": "target/fastaguard-golden-runtime/invalid_empty_record.tsv",
+    "multiqc": "target/fastaguard-golden-runtime/invalid_empty_record_multiqc.json"
   }
 }

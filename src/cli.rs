@@ -1,6 +1,8 @@
 use anyhow::{anyhow, Result};
+use chrono::{DateTime, SecondsFormat, Utc};
 use clap::{ArgGroup, Parser};
 use std::collections::BTreeSet;
+use std::env::VarError;
 use std::path::PathBuf;
 
 use crate::profile::ThresholdOverrides;
@@ -77,6 +79,7 @@ pub struct RunConfig {
     pub threads: usize,
     pub command: String,
     pub started_at: String,
+    pub provenance_timestamp_override: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -114,6 +117,8 @@ impl Cli {
             }
         }
 
+        let provenance_timestamp_override = provenance_timestamp_override()?;
+
         Ok(RunConfig {
             input,
             profile: self.profile.clone(),
@@ -132,7 +137,10 @@ impl Cli {
             },
             threads: self.threads,
             command: provenance_command(),
-            started_at: current_utc_timestamp(),
+            started_at: provenance_timestamp_override
+                .clone()
+                .unwrap_or_else(current_utc_timestamp),
+            provenance_timestamp_override,
         })
     }
 }
@@ -142,9 +150,33 @@ fn provenance_command() -> String {
         .unwrap_or_else(|_| std::env::args().collect::<Vec<_>>().join(" "))
 }
 
+fn provenance_timestamp_override() -> Result<Option<String>> {
+    match std::env::var("FASTAGUARD_PROVENANCE_TIMESTAMP") {
+        Ok(value) => normalize_rfc3339_timestamp(&value).map(Some),
+        Err(VarError::NotPresent) => Ok(None),
+        Err(VarError::NotUnicode(_)) => Err(anyhow!(
+            "FASTAGUARD_PROVENANCE_TIMESTAMP must be valid Unicode RFC3339 date-time"
+        )),
+    }
+}
+
+fn normalize_rfc3339_timestamp(value: &str) -> Result<String> {
+    DateTime::parse_from_rfc3339(value)
+        .map(|timestamp| {
+            timestamp
+                .with_timezone(&Utc)
+                .to_rfc3339_opts(SecondsFormat::Secs, true)
+        })
+        .map_err(|_| {
+            anyhow!(
+                "FASTAGUARD_PROVENANCE_TIMESTAMP must be a valid RFC3339 date-time, got '{}'",
+                value
+            )
+        })
+}
+
 fn current_utc_timestamp() -> String {
-    std::env::var("FASTAGUARD_PROVENANCE_TIMESTAMP")
-        .unwrap_or_else(|_| chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true))
+    Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true)
 }
 
 fn normalize_rules(values: &[String]) -> BTreeSet<String> {
