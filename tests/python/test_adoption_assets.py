@@ -24,6 +24,33 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertEqual(summary["valid_assembly"]["sequence_count"], 3)
         self.assertEqual(summary["valid_assembly"]["n50"], 16)
 
+    def test_multiqc_parser_reads_expanded_fields_from_cli_example(self):
+        fixture = ROOT / "examples" / "reports" / "assembly_fail" / "fastaguard_mqc.json"
+
+        summary = load_custom_content_summary(fixture)
+
+        self.assertEqual(
+            summary["problem_assembly"],
+            {
+                "verdict": "FAIL",
+                "sequence_count": 5,
+                "total_length": 145,
+                "n50": 110,
+                "n90": 8,
+                "gc_percent": 8.28,
+                "n_percent": 80.69,
+                "finding_count": 5,
+                "duplicate_id_count": 1,
+                "invalid_sequence_count": 1,
+                "high_n_sequence_count": 2,
+                "tiny_contig_count": 5,
+                "max_gap_run": 101,
+                "gc_outlier_count": 0,
+                "length_outlier_count": 0,
+                "composite_anomaly_count": 0,
+            },
+        )
+
     def test_multiqc_parser_reads_expanded_summary_fields(self):
         with TemporaryDirectory() as temp_dir:
             fixture = Path(temp_dir) / "fastaguard_mqc.json"

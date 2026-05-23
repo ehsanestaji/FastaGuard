@@ -31,6 +31,14 @@ struct MultiqcSummaryRow {
     n90: u64,
     gc_percent: f64,
     n_percent: f64,
+    duplicate_id_count: u64,
+    invalid_sequence_count: u64,
+    high_n_sequence_count: u64,
+    tiny_contig_count: u64,
+    max_gap_run: u64,
+    gc_outlier_count: u64,
+    length_outlier_count: u64,
+    composite_anomaly_count: u64,
     finding_count: usize,
 }
 
@@ -78,8 +86,25 @@ fn summary_row(report: &FastaguardReport) -> MultiqcSummaryRow {
         n90: report.summary.n90,
         gc_percent: report.summary.gc_percent,
         n_percent: report.summary.n_percent,
+        duplicate_id_count: report.summary.duplicate_id_count,
+        invalid_sequence_count: report.summary.invalid_sequence_count,
+        high_n_sequence_count: report.summary.high_n_sequence_count,
+        tiny_contig_count: report.summary.tiny_contig_count,
+        max_gap_run: report.summary.max_gap_run,
+        gc_outlier_count: affected_record_count(report, "gc_outliers"),
+        length_outlier_count: affected_record_count(report, "length_outliers"),
+        composite_anomaly_count: affected_record_count(report, "composite_anomalies"),
         finding_count: report.findings.len(),
     }
+}
+
+fn affected_record_count(report: &FastaguardReport, finding_id: &str) -> u64 {
+    report
+        .findings
+        .iter()
+        .find(|finding| finding.id == finding_id)
+        .map(|finding| finding.affected_count)
+        .unwrap_or(0)
 }
 
 fn verdict_status(status: VerdictStatus) -> &'static str {
@@ -117,6 +142,14 @@ mod tests {
         assert_eq!(output["pconfig"]["id"], "fastaguard_summary");
         assert_eq!(output["data"]["sample"]["verdict"], "PASS");
         assert_eq!(output["data"]["sample"]["sequence_count"], 2);
+        assert_eq!(output["data"]["sample"]["duplicate_id_count"], 0);
+        assert_eq!(output["data"]["sample"]["invalid_sequence_count"], 0);
+        assert_eq!(output["data"]["sample"]["high_n_sequence_count"], 0);
+        assert_eq!(output["data"]["sample"]["tiny_contig_count"], 0);
+        assert_eq!(output["data"]["sample"]["max_gap_run"], 1);
+        assert_eq!(output["data"]["sample"]["gc_outlier_count"], 0);
+        assert_eq!(output["data"]["sample"]["length_outlier_count"], 0);
+        assert_eq!(output["data"]["sample"]["composite_anomaly_count"], 0);
         assert!(output.get("report").is_none(), "{output}");
     }
 
