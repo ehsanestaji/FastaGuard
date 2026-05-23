@@ -31,6 +31,9 @@ tar -xzf fastaguard-v0.1.1-x86_64-unknown-linux-gnu.tar.gz
 ./fastaguard-v0.1.1-x86_64-unknown-linux-gnu/fastaguard --help
 ```
 
+The v0.1.1 binary archive remains the latest published release asset until the
+v0.2.0 release archive and Bioconda source SHA are published.
+
 Local development build:
 
 ```bash
@@ -99,9 +102,9 @@ FastaGuard fills that gap:
 FastaGuard is a fast, explainable FASTA QC tool that validates assembly FASTA files, detects structural and composition red flags, and produces pipeline-ready reports before expensive downstream analysis.
 ```
 
-## v0.1 Scope
+## Assembly Scope
 
-The first release is assembly-first.
+FastaGuard is assembly-first.
 
 ```bash
 fastaguard sample.fa \
@@ -131,9 +134,11 @@ The MVP focuses on:
 - stable JSON, TSV, HTML, and MultiQC-compatible outputs
 - length histogram and GC-vs-length plot data in JSON and HTML
 
-Planned after v0.1:
+v0.2 expands the assembly preflight layer with:
 
 - composition outliers
+- richer provenance, taxonomy context, and routing hints
+- hardened MultiQC and pipeline adoption material
 
 ## Positioning
 
@@ -162,6 +167,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [LLM and tooling vision](docs/llm-tooling-vision.md)
 - [Benchmarking](docs/benchmarking.md)
 - [Packaging](docs/packaging.md)
+- [v0.2.0 release notes](docs/releases/v0.2.0.md)
 - [v0.1.1 release notes](docs/releases/v0.1.1.md)
 - [v0.1.0 release notes](docs/releases/v0.1.0.md)
 - [Roadmap](docs/roadmap.md)
@@ -169,6 +175,8 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 ## Status
 
-v0.1 assembly MVP implemented as a Rust CLI. FastaGuard v0.1.1 is published
-on Bioconda for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`.
-BioContainers image availability is still pending confirmation.
+v0.2 release metadata is staged in the repository. FastaGuard v0.1.1 remains
+the current published Bioconda package for `linux-64`, `linux-aarch64`,
+`osx-64`, and `osx-arm64` until the v0.2.0 source archive is published and the
+Bioconda recipe SHA is updated. BioContainers image availability is still
+pending confirmation.

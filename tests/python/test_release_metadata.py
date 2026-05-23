@@ -8,27 +8,40 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ReleaseMetadataTest(unittest.TestCase):
-    def test_package_and_bioconda_recipe_target_v0_1_1(self):
+    def test_package_and_bioconda_recipe_target_v0_2_0(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
 
-        self.assertEqual(cargo["package"]["version"], "0.1.1")
-        self.assertIn('{% set version = "0.1.1" %}', recipe)
+        self.assertEqual(cargo["package"]["version"], "0.2.0")
+        self.assertIn('{% set version = "0.2.0" %}', recipe)
 
-    def test_v0_1_1_release_notes_exist(self):
-        notes = ROOT / "docs" / "releases" / "v0.1.1.md"
+    def test_v0_2_0_release_notes_exist(self):
+        notes = ROOT / "docs" / "releases" / "v0.2.0.md"
 
         self.assertTrue(notes.exists())
         text = notes.read_text()
-        self.assertIn("FastaGuard v0.1.1", text)
-        self.assertIn("packaging metadata", text)
+        self.assertIn("FastaGuard v0.2.0", text)
+        self.assertIn("Assembly Trust", text)
+        self.assertIn("Pipeline Adoption", text)
 
     def test_bioconda_recipe_sha256_is_real_hash(self):
+        cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
+        placeholder = "REPLACE_WITH_V0_2_0_SOURCE_ARCHIVE_SHA256"
+
+        if cargo["package"]["version"] == "0.2.0" and placeholder in recipe:
+            self.assertTrue((ROOT / "docs" / "releases" / "v0.2.0.md").exists())
+            self.assertIn(
+                "# Update sha256 after the v0.2.0 GitHub source archive is published.",
+                recipe,
+            )
+            self.assertIn(f"sha256: {placeholder}", recipe)
+            return
 
         match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
         self.assertIsNotNone(match, recipe)
         self.assertNotIn("REPLACE_WITH_PUBLIC_SOURCE_ARCHIVE_SHA256", recipe)
+        self.assertNotIn(placeholder, recipe)
 
     def test_bioconda_recipe_avoids_unneeded_runtime_zlib(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()

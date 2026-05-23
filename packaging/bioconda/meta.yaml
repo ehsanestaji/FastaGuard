@@ -1,13 +1,14 @@
 {% set name = "fastaguard" %}
-{% set version = "0.1.1" %}
+{% set version = "0.2.0" %}
 
 package:
   name: {{ name|lower }}
   version: {{ version }}
 
+# Update sha256 after the v0.2.0 GitHub source archive is published.
 source:
   url: https://github.com/ehsanestaji/FastaGuard/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 10a5520e54d7e7884aa4cdfec5108cd7183c6033053e7839f969b9dcd9d73a17
+  sha256: REPLACE_WITH_V0_2_0_SOURCE_ARCHIVE_SHA256
 
 build:
   number: 0
