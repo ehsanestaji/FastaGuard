@@ -240,18 +240,17 @@ impl<'a> MetricsAccumulator<'a> {
         }
 
         for sequence in &mut self.sequences {
-            let signal_count = [
-                sequence.gc_outlier,
+            let has_composition_signal =
+                sequence.gc_outlier || sequence.n_fraction >= self.profile.high_n_sequence_fraction;
+            let has_independent_signal = [
                 sequence.length_outlier,
-                sequence.n_fraction >= 0.20,
                 sequence.duplicate_sequence,
                 sequence.invalid_count > 0,
-                sequence.max_gap_run > 100,
+                sequence.max_gap_run > self.profile.max_gap_run,
             ]
             .into_iter()
-            .filter(|signal| *signal)
-            .count();
-            sequence.composite_anomaly = signal_count >= 2;
+            .any(|signal| signal);
+            sequence.composite_anomaly = has_composition_signal && has_independent_signal;
         }
     }
 }
@@ -473,5 +472,74 @@ mod tests {
     #[test]
     fn median_handles_large_even_lengths_without_overflow() {
         assert_eq!(median(&[u64::MAX, u64::MAX]), u64::MAX as f64);
+    }
+
+    #[test]
+    fn composite_anomaly_requires_composition_signal_plus_independent_signal() {
+        let mut records = normal_records();
+        records.push(FastaRecord {
+            id: "long_balanced_1".into(),
+            header: "long_balanced_1".into(),
+            sequence: balanced_sequence(10_000),
+        });
+        records.push(FastaRecord {
+            id: "long_balanced_2".into(),
+            header: "long_balanced_2".into(),
+            sequence: balanced_sequence(10_000),
+        });
+
+        let metrics = AssemblyMetrics::from_records(records, &profile());
+        let duplicate_length_outlier = metrics
+            .sequences
+            .iter()
+            .find(|sequence| sequence.id == "long_balanced_2")
+            .unwrap();
+
+        assert!(duplicate_length_outlier.length_outlier);
+        assert!(duplicate_length_outlier.duplicate_sequence);
+        assert!(!duplicate_length_outlier.composite_anomaly);
+    }
+
+    #[test]
+    fn composite_anomaly_allows_composition_signal_plus_independent_signal() {
+        let mut records = normal_records();
+        records.push(FastaRecord {
+            id: "long_high_gc".into(),
+            header: "long_high_gc".into(),
+            sequence: vec![b'G'; 10_000],
+        });
+
+        let metrics = AssemblyMetrics::from_records(records, &profile());
+        let long_high_gc = metrics
+            .sequences
+            .iter()
+            .find(|sequence| sequence.id == "long_high_gc")
+            .unwrap();
+
+        assert!(long_high_gc.gc_outlier);
+        assert!(long_high_gc.length_outlier);
+        assert!(long_high_gc.composite_anomaly);
+    }
+
+    fn normal_records() -> Vec<FastaRecord> {
+        [
+            900, 940, 980, 1_000, 1_020, 1_040, 1_060, 1_080, 1_100, 1_120, 1_140,
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(index, length)| FastaRecord {
+            id: format!("normal_{}", index + 1),
+            header: format!("normal_{}", index + 1),
+            sequence: balanced_sequence(length),
+        })
+        .collect()
+    }
+
+    fn balanced_sequence(length: usize) -> Vec<u8> {
+        b"ACGT"
+            .repeat(length.div_ceil(4))
+            .into_iter()
+            .take(length)
+            .collect()
     }
 }

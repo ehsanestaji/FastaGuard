@@ -173,6 +173,105 @@
       "cannot_conclude": ["biological repeat structure", "copy number accuracy"]
     },
     {
+      "id": "gc_outliers",
+      "profile": "assembly",
+      "default_severity": "major",
+      "default_verdict_effect": "warn",
+      "meaning": "One or more records have GC composition far from the assembly background.",
+      "why_it_matters": "GC outliers can reflect contamination, cobionts, plasmids, artifacts, or genuine biological variation and need context before interpretation.",
+      "evidence_fields": [
+        "findings[].affected_count",
+        "findings[].evidence.records[].gc_percent",
+        "findings[].evidence.records[].gc_zscore"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "inspect_records",
+          "target": "GC outlier records",
+          "reason": "Records with GC composition far from the assembly background should be inspected with coverage and taxonomy context.",
+          "recommended_tool": "BlobToolKit",
+          "requires_external_database": true
+        },
+        {
+          "action_type": "compare_kmers_or_taxonomy",
+          "target": "GC outlier records",
+          "reason": "K-mer or taxonomy comparison can help distinguish artifacts from plausible biological variation.",
+          "recommended_tool": "sourmash",
+          "requires_external_database": true
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "BlobToolKit",
+          "role": "inspect composition, coverage, and taxonomy context for affected records"
+        },
+        {
+          "tool": "sourmash",
+          "role": "compare k-mer similarity when the pattern is strong"
+        }
+      ],
+      "cannot_conclude": ["taxonomic contamination", "biological origin without external evidence"]
+    },
+    {
+      "id": "length_outliers",
+      "profile": "assembly",
+      "default_severity": "minor",
+      "default_verdict_effect": "warn",
+      "meaning": "One or more records have lengths outside the assembly length distribution.",
+      "why_it_matters": "Length outliers can be expected in assemblies, but extreme records deserve inspection before downstream filtering or annotation.",
+      "evidence_fields": [
+        "findings[].affected_count",
+        "findings[].evidence.records[].length",
+        "findings[].evidence.records[].gc_percent"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "inspect_records",
+          "target": "length outlier records",
+          "reason": "Extreme record lengths should be reviewed before automatic filtering or annotation.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "inspect sequence lengths and affected records"
+        }
+      ],
+      "cannot_conclude": ["whether an extreme length is biologically expected"]
+    },
+    {
+      "id": "composite_anomalies",
+      "profile": "assembly",
+      "default_severity": "major",
+      "default_verdict_effect": "warn",
+      "meaning": "One or more records combine a composition anomaly with another independent FASTA-level signal.",
+      "why_it_matters": "Multiple independent FASTA-level signals make a record more likely to need manual review before expensive downstream QC.",
+      "evidence_fields": [
+        "findings[].affected_count",
+        "findings[].evidence.records[].gc_percent",
+        "findings[].evidence.records[].n_fraction",
+        "findings[].evidence.records[].gc_zscore"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "prioritize_records",
+          "target": "records with multiple anomaly signals",
+          "reason": "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.",
+          "recommended_tool": "BlobToolKit",
+          "requires_external_database": true
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "BlobToolKit",
+          "role": "prioritize composition and coverage review for records with multiple signals"
+        }
+      ],
+      "cannot_conclude": ["taxonomic contamination", "misassembly status without external evidence"]
+    },
+    {
       "id": "invalid_fasta_structure",
       "profile": "assembly",
       "default_severity": "critical",

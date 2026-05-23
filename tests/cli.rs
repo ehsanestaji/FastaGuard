@@ -63,6 +63,19 @@ fn contract_explain_finding_prints_single_catalog_entry() {
 }
 
 #[test]
+fn contract_explain_finding_prints_outlier_catalog_entries() {
+    for id in ["gc_outliers", "length_outliers", "composite_anomalies"] {
+        let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+        cmd.args(["--explain-finding", id])
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(format!(r#""id": "{id}""#)))
+            .stdout(predicate::str::contains(r#""recommended_next_tools""#))
+            .stderr(predicate::str::is_empty());
+    }
+}
+
+#[test]
 fn contract_unknown_finding_is_tool_error() {
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     cmd.args(["--explain-finding", "unknown_rule"])
@@ -364,6 +377,7 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
     );
     assert!(gc_outliers["evidence"]["records"][0]["n_fraction"].is_number());
     assert!(gc_outliers["evidence"]["records"][0]["n_percent"].is_number());
+    assert!(gc_outliers["evidence"]["records"][0]["gc_zscore"].is_number());
 
     let length_outliers = finding_by_id(&report, "length_outliers");
     assert_eq!(
@@ -747,6 +761,10 @@ fn assert_json_matches_golden(actual_path: &Path, golden_path: &str) {
 }
 
 fn normalize_for_deferred_v0_2_golden_update(mut report: Value) -> Value {
+    // Task 8 must remove this compatibility bridge when the JSON schema, finding
+    // catalog, golden fixtures, examples, HTML, TSV, and MultiQC outputs are
+    // regenerated together. Until then, this keeps legacy v0.1 golden
+    // comparisons focused while allowing live v0.2 fields and outlier findings.
     report["schema_version"] = json!("0.1.0");
 
     if let Some(machine_summary) = report["machine_summary"].as_object_mut() {

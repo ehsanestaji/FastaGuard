@@ -498,6 +498,7 @@ fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind)
         n_percent: None,
         max_gap_run: None,
         gc_percent: None,
+        gc_zscore: None,
     };
 
     match kind {
@@ -516,6 +517,7 @@ fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind)
         }
         EvidenceKind::CompositionOutlier | EvidenceKind::AssemblyOutlier => {
             record.gc_percent = Some(sequence.gc_percent);
+            record.gc_zscore = sequence.gc_zscore;
             record.n_fraction = Some(round2(sequence.n_fraction));
             record.n_percent = Some(round2(sequence.n_fraction * 100.0));
         }

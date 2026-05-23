@@ -591,6 +591,7 @@ mod tests {
                     n_percent: Some(42.0),
                     max_gap_run: Some(240),
                     gc_percent: None,
+                    gc_zscore: None,
                 }],
             },
             actions: vec![FindingAction {

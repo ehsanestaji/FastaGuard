@@ -1,5 +1,6 @@
 use serde_json::Value;
 use std::path::Path;
+use tempfile::TempDir;
 
 #[test]
 fn committed_reports_validate_against_json_schema() {
@@ -23,6 +24,61 @@ fn committed_reports_validate_against_json_schema() {
     }
 }
 
+#[test]
+fn freshly_generated_outlier_report_validates_against_json_schema() {
+    let temp_dir = TempDir::new().unwrap();
+    let input = temp_dir.path().join("outliers.fa");
+    let mut fasta = String::new();
+    for (index, length) in [
+        900, 940, 980, 1_000, 1_020, 1_040, 1_060, 1_080, 1_100, 1_120, 1_140,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        fasta.push_str(&format!(
+            ">normal_{}\n{}\n",
+            index + 1,
+            balanced_sequence(length)
+        ));
+    }
+    fasta.push_str(&format!(">long_high_gc\n{}\n", "G".repeat(10_000)));
+    std::fs::write(&input, fasta).unwrap();
+
+    let html = temp_dir.path().join("outliers.html");
+    let json = temp_dir.path().join("outliers.json");
+    let tsv = temp_dir.path().join("outliers.tsv");
+    let multiqc = temp_dir.path().join("outliers_multiqc.json");
+    let mut cmd = assert_cmd::Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg(&input)
+        .arg("--min-contig-length")
+        .arg("1")
+        .arg("--out")
+        .arg(&html)
+        .arg("--json")
+        .arg(&json)
+        .arg("--tsv")
+        .arg(&tsv)
+        .arg("--multiqc")
+        .arg(&multiqc)
+        .assert()
+        .code(1);
+
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let report = read_json(&json);
+    let validator =
+        jsonschema::validator_for(&schema).expect("schema/fastaguard.schema.json should compile");
+    let errors = validator
+        .iter_errors(&report)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+
+    assert!(
+        errors.is_empty(),
+        "fresh outlier report did not validate:\n{}",
+        errors.join("\n")
+    );
+}
+
 fn golden_report_paths() -> Vec<&'static Path> {
     vec![
         Path::new("tests/golden/valid_assembly.json"),
@@ -36,4 +92,12 @@ fn golden_report_paths() -> Vec<&'static Path> {
 fn read_json(path: &Path) -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap())
         .unwrap_or_else(|error| panic!("failed to parse {}: {error}", path.display()))
+}
+
+fn balanced_sequence(length: usize) -> String {
+    "ACGT"
+        .repeat(length.div_ceil(4))
+        .chars()
+        .take(length)
+        .collect()
 }

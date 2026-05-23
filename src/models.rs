@@ -172,6 +172,8 @@ pub struct EvidenceRecord {
     pub max_gap_run: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gc_percent: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gc_zscore: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

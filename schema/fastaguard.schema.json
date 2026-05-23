@@ -375,7 +375,13 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["tiny_contig", "high_n", "gc_outlier"]
+            "enum": [
+              "tiny_contig",
+              "high_n",
+              "gc_outlier",
+              "length_outlier",
+              "composite_anomaly"
+            ]
           },
           "uniqueItems": true
         }
@@ -490,6 +496,10 @@
           "type": "number",
           "minimum": 0,
           "maximum": 100
+        },
+        "gc_zscore": {
+          "type": "number",
+          "minimum": 0
         }
       }
     },
