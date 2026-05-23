@@ -120,7 +120,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <p>No findings.</p>
 <h2>JSON</h2>
 <pre>{
-  &quot;schema_version&quot;: &quot;0.1.0&quot;,
+  &quot;schema_version&quot;: &quot;0.2.0&quot;,
   &quot;tool&quot;: {
     &quot;name&quot;: &quot;FastaGuard&quot;,
     &quot;version&quot;: &quot;0.1.1&quot;
@@ -151,7 +151,8 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
         &quot;tool&quot;: &quot;BlobToolKit&quot;,
         &quot;reason&quot;: &quot;contamination and cobiont exploration after FASTA preflight passes&quot;
       }
-    ]
+    ],
+    &quot;routing_hints&quot;: []
   },
   &quot;scope&quot;: {
     &quot;level&quot;: &quot;fasta_preflight&quot;,
@@ -179,7 +180,12 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       &quot;min_contig_length&quot;: 1,
       &quot;max_gap_run&quot;: 100,
       &quot;gc_outlier_zscore&quot;: 3.0
-    }
+    },
+    &quot;command&quot;: &quot;fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json&quot;,
+    &quot;started_at&quot;: &quot;2026-05-23T00:00:00Z&quot;,
+    &quot;completed_at&quot;: &quot;2026-05-23T00:00:00Z&quot;,
+    &quot;duration_ms&quot;: 0,
+    &quot;input_size_bytes&quot;: 92
   },
   &quot;summary&quot;: {
     &quot;sequence_count&quot;: 3,

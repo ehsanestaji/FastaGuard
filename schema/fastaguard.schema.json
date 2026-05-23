@@ -19,7 +19,7 @@
   ],
   "properties": {
     "schema_version": {
-      "type": "string",
+      "const": "0.2.0",
       "description": "Version of the FastaGuard report schema."
     },
     "tool": {
@@ -72,7 +72,8 @@
         "verdict",
         "safe_for_downstream",
         "top_findings",
-        "recommended_next_tools"
+        "recommended_next_tools",
+        "routing_hints"
       ],
       "properties": {
         "verdict": {
@@ -92,6 +93,12 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/recommended_tool"
+          }
+        },
+        "routing_hints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/routing_hint"
           }
         }
       }
@@ -119,7 +126,17 @@
     },
     "provenance": {
       "type": "object",
-      "required": ["profile", "threads", "fail_on", "thresholds"],
+      "required": [
+        "profile",
+        "threads",
+        "fail_on",
+        "thresholds",
+        "command",
+        "started_at",
+        "completed_at",
+        "duration_ms",
+        "input_size_bytes"
+      ],
       "properties": {
         "profile": {
           "type": "string"
@@ -168,6 +185,25 @@
               "minimum": 0
             }
           }
+        },
+        "command": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "input_size_bytes": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -568,6 +604,21 @@
         },
         "reason": {
           "type": "string"
+        }
+      }
+    },
+    "routing_hint": {
+      "type": "object",
+      "required": ["condition", "suggested_route", "requires_external_database"],
+      "properties": {
+        "condition": {
+          "type": "string"
+        },
+        "suggested_route": {
+          "type": "string"
+        },
+        "requires_external_database": {
+          "type": "boolean"
         }
       }
     }

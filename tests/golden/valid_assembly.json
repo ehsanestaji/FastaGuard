@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "tool": {
     "name": "FastaGuard",
     "version": "0.1.1"
@@ -30,7 +30,8 @@
         "tool": "BlobToolKit",
         "reason": "contamination and cobiont exploration after FASTA preflight passes"
       }
-    ]
+    ],
+    "routing_hints": []
   },
   "scope": {
     "level": "fasta_preflight",
@@ -58,7 +59,12 @@
       "min_contig_length": 1,
       "max_gap_run": 100,
       "gc_outlier_zscore": 3.0
-    }
+    },
+    "command": "fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json",
+    "started_at": "2026-05-23T00:00:00Z",
+    "completed_at": "2026-05-23T00:00:00Z",
+    "duration_ms": 0,
+    "input_size_bytes": 92
   },
   "summary": {
     "sequence_count": 3,
@@ -126,8 +132,8 @@
   },
   "findings": [],
   "artifacts": {
-    "html": "target/fastaguard-golden-runtime/valid_assembly.html",
-    "tsv": "target/fastaguard-golden-runtime/valid_assembly.tsv",
-    "multiqc": "target/fastaguard-golden-runtime/valid_assembly_multiqc.json"
+    "html": "examples/reports/assembly_pass/fastaguard_report.html",
+    "tsv": "examples/reports/assembly_pass/fastaguard.tsv",
+    "multiqc": "examples/reports/assembly_pass/fastaguard_mqc.json"
   }
 }

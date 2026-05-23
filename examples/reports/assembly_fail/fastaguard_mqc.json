@@ -22,9 +22,9 @@
       "tiny_contig_count": 5,
       "max_gap_run": 101,
       "gc_outlier_count": 0,
-      "length_outlier_count": 0,
-      "composite_anomaly_count": 0,
-      "finding_count": 5
+      "length_outlier_count": 1,
+      "composite_anomaly_count": 1,
+      "finding_count": 7
     }
   }
 }

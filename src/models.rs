@@ -578,7 +578,8 @@ fn fasta_preflight_scope() -> Scope {
 }
 
 fn build_provenance(config: &RunConfig, profile: &ProfileConfig) -> Provenance {
-    let completed_at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+    let completed_at = std::env::var("FASTAGUARD_PROVENANCE_TIMESTAMP")
+        .unwrap_or_else(|_| chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true));
     let input_size_bytes = std::fs::metadata(&config.input)
         .map(|metadata| metadata.len())
         .unwrap_or(0);

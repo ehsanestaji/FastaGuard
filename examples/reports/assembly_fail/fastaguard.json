@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "tool": {
     "name": "FastaGuard",
     "version": "0.1.1"
@@ -24,7 +24,9 @@
       "invalid_chars",
       "high_n_rate",
       "tiny_contigs",
-      "gap_runs"
+      "gap_runs",
+      "length_outliers",
+      "composite_anomalies"
     ],
     "recommended_next_tools": [
       {
@@ -34,8 +36,13 @@
       {
         "tool": "QUAST",
         "reason": "Assembly-level evaluation can show whether ambiguity affects broader assembly quality."
+      },
+      {
+        "tool": "BlobToolKit",
+        "reason": "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review."
       }
-    ]
+    ],
+    "routing_hints": []
   },
   "scope": {
     "level": "fasta_preflight",
@@ -63,7 +70,12 @@
       "min_contig_length": 200,
       "max_gap_run": 100,
       "gc_outlier_zscore": 3.0
-    }
+    },
+    "command": "fastaguard testdata/problem_assembly.fa --out examples/reports/assembly_fail/fastaguard_report.html --json examples/reports/assembly_fail/fastaguard.json --tsv examples/reports/assembly_fail/fastaguard.tsv --multiqc examples/reports/assembly_fail/fastaguard_mqc.json",
+    "started_at": "2026-05-23T00:00:00Z",
+    "completed_at": "2026-05-23T00:00:00Z",
+    "duration_ms": 0,
+    "input_size_bytes": 187
   },
   "summary": {
     "sequence_count": 5,
@@ -159,7 +171,9 @@
         "gc_zscore": 1.06,
         "flags": [
           "tiny_contig",
-          "high_n"
+          "high_n",
+          "length_outlier",
+          "composite_anomaly"
         ]
       },
       {
@@ -208,7 +222,10 @@
   "findings": [
     {
       "id": "duplicate_ids",
+      "category": "duplication",
       "severity": "critical",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "affected_count": 1,
       "affected_fraction": 0.2,
@@ -238,7 +255,10 @@
     },
     {
       "id": "invalid_chars",
+      "category": "validity",
       "severity": "critical",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "affected_count": 1,
       "affected_fraction": 0.2,
@@ -269,7 +289,10 @@
     },
     {
       "id": "high_n_rate",
+      "category": "composition",
       "severity": "major",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "affected_count": 2,
       "affected_fraction": 0.4,
@@ -315,7 +338,10 @@
     },
     {
       "id": "tiny_contigs",
+      "category": "structure",
       "severity": "minor",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "affected_count": 5,
       "affected_fraction": 1.0,
@@ -370,7 +396,10 @@
     },
     {
       "id": "gap_runs",
+      "category": "structure",
       "severity": "major",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "affected_count": 1,
       "affected_fraction": 0.2,
@@ -396,6 +425,85 @@
           "reason": "Long gaps may require gap closing, masking review, or scaffold-level inspection.",
           "recommended_tool": "QUAST",
           "requires_external_database": false
+        }
+      ]
+    },
+    {
+      "id": "length_outliers",
+      "category": "structure",
+      "severity": "minor",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "affected_count": 1,
+      "affected_fraction": 0.2,
+      "message": "1 records have lengths outside the assembly length distribution.",
+      "why_it_matters": "Length outliers can be expected in assemblies, but extreme records deserve inspection before downstream filtering or annotation.",
+      "suggested_next_step": "Inspect the affected records and confirm whether their size is expected for this assembly.",
+      "evidence": {
+        "total_records": 1,
+        "truncated": false,
+        "records": [
+          {
+            "id": "gap_rich",
+            "length": 110,
+            "reason": "record length outside the assembly length distribution",
+            "n_fraction": 0.92,
+            "n_percent": 91.82,
+            "gc_percent": 3.64,
+            "gc_zscore": 1.06
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action_type": "inspect_records",
+          "target": "length outlier records",
+          "reason": "Extreme record lengths should be reviewed before automatic filtering or annotation.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ]
+    },
+    {
+      "id": "composite_anomalies",
+      "category": "composition",
+      "severity": "major",
+      "confidence": "moderate",
+      "requires_followup_tool": true,
+      "profile": "assembly",
+      "affected_count": 1,
+      "affected_fraction": 0.2,
+      "message": "1 records have multiple assembly anomaly signals.",
+      "why_it_matters": "Multiple independent FASTA-level signals make a record more likely to need manual review before expensive downstream QC.",
+      "suggested_next_step": "Prioritize these records for review and compare composition, coverage, and taxonomy context with BlobToolKit when available.",
+      "evidence": {
+        "total_records": 1,
+        "truncated": false,
+        "records": [
+          {
+            "id": "gap_rich",
+            "length": 110,
+            "reason": "record has multiple assembly anomaly signals",
+            "n_fraction": 0.92,
+            "n_percent": 91.82,
+            "gc_percent": 3.64,
+            "gc_zscore": 1.06,
+            "signals": [
+              "high_n",
+              "length_outlier",
+              "gap_run"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action_type": "prioritize_records",
+          "target": "records with multiple anomaly signals",
+          "reason": "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.",
+          "recommended_tool": "BlobToolKit",
+          "requires_external_database": true
         }
       ]
     }

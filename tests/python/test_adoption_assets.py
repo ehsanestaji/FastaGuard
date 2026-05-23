@@ -39,15 +39,15 @@ class AdoptionAssetsTest(unittest.TestCase):
                 "n90": 8,
                 "gc_percent": 8.28,
                 "n_percent": 80.69,
-                "finding_count": 5,
+                "finding_count": 7,
                 "duplicate_id_count": 1,
                 "invalid_sequence_count": 1,
                 "high_n_sequence_count": 2,
                 "tiny_contig_count": 5,
                 "max_gap_run": 101,
                 "gc_outlier_count": 0,
-                "length_outlier_count": 0,
-                "composite_anomaly_count": 0,
+                "length_outlier_count": 1,
+                "composite_anomaly_count": 1,
             },
         )
 

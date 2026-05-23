@@ -131,14 +131,20 @@ impl Cli {
                 min_contig_length: self.min_contig_length,
             },
             threads: self.threads,
-            command: std::env::args().collect::<Vec<_>>().join(" "),
+            command: provenance_command(),
             started_at: current_utc_timestamp(),
         })
     }
 }
 
+fn provenance_command() -> String {
+    std::env::var("FASTAGUARD_PROVENANCE_COMMAND")
+        .unwrap_or_else(|_| std::env::args().collect::<Vec<_>>().join(" "))
+}
+
 fn current_utc_timestamp() -> String {
-    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+    std::env::var("FASTAGUARD_PROVENANCE_TIMESTAMP")
+        .unwrap_or_else(|_| chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true))
 }
 
 fn normalize_rules(values: &[String]) -> BTreeSet<String> {

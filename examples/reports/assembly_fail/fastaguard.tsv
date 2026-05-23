@@ -1,5 +1,5 @@
 metric	value
-schema_version	0.1.0
+schema_version	0.2.0
 profile	assembly
 verdict	FAIL
 sequence_count	5
@@ -10,4 +10,7 @@ l50	1
 l90	3
 gc_percent	8.28
 n_percent	80.69
-finding_count	5
+gc_outlier_count	0
+length_outlier_count	1
+composite_anomaly_count	1
+finding_count	7

@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "tool": {
     "name": "FastaGuard",
     "version": "0.1.1"
@@ -26,7 +26,8 @@
         "tool": "parser-aware cleanup script",
         "reason": "Every record needs a valid header and sequence data before downstream tools can consume it safely."
       }
-    ]
+    ],
+    "routing_hints": []
   },
   "scope": {
     "level": "fasta_preflight",
@@ -54,7 +55,12 @@
       "min_contig_length": 200,
       "max_gap_run": 100,
       "gc_outlier_zscore": 3.0
-    }
+    },
+    "command": "fastaguard testdata/invalid_empty_record.fa --json tests/golden/invalid_empty_record.json --out /tmp/fastaguard_invalid.html --tsv /tmp/fastaguard_invalid.tsv --multiqc /tmp/fastaguard_invalid_mqc.json",
+    "started_at": "2026-05-23T00:00:00Z",
+    "completed_at": "2026-05-23T00:00:00Z",
+    "duration_ms": 0,
+    "input_size_bytes": 7
   },
   "summary": {
     "sequence_count": 0,
@@ -85,7 +91,10 @@
   "findings": [
     {
       "id": "invalid_fasta_structure",
+      "category": "validity",
       "severity": "critical",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "affected_count": 0,
       "affected_fraction": 0.0,
@@ -109,8 +118,8 @@
     }
   ],
   "artifacts": {
-    "html": "target/fastaguard-golden-runtime/invalid_empty_record.html",
-    "tsv": "target/fastaguard-golden-runtime/invalid_empty_record.tsv",
-    "multiqc": "target/fastaguard-golden-runtime/invalid_empty_record_multiqc.json"
+    "html": "/tmp/fastaguard_invalid.html",
+    "tsv": "/tmp/fastaguard_invalid.tsv",
+    "multiqc": "/tmp/fastaguard_invalid_mqc.json"
   }
 }

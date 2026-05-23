@@ -26,6 +26,21 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
     write_metric(&mut writer, "l90", report.summary.l90)?;
     write_metric(&mut writer, "gc_percent", report.summary.gc_percent)?;
     write_metric(&mut writer, "n_percent", report.summary.n_percent)?;
+    write_metric(
+        &mut writer,
+        "gc_outlier_count",
+        affected_record_count(report, "gc_outliers"),
+    )?;
+    write_metric(
+        &mut writer,
+        "length_outlier_count",
+        affected_record_count(report, "length_outliers"),
+    )?;
+    write_metric(
+        &mut writer,
+        "composite_anomaly_count",
+        affected_record_count(report, "composite_anomalies"),
+    )?;
     write_metric(&mut writer, "finding_count", report.findings.len())?;
 
     writer
@@ -39,6 +54,15 @@ fn write_metric(
     value: impl std::fmt::Display,
 ) -> std::io::Result<()> {
     writeln!(writer, "{metric}\t{value}")
+}
+
+fn affected_record_count(report: &FastaguardReport, finding_id: &str) -> u64 {
+    report
+        .findings
+        .iter()
+        .find(|finding| finding.id == finding_id)
+        .map(|finding| finding.affected_count)
+        .unwrap_or(0)
 }
 
 fn verdict_status(status: VerdictStatus) -> &'static str {
@@ -57,8 +81,9 @@ mod tests {
 
     use super::*;
     use crate::models::{
-        empty_plots, Artifacts, FastaguardReport, InputInfo, MachineSummary, Provenance,
-        ProvenanceThresholds, Scope, Summary, ToolInfo, Verdict, VerdictStatus,
+        empty_evidence, empty_plots, Artifacts, FastaguardReport, Finding, FindingCategory,
+        FindingConfidence, InputInfo, MachineSummary, Provenance, ProvenanceThresholds, Scope,
+        Severity, Summary, ToolInfo, Verdict, VerdictStatus,
     };
 
     #[test]
@@ -70,6 +95,24 @@ mod tests {
 
         let output = fs::read_to_string(file.path()).unwrap();
         assert!(output.contains("verdict\tWARN\n"), "{output}");
+    }
+
+    #[test]
+    fn writes_outlier_counts_from_matching_findings() {
+        let mut report = test_report(VerdictStatus::Warn);
+        report.findings = vec![
+            test_finding("gc_outliers", 2),
+            test_finding("length_outliers", 3),
+            test_finding("composite_anomalies", 1),
+        ];
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(output.contains("gc_outlier_count\t2\n"), "{output}");
+        assert!(output.contains("length_outlier_count\t3\n"), "{output}");
+        assert!(output.contains("composite_anomaly_count\t1\n"), "{output}");
     }
 
     fn test_report(status: VerdictStatus) -> FastaguardReport {
@@ -146,6 +189,24 @@ mod tests {
                 tsv: "fastaguard.tsv".to_string(),
                 multiqc: "fastaguard_mqc.json".to_string(),
             },
+        }
+    }
+
+    fn test_finding(id: &str, affected_count: u64) -> Finding {
+        Finding {
+            id: id.to_string(),
+            category: FindingCategory::Composition,
+            severity: Severity::Minor,
+            confidence: FindingConfidence::Moderate,
+            requires_followup_tool: false,
+            profile: "assembly".to_string(),
+            affected_count,
+            affected_fraction: 0.0,
+            message: String::new(),
+            why_it_matters: String::new(),
+            suggested_next_step: String::new(),
+            evidence: empty_evidence(),
+            actions: Vec::new(),
         }
     }
 }

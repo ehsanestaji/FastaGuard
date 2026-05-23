@@ -4,6 +4,8 @@ use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
+const GOLDEN_PROVENANCE_TIMESTAMP: &str = "2026-05-23T00:00:00Z";
+
 #[test]
 fn help_mentions_preflight_positioning() {
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
@@ -47,6 +49,9 @@ fn contract_finding_catalog_can_be_printed_without_input() {
         .stdout(predicate::str::contains(r#""schema_version": "0.2.0""#))
         .stdout(predicate::str::contains(r#""duplicate_ids""#))
         .stdout(predicate::str::contains(r#""invalid_fasta_structure""#))
+        .stdout(predicate::str::contains(r#""gc_outliers""#))
+        .stdout(predicate::str::contains(r#""length_outliers""#))
+        .stdout(predicate::str::contains(r#""composite_anomalies""#))
         .stderr(predicate::str::is_empty());
 }
 
@@ -433,9 +438,11 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
 
 #[test]
 fn valid_assembly_json_matches_golden_contract() {
-    let paths = golden_output_paths("valid_assembly");
+    let paths = committed_golden_output_paths("valid_assembly");
+    let provenance_command = golden_provenance_command("valid_assembly");
 
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    with_golden_provenance(&mut cmd, provenance_command);
     cmd.args([
         "testdata/valid_assembly.fa",
         "--min-contig-length",
@@ -479,9 +486,11 @@ fn problem_assembly_returns_failure_for_default_critical_findings() {
 
 #[test]
 fn problem_assembly_json_matches_golden_contract() {
-    let paths = golden_output_paths("problem_assembly");
+    let paths = committed_golden_output_paths("problem_assembly");
+    let provenance_command = golden_provenance_command("problem_assembly");
 
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    with_golden_provenance(&mut cmd, provenance_command);
     cmd.args(["testdata/problem_assembly.fa", "--out"])
         .arg(&paths.html)
         .arg("--json")
@@ -624,9 +633,11 @@ fn problem_report_includes_per_record_evidence() {
 
 #[test]
 fn invalid_fasta_json_matches_golden_contract() {
-    let paths = golden_output_paths("invalid_empty_record");
+    let paths = committed_golden_output_paths("invalid_empty_record");
+    let provenance_command = golden_provenance_command("invalid_empty_record");
 
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    with_golden_provenance(&mut cmd, provenance_command);
     cmd.arg("testdata/invalid_empty_record.fa")
         .arg("--out")
         .arg(&paths.html)
@@ -773,6 +784,53 @@ fn golden_output_paths(stem: &str) -> OutputPaths {
     }
 }
 
+fn committed_golden_output_paths(stem: &str) -> OutputPaths {
+    match stem {
+        "valid_assembly" => OutputPaths {
+            html: PathBuf::from("examples/reports/assembly_pass/fastaguard_report.html"),
+            json: PathBuf::from("examples/reports/assembly_pass/fastaguard.json"),
+            tsv: PathBuf::from("examples/reports/assembly_pass/fastaguard.tsv"),
+            multiqc: PathBuf::from("examples/reports/assembly_pass/fastaguard_mqc.json"),
+        },
+        "problem_assembly" => OutputPaths {
+            html: PathBuf::from("examples/reports/assembly_fail/fastaguard_report.html"),
+            json: PathBuf::from("examples/reports/assembly_fail/fastaguard.json"),
+            tsv: PathBuf::from("examples/reports/assembly_fail/fastaguard.tsv"),
+            multiqc: PathBuf::from("examples/reports/assembly_fail/fastaguard_mqc.json"),
+        },
+        "invalid_empty_record" => {
+            let mut paths = golden_output_paths(stem);
+            paths.html = PathBuf::from("/tmp/fastaguard_invalid.html");
+            paths.tsv = PathBuf::from("/tmp/fastaguard_invalid.tsv");
+            paths.multiqc = PathBuf::from("/tmp/fastaguard_invalid_mqc.json");
+            paths
+        }
+        _ => golden_output_paths(stem),
+    }
+}
+
+fn with_golden_provenance(cmd: &mut Command, command: &str) {
+    cmd.env("FASTAGUARD_PROVENANCE_COMMAND", command).env(
+        "FASTAGUARD_PROVENANCE_TIMESTAMP",
+        GOLDEN_PROVENANCE_TIMESTAMP,
+    );
+}
+
+fn golden_provenance_command(stem: &str) -> &'static str {
+    match stem {
+        "valid_assembly" => {
+            "fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json"
+        }
+        "problem_assembly" => {
+            "fastaguard testdata/problem_assembly.fa --out examples/reports/assembly_fail/fastaguard_report.html --json examples/reports/assembly_fail/fastaguard.json --tsv examples/reports/assembly_fail/fastaguard.tsv --multiqc examples/reports/assembly_fail/fastaguard_mqc.json"
+        }
+        "invalid_empty_record" => {
+            "fastaguard testdata/invalid_empty_record.fa --json tests/golden/invalid_empty_record.json --out /tmp/fastaguard_invalid.html --tsv /tmp/fastaguard_invalid.tsv --multiqc /tmp/fastaguard_invalid_mqc.json"
+        }
+        _ => "fastaguard",
+    }
+}
+
 fn read_json(path: &Path) -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
@@ -786,7 +844,7 @@ fn balanced_sequence(length: usize) -> String {
 }
 
 fn assert_json_matches_golden(actual_path: &Path, golden_path: &str) {
-    let actual = normalize_for_deferred_v0_2_golden_update(read_json(actual_path));
+    let actual = read_json(actual_path);
     let golden_path = PathBuf::from(golden_path);
     let golden = read_json(&golden_path);
 
@@ -797,71 +855,6 @@ fn assert_json_matches_golden(actual_path: &Path, golden_path: &str) {
         actual_path.display(),
         golden_path.display()
     );
-}
-
-fn normalize_for_deferred_v0_2_golden_update(mut report: Value) -> Value {
-    // Task 8 must remove this compatibility bridge when the JSON schema, finding
-    // catalog, golden fixtures, examples, HTML, TSV, and MultiQC outputs are
-    // regenerated together. Until then, this keeps legacy v0.1 golden
-    // comparisons focused while allowing live v0.2 fields and outlier findings.
-    report["schema_version"] = json!("0.1.0");
-
-    if let Some(machine_summary) = report["machine_summary"].as_object_mut() {
-        machine_summary.remove("routing_hints");
-    }
-
-    if let Some(provenance) = report["provenance"].as_object_mut() {
-        provenance.remove("command");
-        provenance.remove("started_at");
-        provenance.remove("completed_at");
-        provenance.remove("duration_ms");
-        provenance.remove("input_size_bytes");
-    }
-
-    if let Some(findings) = report["findings"].as_array_mut() {
-        findings.retain(|finding| {
-            !matches!(
-                finding["id"].as_str(),
-                Some("gc_outliers" | "length_outliers" | "composite_anomalies")
-            )
-        });
-        for finding in findings {
-            if let Some(finding) = finding.as_object_mut() {
-                finding.remove("category");
-                finding.remove("confidence");
-                finding.remove("requires_followup_tool");
-            }
-        }
-    }
-
-    if let Some(top_findings) = report["machine_summary"]["top_findings"].as_array_mut() {
-        top_findings.retain(|finding| {
-            !matches!(
-                finding.as_str(),
-                Some("gc_outliers" | "length_outliers" | "composite_anomalies")
-            )
-        });
-    }
-
-    if report["verdict"]["status"] != json!("PASS") {
-        if let Some(recommended_next_tools) =
-            report["machine_summary"]["recommended_next_tools"].as_array_mut()
-        {
-            recommended_next_tools.retain(|tool| tool["tool"] != json!("BlobToolKit"));
-        }
-    }
-
-    if let Some(points) = report["plots"]["gc_length_plot"].as_array_mut() {
-        for point in points {
-            if let Some(flags) = point["flags"].as_array_mut() {
-                flags.retain(|flag| {
-                    !matches!(flag.as_str(), Some("length_outlier" | "composite_anomaly"))
-                });
-            }
-        }
-    }
-
-    report
 }
 
 fn finding_by_id<'a>(report: &'a Value, id: &str) -> &'a Value {

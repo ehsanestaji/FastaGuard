@@ -48,14 +48,15 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <h3>Verdict</h3>
 <p><span class="label">Machine verdict:</span> FAIL</p>
 <p><span class="label">Safe for downstream:</span> No</p>
-<p><span class="label">Top findings:</span> duplicate_ids, invalid_chars, high_n_rate, tiny_contigs, gap_runs</p>
+<p><span class="label">Top findings:</span> duplicate_ids, invalid_chars, high_n_rate, tiny_contigs, gap_runs, length_outliers, composite_anomalies</p>
 </section>
 <section class="panel">
 <h3>Recommended Next Tools</h3>
 <table>
 <thead><tr><th>Tool</th><th>Reason</th></tr></thead>
 <tbody><tr><td>seqkit</td><td>Downstream tools often assume FASTA identifiers are unique.</td></tr>
-<tr><td>QUAST</td><td>Assembly-level evaluation can show whether ambiguity affects broader assembly quality.</td></tr></tbody>
+<tr><td>QUAST</td><td>Assembly-level evaluation can show whether ambiguity affects broader assembly quality.</td></tr>
+<tr><td>BlobToolKit</td><td>Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.</td></tr></tbody>
 </table>
 </section>
 </div>
@@ -115,7 +116,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <svg viewBox="0 0 720 260" role="img" aria-label="GC vs Length">
 <line class="axis" x1="56" y1="18" x2="56" y2="218"/>
 <line class="axis" x1="56" y1="218" x2="704" y2="218"/>
-<circle class="point" cx="704.00" cy="210.72" r="4"><title>gap_rich: length 110, GC 3.64%, N 91.82%; flags tiny_contig, high_n</title></circle>
+<circle class="point" cx="704.00" cy="210.72" r="4"><title>gap_rich: length 110, GC 3.64%, N 91.82%; flags tiny_contig, high_n, length_outlier, composite_anomaly</title></circle>
 <circle class="point" cx="129.36" cy="218.00" r="4"><title>dup: length 16, GC 0.00%, N 100.00%; flags tiny_contig, high_n</title></circle>
 <circle class="point" cx="80.45" cy="118.00" r="4"><title>dup: length 8, GC 50.00%, N 0.00%; flags tiny_contig</title></circle>
 <circle class="point" cx="74.34" cy="160.86" r="4"><title>bad_chars: length 7, GC 28.57%, N 0.00%; flags tiny_contig</title></circle>
@@ -358,9 +359,81 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </table>
 </div>
 </section>
+<section class="finding">
+<h3>length_outliers</h3>
+<p><span class="label">Severity:</span> minor</p>
+<p><span class="label">Message:</span> 1 records have lengths outside the assembly length distribution.</p>
+<p><span class="label">Why it matters:</span> Length outliers can be expected in assemblies, but extreme records deserve inspection before downstream filtering or annotation.</p>
+<p><span class="label">Suggested next step:</span> Inspect the affected records and confirm whether their size is expected for this assembly.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 1 of 1 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>gap_rich</td>
+<td class="nowrap">110</td>
+<td>record length outside the assembly length distribution</td>
+<td class="nowrap">-</td>
+<td class="nowrap">91.82</td>
+<td class="nowrap">-</td>
+<td class="nowrap">3.64</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>inspect_records</td>
+<td>length outlier records</td>
+<td>Extreme record lengths should be reviewed before automatic filtering or annotation.</td>
+<td>seqkit</td>
+<td>no</td>
+</tr></tbody>
+</table>
+</div>
+</section>
+<section class="finding">
+<h3>composite_anomalies</h3>
+<p><span class="label">Severity:</span> major</p>
+<p><span class="label">Message:</span> 1 records have multiple assembly anomaly signals.</p>
+<p><span class="label">Why it matters:</span> Multiple independent FASTA-level signals make a record more likely to need manual review before expensive downstream QC.</p>
+<p><span class="label">Suggested next step:</span> Prioritize these records for review and compare composition, coverage, and taxonomy context with BlobToolKit when available.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 1 of 1 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>gap_rich</td>
+<td class="nowrap">110</td>
+<td>record has multiple assembly anomaly signals</td>
+<td class="nowrap">-</td>
+<td class="nowrap">91.82</td>
+<td class="nowrap">-</td>
+<td class="nowrap">3.64</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>prioritize_records</td>
+<td>records with multiple anomaly signals</td>
+<td>Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.</td>
+<td>BlobToolKit</td>
+<td>yes</td>
+</tr></tbody>
+</table>
+</div>
+</section>
 <h2>JSON</h2>
 <pre>{
-  &quot;schema_version&quot;: &quot;0.1.0&quot;,
+  &quot;schema_version&quot;: &quot;0.2.0&quot;,
   &quot;tool&quot;: {
     &quot;name&quot;: &quot;FastaGuard&quot;,
     &quot;version&quot;: &quot;0.1.1&quot;
@@ -385,7 +458,9 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       &quot;invalid_chars&quot;,
       &quot;high_n_rate&quot;,
       &quot;tiny_contigs&quot;,
-      &quot;gap_runs&quot;
+      &quot;gap_runs&quot;,
+      &quot;length_outliers&quot;,
+      &quot;composite_anomalies&quot;
     ],
     &quot;recommended_next_tools&quot;: [
       {
@@ -395,8 +470,13 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;tool&quot;: &quot;QUAST&quot;,
         &quot;reason&quot;: &quot;Assembly-level evaluation can show whether ambiguity affects broader assembly quality.&quot;
+      },
+      {
+        &quot;tool&quot;: &quot;BlobToolKit&quot;,
+        &quot;reason&quot;: &quot;Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.&quot;
       }
-    ]
+    ],
+    &quot;routing_hints&quot;: []
   },
   &quot;scope&quot;: {
     &quot;level&quot;: &quot;fasta_preflight&quot;,
@@ -424,7 +504,12 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       &quot;min_contig_length&quot;: 200,
       &quot;max_gap_run&quot;: 100,
       &quot;gc_outlier_zscore&quot;: 3.0
-    }
+    },
+    &quot;command&quot;: &quot;fastaguard testdata/problem_assembly.fa --out examples/reports/assembly_fail/fastaguard_report.html --json examples/reports/assembly_fail/fastaguard.json --tsv examples/reports/assembly_fail/fastaguard.tsv --multiqc examples/reports/assembly_fail/fastaguard_mqc.json&quot;,
+    &quot;started_at&quot;: &quot;2026-05-23T00:00:00Z&quot;,
+    &quot;completed_at&quot;: &quot;2026-05-23T00:00:00Z&quot;,
+    &quot;duration_ms&quot;: 0,
+    &quot;input_size_bytes&quot;: 187
   },
   &quot;summary&quot;: {
     &quot;sequence_count&quot;: 5,
@@ -520,7 +605,9 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
         &quot;gc_zscore&quot;: 1.06,
         &quot;flags&quot;: [
           &quot;tiny_contig&quot;,
-          &quot;high_n&quot;
+          &quot;high_n&quot;,
+          &quot;length_outlier&quot;,
+          &quot;composite_anomaly&quot;
         ]
       },
       {
@@ -569,7 +656,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
   &quot;findings&quot;: [
     {
       &quot;id&quot;: &quot;duplicate_ids&quot;,
+      &quot;category&quot;: &quot;duplication&quot;,
       &quot;severity&quot;: &quot;critical&quot;,
+      &quot;confidence&quot;: &quot;high&quot;,
+      &quot;requires_followup_tool&quot;: false,
       &quot;profile&quot;: &quot;assembly&quot;,
       &quot;affected_count&quot;: 1,
       &quot;affected_fraction&quot;: 0.2,
@@ -599,7 +689,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     },
     {
       &quot;id&quot;: &quot;invalid_chars&quot;,
+      &quot;category&quot;: &quot;validity&quot;,
       &quot;severity&quot;: &quot;critical&quot;,
+      &quot;confidence&quot;: &quot;high&quot;,
+      &quot;requires_followup_tool&quot;: false,
       &quot;profile&quot;: &quot;assembly&quot;,
       &quot;affected_count&quot;: 1,
       &quot;affected_fraction&quot;: 0.2,
@@ -630,7 +723,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     },
     {
       &quot;id&quot;: &quot;high_n_rate&quot;,
+      &quot;category&quot;: &quot;composition&quot;,
       &quot;severity&quot;: &quot;major&quot;,
+      &quot;confidence&quot;: &quot;high&quot;,
+      &quot;requires_followup_tool&quot;: false,
       &quot;profile&quot;: &quot;assembly&quot;,
       &quot;affected_count&quot;: 2,
       &quot;affected_fraction&quot;: 0.4,
@@ -676,7 +772,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     },
     {
       &quot;id&quot;: &quot;tiny_contigs&quot;,
+      &quot;category&quot;: &quot;structure&quot;,
       &quot;severity&quot;: &quot;minor&quot;,
+      &quot;confidence&quot;: &quot;moderate&quot;,
+      &quot;requires_followup_tool&quot;: false,
       &quot;profile&quot;: &quot;assembly&quot;,
       &quot;affected_count&quot;: 5,
       &quot;affected_fraction&quot;: 1.0,
@@ -731,7 +830,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     },
     {
       &quot;id&quot;: &quot;gap_runs&quot;,
+      &quot;category&quot;: &quot;structure&quot;,
       &quot;severity&quot;: &quot;major&quot;,
+      &quot;confidence&quot;: &quot;high&quot;,
+      &quot;requires_followup_tool&quot;: false,
       &quot;profile&quot;: &quot;assembly&quot;,
       &quot;affected_count&quot;: 1,
       &quot;affected_fraction&quot;: 0.2,
@@ -757,6 +859,85 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
           &quot;reason&quot;: &quot;Long gaps may require gap closing, masking review, or scaffold-level inspection.&quot;,
           &quot;recommended_tool&quot;: &quot;QUAST&quot;,
           &quot;requires_external_database&quot;: false
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;length_outliers&quot;,
+      &quot;category&quot;: &quot;structure&quot;,
+      &quot;severity&quot;: &quot;minor&quot;,
+      &quot;confidence&quot;: &quot;moderate&quot;,
+      &quot;requires_followup_tool&quot;: false,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 1,
+      &quot;affected_fraction&quot;: 0.2,
+      &quot;message&quot;: &quot;1 records have lengths outside the assembly length distribution.&quot;,
+      &quot;why_it_matters&quot;: &quot;Length outliers can be expected in assemblies, but extreme records deserve inspection before downstream filtering or annotation.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Inspect the affected records and confirm whether their size is expected for this assembly.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 1,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;gap_rich&quot;,
+            &quot;length&quot;: 110,
+            &quot;reason&quot;: &quot;record length outside the assembly length distribution&quot;,
+            &quot;n_fraction&quot;: 0.92,
+            &quot;n_percent&quot;: 91.82,
+            &quot;gc_percent&quot;: 3.64,
+            &quot;gc_zscore&quot;: 1.06
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;inspect_records&quot;,
+          &quot;target&quot;: &quot;length outlier records&quot;,
+          &quot;reason&quot;: &quot;Extreme record lengths should be reviewed before automatic filtering or annotation.&quot;,
+          &quot;recommended_tool&quot;: &quot;seqkit&quot;,
+          &quot;requires_external_database&quot;: false
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;composite_anomalies&quot;,
+      &quot;category&quot;: &quot;composition&quot;,
+      &quot;severity&quot;: &quot;major&quot;,
+      &quot;confidence&quot;: &quot;moderate&quot;,
+      &quot;requires_followup_tool&quot;: true,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 1,
+      &quot;affected_fraction&quot;: 0.2,
+      &quot;message&quot;: &quot;1 records have multiple assembly anomaly signals.&quot;,
+      &quot;why_it_matters&quot;: &quot;Multiple independent FASTA-level signals make a record more likely to need manual review before expensive downstream QC.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Prioritize these records for review and compare composition, coverage, and taxonomy context with BlobToolKit when available.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 1,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;gap_rich&quot;,
+            &quot;length&quot;: 110,
+            &quot;reason&quot;: &quot;record has multiple assembly anomaly signals&quot;,
+            &quot;n_fraction&quot;: 0.92,
+            &quot;n_percent&quot;: 91.82,
+            &quot;gc_percent&quot;: 3.64,
+            &quot;gc_zscore&quot;: 1.06,
+            &quot;signals&quot;: [
+              &quot;high_n&quot;,
+              &quot;length_outlier&quot;,
+              &quot;gap_run&quot;
+            ]
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;prioritize_records&quot;,
+          &quot;target&quot;: &quot;records with multiple anomaly signals&quot;,
+          &quot;reason&quot;: &quot;Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.&quot;,
+          &quot;recommended_tool&quot;: &quot;BlobToolKit&quot;,
+          &quot;requires_external_database&quot;: true
         }
       ]
     }
