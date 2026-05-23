@@ -81,6 +81,21 @@ Use it to answer:
 
 Do not use it to claim performance on contaminated assemblies, highly ambiguous assemblies, or compressed FASTA until separate fixtures cover those cases.
 
+## v0.2 Evidence Targets
+
+FastaGuard should prove four preflight categories with small reproducible
+fixtures:
+
+| Evidence case | What FastaGuard catches | Why it should run before heavier tools |
+| --- | --- | --- |
+| duplicate IDs | repeated FASTA identifiers | prevents workflow joins, indexes, and annotations from becoming ambiguous |
+| invalid characters | non-IUPAC sequence symbols | prevents downstream parser and aligner failures |
+| high-N | ambiguous scaffolds and gap-heavy records | prevents low-confidence mapping and annotation from being treated as clean input |
+| GC outliers | composition-anomalous records | routes suspicious records to BlobToolKit, sourmash, Kraken, or other follow-up tools |
+
+FastaGuard should not replace QUAST, BUSCO, or BlobToolKit. It should make their
+inputs safer and make obvious FASTA-level problems visible before those tools run.
+
 ## Evidence To Collect Next
 
 Use release binaries and public assemblies to build a small evidence table for the README and release notes:

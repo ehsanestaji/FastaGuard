@@ -283,6 +283,17 @@ class AdoptionAssetsTest(unittest.TestCase):
             nfcore_readme,
         )
 
+    def test_benchmarking_docs_include_v0_2_evidence_topics(self):
+        text = (ROOT / "docs" / "benchmarking.md").read_text()
+
+        self.assertIn("duplicate IDs", text)
+        self.assertIn("invalid characters", text)
+        self.assertIn("high-N", text)
+        self.assertIn("GC outliers", text)
+        self.assertIn("QUAST", text)
+        self.assertIn("BUSCO", text)
+        self.assertIn("BlobToolKit", text)
+
     def test_snakemake_wrapper_declares_bioconda_environment(self):
         environment = (
             ROOT / "examples" / "snakemake" / "wrapper" / "environment.yaml"
