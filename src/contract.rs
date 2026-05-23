@@ -29,6 +29,8 @@ pub fn explain_finding_json(id: &str) -> Result<String> {
 
 #[cfg(test)]
 mod tests {
+    use crate::models::finding_actions;
+
     use super::*;
 
     #[test]
@@ -56,6 +58,23 @@ mod tests {
             "{finding}"
         );
         assert!(finding.contains(r#""recommended_next_tools""#), "{finding}");
+    }
+
+    #[test]
+    fn bundled_catalog_actions_match_runtime_actions() {
+        let catalog: Value = serde_json::from_str(finding_catalog_json()).unwrap();
+        let findings = catalog["findings"].as_array().unwrap();
+
+        for finding in findings {
+            let id = finding["id"].as_str().unwrap();
+            let catalog_actions = &finding["suggested_actions"];
+            let runtime_actions = serde_json::to_value(finding_actions(id)).unwrap();
+
+            assert_eq!(
+                catalog_actions, &runtime_actions,
+                "catalog suggested_actions drifted from runtime actions for {id}"
+            );
+        }
     }
 
     #[test]

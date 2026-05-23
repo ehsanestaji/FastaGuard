@@ -87,9 +87,9 @@
           "requires_external_database": false
         },
         {
-          "action_type": "consider_polishing_or_gap_closing",
-          "target": "assembly workflow",
-          "reason": "Gap closing or polishing may reduce ambiguity before annotation or mapping.",
+          "action_type": "run_assembly_qc",
+          "target": "assembly after FASTA preflight",
+          "reason": "Assembly-level evaluation can show whether ambiguity affects broader assembly quality.",
           "recommended_tool": "QUAST",
           "requires_external_database": false
         }
