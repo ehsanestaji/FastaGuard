@@ -16,8 +16,10 @@ cd path/to/fastaguard/results
 multiqc .
 ```
 
-The plugin looks for `*fastaguard_mqc.json` files and reads the same custom
-content contract emitted by the CLI.
+After installation, the native FastaGuard module is discovered during a normal
+MultiQC run. The plugin looks for `fastaguard_mqc.json` and
+`*.fastaguard_mqc.json` files and reads the same custom content contract emitted
+by the CLI.
 
 ## Verification
 
@@ -27,6 +29,12 @@ Run the plugin against example reports in strict mode:
 cd integrations/multiqc
 python -m pip install -e .
 cd ../..
+multiqc --strict examples/reports
+```
+
+To isolate just the native module while troubleshooting:
+
+```bash
 multiqc --strict --module fastaguard examples/reports
 ```
 

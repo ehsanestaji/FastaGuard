@@ -1,5 +1,6 @@
 import json
 import sys
+import types
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -169,17 +170,64 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn('fastaguard = "fastaguard_multiqc:MultiqcModule"', pyproject)
         self.assertIn("multiqc", pyproject)
 
-    def test_multiqc_plugin_registers_fastaguard_search_pattern(self):
+    def test_multiqc_plugin_registers_filename_first_fastaguard_search_pattern(self):
         patterns = getattr(multiqc_parser, "FASTAGUARD_SEARCH_PATTERN", {})
         fastaguard_patterns = patterns.get("fastaguard", [])
-        filenames = {pattern.get("fn") for pattern in fastaguard_patterns}
+        filenames = [pattern.get("fn") for pattern in fastaguard_patterns]
         pyproject = (ROOT / "integrations" / "multiqc" / "pyproject.toml").read_text()
 
-        self.assertIn("fastaguard_mqc.json", filenames)
-        self.assertIn("*.fastaguard_mqc.json", filenames)
-        self.assertIn('"id": "fastaguard"', {pattern.get("contents") for pattern in fastaguard_patterns})
+        self.assertEqual(filenames, ["fastaguard_mqc.json", "*.fastaguard_mqc.json"])
+        for pattern in fastaguard_patterns:
+            self.assertEqual(set(pattern), {"fn"})
+            self.assertFalse(pattern.get("shared", False))
+            self.assertNotIn("contents", pattern)
+            self.assertNotIn("contents_re", pattern)
+            self.assertNotIn("num_lines", pattern)
         self.assertIn('[project.entry-points."multiqc.hooks.v1"]', pyproject)
         self.assertIn('before_config = "fastaguard_multiqc.parser:register_search_patterns"', pyproject)
+
+    def test_multiqc_plugin_prepends_fastaguard_search_pattern(self):
+        original_modules = {
+            name: sys.modules.get(name)
+            for name in (
+                "multiqc",
+                "multiqc.utils",
+                "multiqc.utils.util_functions",
+            )
+        }
+        fake_config = types.SimpleNamespace(
+            sp={"custom_content": {"fn_re": r".+_mqc\.(yaml|yml|json)"}}
+        )
+        fake_multiqc = types.ModuleType("multiqc")
+        fake_multiqc.config = fake_config
+        fake_utils = types.ModuleType("multiqc.utils")
+        fake_util_functions = types.ModuleType("multiqc.utils.util_functions")
+
+        def update_dict(target, source, none_only=False, add_in_the_beginning=False):
+            for key, src_val in source.items():
+                if isinstance(src_val, list):
+                    target[key] = src_val.copy()
+                elif add_in_the_beginning:
+                    target = {key: src_val, **target}
+                else:
+                    target[key] = src_val
+            return target
+
+        fake_util_functions.update_dict = update_dict
+        sys.modules["multiqc"] = fake_multiqc
+        sys.modules["multiqc.utils"] = fake_utils
+        sys.modules["multiqc.utils.util_functions"] = fake_util_functions
+        try:
+            multiqc_parser.register_search_patterns()
+        finally:
+            for name, module in original_modules.items():
+                if module is None:
+                    sys.modules.pop(name, None)
+                else:
+                    sys.modules[name] = module
+
+        self.assertEqual(next(iter(fake_config.sp)), "fastaguard")
+        self.assertIn("custom_content", fake_config.sp)
 
     def test_bioconda_recipe_declares_binary_and_contract_tests(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()

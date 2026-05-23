@@ -33,18 +33,8 @@ SUMMARY_FIELDS = REQUIRED_SUMMARY_FIELDS + OPTIONAL_SUMMARY_FIELDS
 
 FASTAGUARD_SEARCH_PATTERN = {
     "fastaguard": [
-        {
-            "fn": "fastaguard_mqc.json",
-            "contents": '"id": "fastaguard"',
-            "num_lines": 20,
-            "shared": True,
-        },
-        {
-            "fn": "*.fastaguard_mqc.json",
-            "contents": '"id": "fastaguard"',
-            "num_lines": 20,
-            "shared": True,
-        },
+        {"fn": "fastaguard_mqc.json"},
+        {"fn": "*.fastaguard_mqc.json"},
     ]
 }
 
@@ -52,13 +42,11 @@ FASTAGUARD_SEARCH_PATTERN = {
 def register_search_patterns() -> None:
     """Register FastaGuard file search patterns with MultiQC."""
     from multiqc import config
-    from multiqc.utils.util_functions import update_dict
 
-    config.sp = update_dict(
-        config.sp,
-        FASTAGUARD_SEARCH_PATTERN,
-        add_in_the_beginning=True,
-    )
+    config.sp = {
+        "fastaguard": FASTAGUARD_SEARCH_PATTERN["fastaguard"],
+        **{key: value for key, value in config.sp.items() if key != "fastaguard"},
+    }
 
 
 def load_custom_content_summary(path: str | Path) -> dict[str, dict[str, Any]]:
