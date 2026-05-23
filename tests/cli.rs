@@ -407,6 +407,32 @@ fn problem_report_includes_structured_finding_actions() {
 }
 
 #[test]
+fn problem_report_includes_v0_2_finding_taxonomy() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "problem_taxonomy");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["testdata/problem_assembly.fa", "--out"])
+        .arg(&outputs.html)
+        .arg("--json")
+        .arg(&outputs.json)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let report = read_json(&outputs.json);
+    assert_finding_taxonomy(&report, "duplicate_ids", "duplication", "high", false);
+    assert_finding_taxonomy(&report, "invalid_chars", "validity", "high", false);
+    assert_finding_taxonomy(&report, "high_n_rate", "composition", "high", false);
+    assert_finding_taxonomy(&report, "tiny_contigs", "structure", "moderate", false);
+    assert_finding_taxonomy(&report, "gap_runs", "structure", "high", false);
+}
+
+#[test]
 fn problem_report_includes_per_record_evidence() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "problem_evidence");
@@ -665,6 +691,22 @@ fn finding_by_id<'a>(report: &'a Value, id: &str) -> &'a Value {
         .iter()
         .find(|finding| finding["id"] == json!(id))
         .unwrap_or_else(|| panic!("missing finding {id}: {report}"))
+}
+
+fn assert_finding_taxonomy(
+    report: &Value,
+    id: &str,
+    category: &str,
+    confidence: &str,
+    requires_followup_tool: bool,
+) {
+    let finding = finding_by_id(report, id);
+    assert_eq!(finding["category"], json!(category));
+    assert_eq!(finding["confidence"], json!(confidence));
+    assert_eq!(
+        finding["requires_followup_tool"],
+        json!(requires_followup_tool)
+    );
 }
 
 fn array_contains_string(value: &Value, expected: &str) -> bool {

@@ -230,12 +230,13 @@ fn finding(
     evidence: FindingEvidence,
     text: FindingText<'_>,
 ) -> Finding {
+    let metadata = finding_metadata(id);
     Finding {
         id: id.to_string(),
-        category: finding_category(id),
+        category: metadata.category,
         severity,
-        confidence: finding_confidence(id),
-        requires_followup_tool: false,
+        confidence: metadata.confidence,
+        requires_followup_tool: metadata.requires_followup_tool,
         profile: profile.name.clone(),
         affected_count,
         affected_fraction,
@@ -247,20 +248,57 @@ fn finding(
     }
 }
 
-fn finding_category(id: &str) -> FindingCategory {
-    match id {
-        "duplicate_ids" | "duplicate_sequences" => FindingCategory::Duplication,
-        "invalid_chars" | "invalid_fasta_structure" => FindingCategory::Validity,
-        "high_n_rate" => FindingCategory::Composition,
-        "tiny_contigs" | "gap_runs" => FindingCategory::Structure,
-        _ => FindingCategory::Validity,
+#[derive(Debug, Clone, Copy)]
+struct FindingMetadata {
+    category: FindingCategory,
+    confidence: FindingConfidence,
+    requires_followup_tool: bool,
+}
+
+fn finding_metadata(id: &str) -> FindingMetadata {
+    use FindingCategory::{Composition, Duplication, Structure, Validity};
+    use FindingConfidence::{High, Moderate};
+
+    let (category, confidence) = match id {
+        "duplicate_ids" | "duplicate_sequences" => (Duplication, High),
+        "invalid_chars" | "invalid_fasta_structure" => (Validity, High),
+        "high_n_rate" => (Composition, High),
+        "tiny_contigs" => (Structure, Moderate),
+        "gap_runs" => (Structure, High),
+        _ => unreachable!("unknown finding id: {id}"),
+    };
+
+    FindingMetadata {
+        category,
+        confidence,
+        requires_followup_tool: false,
     }
 }
 
-fn finding_confidence(id: &str) -> FindingConfidence {
-    match id {
-        "tiny_contigs" => FindingConfidence::Moderate,
-        _ => FindingConfidence::High,
+#[cfg(test)]
+mod taxonomy_tests {
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "unknown finding id: future_finding")]
+    fn finding_metadata_panics_on_unknown_ids() {
+        finding_metadata("future_finding");
+    }
+
+    #[test]
+    fn finding_metadata_classifies_current_ids() {
+        assert_eq!(
+            finding_metadata("duplicate_ids").category,
+            FindingCategory::Duplication
+        );
+        assert_eq!(
+            finding_metadata("high_n_rate").category,
+            FindingCategory::Composition
+        );
+        assert_eq!(
+            finding_metadata("tiny_contigs").confidence,
+            FindingConfidence::Moderate
+        );
     }
 }
 
