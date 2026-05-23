@@ -88,10 +88,10 @@ fixtures:
 
 | Evidence case | What FastaGuard catches | Why it should run before heavier tools |
 | --- | --- | --- |
-| duplicate IDs | repeated FASTA identifiers | prevents workflow joins, indexes, and annotations from becoming ambiguous |
-| invalid characters | non-IUPAC sequence symbols | prevents downstream parser and aligner failures |
-| high-N | ambiguous scaffolds and gap-heavy records | prevents low-confidence mapping and annotation from being treated as clean input |
-| GC outliers | composition-anomalous records | routes suspicious records to BlobToolKit, sourmash, Kraken, or other follow-up tools |
+| duplicate IDs | repeated FASTA identifiers | helps prevent workflow joins, indexes, and annotations from becoming ambiguous |
+| invalid characters | non-IUPAC sequence symbols | flags inputs that may trigger downstream parser and aligner failures |
+| high-N | ambiguous scaffolds and gap-heavy records | flags low-confidence mapping and annotation inputs before they are treated as clean |
+| GC outliers | composition-anomalous records | supports routing suspicious records to BlobToolKit, sourmash, Kraken, or other follow-up tools |
 
 FastaGuard should not replace QUAST, BUSCO, or BlobToolKit. It should make their
 inputs safer and make obvious FASTA-level problems visible before those tools run.

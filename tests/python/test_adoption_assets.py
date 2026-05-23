@@ -286,6 +286,7 @@ class AdoptionAssetsTest(unittest.TestCase):
     def test_benchmarking_docs_include_v0_2_evidence_topics(self):
         text = (ROOT / "docs" / "benchmarking.md").read_text()
 
+        self.assertIn("## v0.2 Evidence Targets", text)
         self.assertIn("duplicate IDs", text)
         self.assertIn("invalid characters", text)
         self.assertIn("high-N", text)
