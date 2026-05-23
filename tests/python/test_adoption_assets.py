@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "integrations" / "multiqc" / "src"))
 
+import fastaguard_multiqc.parser as multiqc_parser
 from fastaguard_multiqc.parser import load_custom_content_summary
 
 
@@ -58,27 +59,92 @@ class AdoptionAssetsTest(unittest.TestCase):
             )
 
             summary = load_custom_content_summary(fixture)
-            row = summary["sample"]
+            self.assertEqual(
+                summary["sample"],
+                {
+                    "verdict": "WARN",
+                    "sequence_count": 8,
+                    "total_length": 2000,
+                    "n50": 500,
+                    "n90": 100,
+                    "gc_percent": 50.0,
+                    "n_percent": 2.5,
+                    "finding_count": 4,
+                    "duplicate_id_count": 1,
+                    "invalid_sequence_count": 0,
+                    "high_n_sequence_count": 2,
+                    "tiny_contig_count": 1,
+                    "max_gap_run": 120,
+                    "gc_outlier_count": 1,
+                    "length_outlier_count": 1,
+                    "composite_anomaly_count": 1,
+                },
+            )
 
-            for field in (
-                "verdict",
-                "sequence_count",
-                "total_length",
-                "n50",
-                "n90",
-                "gc_percent",
-                "n_percent",
-                "duplicate_id_count",
-                "invalid_sequence_count",
-                "high_n_sequence_count",
-                "tiny_contig_count",
-                "max_gap_run",
-                "gc_outlier_count",
-                "length_outlier_count",
-                "composite_anomaly_count",
-                "finding_count",
-            ):
-                self.assertIn(field, row)
+    def test_multiqc_parser_rejects_missing_required_summary_fields(self):
+        with TemporaryDirectory() as temp_dir:
+            fixture = Path(temp_dir) / "fastaguard_mqc.json"
+            fixture.write_text(
+                json.dumps(
+                    {
+                        "id": "fastaguard",
+                        "plot_type": "table",
+                        "data": {
+                            "sample": {
+                                "verdict": "WARN",
+                                "sequence_count": 8,
+                                "total_length": 2000,
+                                "n90": 100,
+                                "gc_percent": 50.0,
+                                "n_percent": 2.5,
+                                "finding_count": 4,
+                            }
+                        },
+                    }
+                )
+            )
+
+            with self.assertRaisesRegex(ValueError, "missing required"):
+                load_custom_content_summary(fixture)
+
+    def test_multiqc_parser_omits_absent_optional_summary_fields(self):
+        with TemporaryDirectory() as temp_dir:
+            fixture = Path(temp_dir) / "fastaguard_mqc.json"
+            fixture.write_text(
+                json.dumps(
+                    {
+                        "id": "fastaguard",
+                        "plot_type": "table",
+                        "data": {
+                            "sample": {
+                                "verdict": "PASS",
+                                "sequence_count": 3,
+                                "total_length": 48,
+                                "n50": 16,
+                                "n90": 16,
+                                "gc_percent": 50.0,
+                                "n_percent": 0.0,
+                                "finding_count": 0,
+                            }
+                        },
+                    }
+                )
+            )
+
+            summary = load_custom_content_summary(fixture)
+            self.assertEqual(
+                summary["sample"],
+                {
+                    "verdict": "PASS",
+                    "sequence_count": 3,
+                    "total_length": 48,
+                    "n50": 16,
+                    "n90": 16,
+                    "gc_percent": 50.0,
+                    "n_percent": 0.0,
+                    "finding_count": 0,
+                },
+            )
 
     def test_multiqc_parser_rejects_non_fastaguard_custom_content(self):
         with TemporaryDirectory() as temp_dir:
@@ -102,6 +168,18 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn('[project.entry-points."multiqc.modules.v1"]', pyproject)
         self.assertIn('fastaguard = "fastaguard_multiqc:MultiqcModule"', pyproject)
         self.assertIn("multiqc", pyproject)
+
+    def test_multiqc_plugin_registers_fastaguard_search_pattern(self):
+        patterns = getattr(multiqc_parser, "FASTAGUARD_SEARCH_PATTERN", {})
+        fastaguard_patterns = patterns.get("fastaguard", [])
+        filenames = {pattern.get("fn") for pattern in fastaguard_patterns}
+        pyproject = (ROOT / "integrations" / "multiqc" / "pyproject.toml").read_text()
+
+        self.assertIn("fastaguard_mqc.json", filenames)
+        self.assertIn("*.fastaguard_mqc.json", filenames)
+        self.assertIn('"id": "fastaguard"', {pattern.get("contents") for pattern in fastaguard_patterns})
+        self.assertIn('[project.entry-points."multiqc.hooks.v1"]', pyproject)
+        self.assertIn('before_config = "fastaguard_multiqc.parser:register_search_patterns"', pyproject)
 
     def test_bioconda_recipe_declares_binary_and_contract_tests(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()

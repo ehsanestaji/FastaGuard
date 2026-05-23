@@ -16,5 +16,8 @@ dependencies = [
 [project.entry-points."multiqc.modules.v1"]
 fastaguard = "fastaguard_multiqc:MultiqcModule"
 
+[project.entry-points."multiqc.hooks.v1"]
+before_config = "fastaguard_multiqc.parser:register_search_patterns"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/fastaguard_multiqc"]

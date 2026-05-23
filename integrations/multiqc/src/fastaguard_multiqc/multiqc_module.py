@@ -7,7 +7,7 @@ from pathlib import Path
 from multiqc.base_module import BaseMultiqcModule, ModuleNoSamplesFound
 from multiqc.plots import table
 
-from .parser import find_custom_content_files, load_custom_content_summary
+from .parser import load_custom_content_summary
 
 
 class MultiqcModule(BaseMultiqcModule):
@@ -21,7 +21,7 @@ class MultiqcModule(BaseMultiqcModule):
             info="FASTA preflight QC before downstream assembly analysis.",
         )
 
-        data_by_sample = self._load_reports(Path.cwd())
+        data_by_sample = self._load_reports()
         if not data_by_sample:
             raise ModuleNoSamplesFound
 
@@ -35,6 +35,7 @@ class MultiqcModule(BaseMultiqcModule):
             description="FASTA preflight verdicts and core assembly metrics.",
             plot=table.plot(
                 data_by_sample,
+                headers=self._summary_headers(),
                 pconfig={
                     "id": "fastaguard_summary",
                     "title": "FastaGuard FASTA preflight summary",
@@ -44,14 +45,14 @@ class MultiqcModule(BaseMultiqcModule):
         )
         self.write_data_file(data_by_sample, "multiqc_fastaguard")
 
-    @staticmethod
-    def _load_reports(root: Path) -> dict[str, dict]:
+    def _load_reports(self) -> dict[str, dict]:
         data_by_sample: dict[str, dict] = {}
-        for path in find_custom_content_files(root):
-            try:
-                data_by_sample.update(load_custom_content_summary(path))
-            except ValueError:
-                continue
+        for file_match in self.find_log_files("fastaguard", filecontents=False):
+            path = Path(file_match["root"]) / file_match["fn"]
+            file_data = load_custom_content_summary(path)
+            data_by_sample.update(file_data)
+            for sample_name in file_data:
+                self.add_data_source(file_match, sample_name)
         return data_by_sample
 
     @staticmethod
@@ -124,5 +125,112 @@ class MultiqcModule(BaseMultiqcModule):
                 "max": 100,
                 "suffix": "%",
                 "scale": "OrRd",
+            },
+        }
+
+    @staticmethod
+    def _summary_headers() -> dict:
+        return {
+            "verdict": {
+                "title": "Verdict",
+                "description": "FastaGuard FASTA preflight verdict",
+            },
+            "sequence_count": {
+                "title": "Sequences",
+                "description": "Number of FASTA records",
+                "min": 0,
+                "scale": "Blues",
+            },
+            "total_length": {
+                "title": "Total length",
+                "description": "Total sequence length",
+                "min": 0,
+                "suffix": " bp",
+                "scale": "Blues",
+            },
+            "n50": {
+                "title": "N50",
+                "description": "Assembly N50",
+                "min": 0,
+                "suffix": " bp",
+                "scale": "Blues",
+            },
+            "n90": {
+                "title": "N90",
+                "description": "Assembly N90",
+                "min": 0,
+                "suffix": " bp",
+                "scale": "Blues",
+            },
+            "gc_percent": {
+                "title": "GC",
+                "description": "Global GC percentage",
+                "min": 0,
+                "max": 100,
+                "suffix": "%",
+                "scale": "RdYlBu",
+            },
+            "n_percent": {
+                "title": "N",
+                "description": "Global N percentage",
+                "min": 0,
+                "max": 100,
+                "suffix": "%",
+                "scale": "OrRd",
+            },
+            "finding_count": {
+                "title": "Findings",
+                "description": "Number of FastaGuard findings",
+                "min": 0,
+                "scale": "OrRd",
+            },
+            "duplicate_id_count": {
+                "title": "Duplicate IDs",
+                "description": "Number of duplicate FASTA record IDs",
+                "min": 0,
+                "scale": "OrRd",
+            },
+            "invalid_sequence_count": {
+                "title": "Invalid sequences",
+                "description": "Number of records with invalid sequence characters",
+                "min": 0,
+                "scale": "Reds",
+            },
+            "high_n_sequence_count": {
+                "title": "High-N sequences",
+                "description": "Number of records exceeding the high-N threshold",
+                "min": 0,
+                "scale": "OrRd",
+            },
+            "tiny_contig_count": {
+                "title": "Tiny contigs",
+                "description": "Number of records below the tiny-contig threshold",
+                "min": 0,
+                "scale": "YlOrBr",
+            },
+            "max_gap_run": {
+                "title": "Max gap run",
+                "description": "Longest consecutive N run",
+                "min": 0,
+                "suffix": " bp",
+                "scale": "OrRd",
+            },
+            "gc_outlier_count": {
+                "title": "GC outliers",
+                "description": "Number of records flagged as GC composition outliers",
+                "min": 0,
+                "scale": "OrRd",
+            },
+            "length_outlier_count": {
+                "title": "Length outliers",
+                "description": "Number of records flagged as length distribution outliers",
+                "min": 0,
+                "scale": "YlOrBr",
+            },
+            "composite_anomaly_count": {
+                "title": "Composite anomalies",
+                "description": "Number of records flagged by composite anomaly checks",
+                "min": 0,
+                "scale": "Reds",
             },
         }

@@ -27,7 +27,7 @@ Run the plugin against example reports in strict mode:
 cd integrations/multiqc
 python -m pip install -e .
 cd ../..
-multiqc --strict examples/reports
+multiqc --strict --module fastaguard examples/reports
 ```
 
 ## Current Scope

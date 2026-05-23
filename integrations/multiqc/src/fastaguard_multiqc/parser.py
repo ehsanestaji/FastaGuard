@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 
-SUMMARY_FIELDS = (
+REQUIRED_SUMMARY_FIELDS = (
     "verdict",
     "sequence_count",
     "total_length",
@@ -15,6 +15,10 @@ SUMMARY_FIELDS = (
     "n90",
     "gc_percent",
     "n_percent",
+    "finding_count",
+)
+
+OPTIONAL_SUMMARY_FIELDS = (
     "duplicate_id_count",
     "invalid_sequence_count",
     "high_n_sequence_count",
@@ -23,8 +27,38 @@ SUMMARY_FIELDS = (
     "gc_outlier_count",
     "length_outlier_count",
     "composite_anomaly_count",
-    "finding_count",
 )
+
+SUMMARY_FIELDS = REQUIRED_SUMMARY_FIELDS + OPTIONAL_SUMMARY_FIELDS
+
+FASTAGUARD_SEARCH_PATTERN = {
+    "fastaguard": [
+        {
+            "fn": "fastaguard_mqc.json",
+            "contents": '"id": "fastaguard"',
+            "num_lines": 20,
+            "shared": True,
+        },
+        {
+            "fn": "*.fastaguard_mqc.json",
+            "contents": '"id": "fastaguard"',
+            "num_lines": 20,
+            "shared": True,
+        },
+    ]
+}
+
+
+def register_search_patterns() -> None:
+    """Register FastaGuard file search patterns with MultiQC."""
+    from multiqc import config
+    from multiqc.utils.util_functions import update_dict
+
+    config.sp = update_dict(
+        config.sp,
+        FASTAGUARD_SEARCH_PATTERN,
+        add_in_the_beginning=True,
+    )
 
 
 def load_custom_content_summary(path: str | Path) -> dict[str, dict[str, Any]]:
@@ -45,7 +79,25 @@ def load_custom_content_summary(path: str | Path) -> dict[str, dict[str, Any]]:
     for sample_name, row in data.items():
         if not isinstance(row, dict):
             raise ValueError(f"{report_path} sample {sample_name!r} is not a table row")
-        parsed[str(sample_name)] = {field: row.get(field) for field in SUMMARY_FIELDS}
+        missing_fields = [
+            field for field in REQUIRED_SUMMARY_FIELDS if row.get(field) is None
+        ]
+        if missing_fields:
+            missing = ", ".join(missing_fields)
+            raise ValueError(
+                f"{report_path} sample {sample_name!r} missing required "
+                f"FastaGuard summary fields: {missing}"
+            )
+
+        parsed_row = {field: row[field] for field in REQUIRED_SUMMARY_FIELDS}
+        parsed_row.update(
+            {
+                field: row[field]
+                for field in OPTIONAL_SUMMARY_FIELDS
+                if row.get(field) is not None
+            }
+        )
+        parsed[str(sample_name)] = parsed_row
 
     return parsed
 
