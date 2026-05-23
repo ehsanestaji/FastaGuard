@@ -58,6 +58,20 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("cargo install", build)
         self.assertIn("--no-track", build)
 
+    def test_workflow_docs_reference_bioconda_and_container_status(self):
+        nfcore_readme = (ROOT / "examples" / "nf-core" / "README.md").read_text()
+        snakemake_readme = (
+            ROOT / "examples" / "snakemake" / "wrapper" / "README.md"
+        ).read_text()
+
+        install = "mamba install -c conda-forge -c bioconda fastaguard"
+        self.assertIn(install, nfcore_readme)
+        self.assertIn(install, snakemake_readme)
+        self.assertTrue(
+            "BioContainers image is confirmed" in nfcore_readme
+            or "Once a BioContainers image is confirmed" in nfcore_readme
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -145,6 +145,8 @@ separately by checking the generated registry image/tag once it appears. That
 path is preferable to maintaining a separate BioContainers Dockerfile unless
 automated container publication proves unavailable.
 
+BioContainers image availability is still pending confirmation.
+
 ## MultiQC
 
 FastaGuard emits MultiQC custom content as `fastaguard_mqc.json`.
