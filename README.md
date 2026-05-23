@@ -9,18 +9,40 @@ Before QUAST. Before BUSCO. Before BlobToolKit. Before annotation.
 Run FastaGuard first.
 ```
 
-## Quickstart
+## Install
 
-Build locally:
+Recommended bioinformatics install:
+
+```bash
+mamba install -c conda-forge -c bioconda fastaguard
+```
+
+Verify the installed CLI:
+
+```bash
+fastaguard --version
+fastaguard --schema
+```
+
+GitHub release binaries are also available for Linux and macOS:
+
+```bash
+tar -xzf fastaguard-v0.1.1-x86_64-unknown-linux-gnu.tar.gz
+./fastaguard-v0.1.1-x86_64-unknown-linux-gnu/fastaguard --help
+```
+
+Local development build:
 
 ```bash
 cargo build --release --locked
 ```
 
+## Quickstart
+
 Run the assembly preflight check:
 
 ```bash
-./target/release/fastaguard sample.fa \
+fastaguard sample.fa \
   --profile assembly \
   --out fastaguard_report.html \
   --json fastaguard.json \
@@ -31,15 +53,15 @@ Run the assembly preflight check:
 Pipeline gate example:
 
 ```bash
-./target/release/fastaguard sample.fa --fail-on duplicate_ids,invalid_chars,high_n_rate
+fastaguard sample.fa --fail-on duplicate_ids,invalid_chars,high_n_rate
 ```
 
 Inspect the machine-readable contract:
 
 ```bash
-./target/release/fastaguard --schema
-./target/release/fastaguard --finding-catalog
-./target/release/fastaguard --explain-finding high_n_rate
+fastaguard --schema
+fastaguard --finding-catalog
+fastaguard --explain-finding high_n_rate
 ```
 
 Build and run the Docker image:
@@ -147,4 +169,6 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 ## Status
 
-v0.1 assembly MVP implemented as a Rust CLI.
+v0.1 assembly MVP implemented as a Rust CLI. FastaGuard v0.1.1 is published
+on Bioconda for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`.
+BioContainers image availability is still pending confirmation.

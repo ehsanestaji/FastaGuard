@@ -16,7 +16,13 @@ Emitted outputs:
 - `mqc`
 - `versions`
 
-The module assumes `fastaguard` is available on `PATH` until a Bioconda package and BioContainers image exist.
+The module assumes `fastaguard` is available on `PATH`. The recommended install is now:
+
+```bash
+mamba install -c conda-forge -c bioconda fastaguard
+```
+
+Once a BioContainers image is confirmed, the module can add a pinned container directive.
 
 Example include:
 

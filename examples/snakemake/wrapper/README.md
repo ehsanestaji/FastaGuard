@@ -1,6 +1,12 @@
 # Snakemake Wrapper Starter
 
-This is a local wrapper-style starter for FastaGuard. It assumes `fastaguard` is available on `PATH` until Bioconda packaging exists.
+This is a local wrapper-style starter for FastaGuard. It assumes `fastaguard` is available on `PATH`.
+
+Recommended install:
+
+```bash
+mamba install -c conda-forge -c bioconda fastaguard
+```
 
 Run from this directory with a `sample.fa` input:
 

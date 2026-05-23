@@ -8,27 +8,28 @@ adding many new biological heuristics.
 Priority:
 
 ```text
-Bioconda -> BioContainers -> MultiQC plugin -> public benchmarks -> upstream workflow examples
+Bioconda published -> BioContainers confirmation -> MultiQC plugin -> public benchmarks -> upstream workflow examples
 ```
 
 ## Phase 1: Package
 
 Goal: make installation natural for bioinformatics users.
 
+Status: Bioconda is live for FastaGuard v0.1.1.
+
 - Keep GitHub release binaries working.
 - Keep Docker smoke tests passing.
-- Replace the Bioconda recipe placeholder SHA256 once a public source archive exists.
-- Submit `packaging/bioconda/` as `recipes/fastaguard/` to Bioconda.
-- Let BioContainers build from the merged Bioconda recipe.
+- Keep `packaging/bioconda/` aligned with the upstream Bioconda recipe.
+- Confirm BioContainers image/tag publication after the Bioconda merge.
 
 Done when:
 
 ```bash
-conda install -c bioconda fastaguard
+mamba install -c conda-forge -c bioconda fastaguard
 fastaguard --schema
 ```
 
-works in a clean environment.
+works in a clean environment. This has been verified locally on macOS for v0.1.1.
 
 ## Phase 2: Aggregate
 

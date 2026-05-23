@@ -45,23 +45,25 @@ machine-readable FASTA preflight contract.
 
 ## Product Evidence We Have
 
-Current v0.1.0 evidence:
+Current v0.1 evidence:
 
 - Rust CLI builds and runs as a single binary.
 - Docker build and smoke test pass.
 - GitHub release workflow builds Linux and macOS binaries.
+- FastaGuard v0.1.1 is published on Bioconda for Linux and macOS platforms.
+- Clean Bioconda install has been smoke-tested with `fastaguard --schema`.
 - JSON Schema validates committed golden reports.
 - Reports include bounded evidence records and suggested actions.
 - MultiQC custom-content JSON is emitted as `fastaguard_mqc.json`.
 - A native MultiQC plugin starter exists under `integrations/multiqc/`.
-- Bioconda recipe scaffolding exists under `packaging/bioconda/`.
+- Bioconda recipe mirror exists under `packaging/bioconda/`.
 - nf-core, Nextflow, and Snakemake starters exist under `examples/`.
 
 Evidence still needed:
 
 - benchmarks on public assemblies
 - user feedback from real pipeline authors
-- Bioconda/BioContainers availability
+- BioContainers image/tag confirmation
 - official MultiQC module or packaged plugin
 - comparison examples showing what FastaGuard catches before QUAST/BUSCO/BlobToolKit
 

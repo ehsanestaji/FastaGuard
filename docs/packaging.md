@@ -5,10 +5,41 @@
 Treat packaging as part of the product, not as a later chore. For bioinformatics adoption, the order should be:
 
 ```text
-GitHub release binaries -> Docker image -> Bioconda -> Homebrew later
+Bioconda -> GitHub release binaries -> Docker image -> BioContainers -> Homebrew later
 ```
 
-The repository currently supports local release builds and Docker builds. Bioconda should be prepared once the first public tag exists.
+FastaGuard v0.1.1 is published on Bioconda and GitHub release binaries are
+available for Linux and macOS. Docker remains useful for local smoke tests and
+pipeline containers, while BioContainers should be confirmed after the
+Bioconda publication pipeline catches up.
+
+## Bioconda
+
+Recommended install:
+
+```bash
+mamba install -c conda-forge -c bioconda fastaguard
+```
+
+Conda equivalent:
+
+```bash
+conda install -c conda-forge -c bioconda fastaguard
+```
+
+Verify the installed package:
+
+```bash
+fastaguard --version
+fastaguard --schema
+fastaguard --finding-catalog
+```
+
+Current published package:
+
+- Version: `0.1.1`
+- Platforms: `linux-64`, `linux-aarch64`, `osx-64`, `osx-arm64`
+- Package page: [anaconda.org/bioconda/fastaguard](https://anaconda.org/bioconda/fastaguard)
 
 ## Local Binary
 
@@ -67,15 +98,10 @@ For the first public release:
 4. Attach `SHA256SUMS` and release archives to the GitHub release.
 5. Keep the JSON Schema and finding catalog in the source archive and binary archives.
 
-## Bioconda
+## Upstream Recipe
 
-Bioconda should be submitted after the first public source archive is available. A starter recipe now lives in:
-
-```text
-packaging/bioconda/
-```
-
-The recipe should expose one executable:
+The upstream Bioconda recipe was merged from `packaging/bioconda/` as
+`recipes/fastaguard/`. The recipe exposes one executable:
 
 ```text
 fastaguard
@@ -89,15 +115,13 @@ fastaguard --schema
 fastaguard --finding-catalog
 ```
 
-Do not block the MVP on Bioconda, but design for it now:
+Keep future releases compatible with Bioconda expectations:
 
 - keep a single static-ish CLI binary target
 - keep deterministic tests and tiny fixtures
 - avoid runtime databases for v0.1
 - maintain stable exit codes
 - maintain a versioned JSON Schema
-
-Important current blocker: the GitHub repository is private. Before upstream Bioconda submission, make the source archive public or move the final recipe to a public source URL and replace the placeholder SHA256 in `packaging/bioconda/meta.yaml`.
 
 Bioconda recipe guidance checked for this setup:
 
@@ -116,7 +140,10 @@ The Docker image should stay boring:
 
 That makes it easy to run in Nextflow, Snakemake, Galaxy, and CI systems.
 
-Once the Bioconda recipe is merged upstream, BioContainers can build the corresponding container from the conda recipe. That path is preferable to maintaining a separate BioContainers Dockerfile unless Bioconda packaging proves impossible.
+The Bioconda recipe has merged upstream. BioContainers should be confirmed
+separately by checking the generated registry image/tag once it appears. That
+path is preferable to maintaining a separate BioContainers Dockerfile unless
+automated container publication proves unavailable.
 
 ## MultiQC
 

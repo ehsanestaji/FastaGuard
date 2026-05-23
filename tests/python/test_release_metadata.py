@@ -48,6 +48,24 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn('mkdir -p "${PREFIX}/share/${PKG_NAME}/schema"', script)
         self.assertNotIn("install -D", script)
 
+    def test_docs_reference_published_bioconda_install(self):
+        install_command = "mamba install -c conda-forge -c bioconda fastaguard"
+        docs = [
+            ROOT / "README.md",
+            ROOT / "docs" / "packaging.md",
+            ROOT / "docs" / "adoption-plan.md",
+            ROOT / "packaging" / "bioconda" / "README.md",
+        ]
+
+        for path in docs:
+            with self.subTest(path=path):
+                text = path.read_text()
+                self.assertIn(install_command, text)
+
+        packaging = (ROOT / "docs" / "packaging.md").read_text()
+        self.assertNotIn("GitHub repository is private", packaging)
+        self.assertNotIn("placeholder SHA256", packaging)
+
 
 if __name__ == "__main__":
     unittest.main()
