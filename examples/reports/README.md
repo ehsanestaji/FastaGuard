@@ -1,6 +1,6 @@
 # Example Reports
 
-These tiny examples show the complete v0.1 output contract without requiring large datasets.
+These tiny examples show the complete v0.2 output contract without requiring large datasets.
 
 ## Assembly Pass
 
