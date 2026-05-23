@@ -8,7 +8,7 @@ use crate::metrics::{AssemblyMetrics, SequenceSummary};
 use crate::profile::ProfileConfig;
 use crate::stats::composition::{percent, round2};
 
-pub const SCHEMA_VERSION: &str = "0.1.0";
+pub const SCHEMA_VERSION: &str = "0.2.0";
 pub const TOOL_NAME: &str = "FastaGuard";
 pub const TOOL_VERSION: &str = env!("CARGO_PKG_VERSION");
 const LENGTH_HISTOGRAM_BIN_COUNT: u64 = 10;
@@ -54,12 +54,20 @@ pub struct MachineSummary {
     pub safe_for_downstream: bool,
     pub top_findings: Vec<String>,
     pub recommended_next_tools: Vec<RecommendedTool>,
+    pub routing_hints: Vec<RoutingHint>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecommendedTool {
     pub tool: String,
     pub reason: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoutingHint {
+    pub condition: String,
+    pub suggested_route: String,
+    pub requires_external_database: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,6 +83,11 @@ pub struct Provenance {
     pub threads: usize,
     pub fail_on: Vec<String>,
     pub thresholds: ProvenanceThresholds,
+    pub command: String,
+    pub started_at: String,
+    pub completed_at: String,
+    pub duration_ms: u64,
+    pub input_size_bytes: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,10 +116,30 @@ pub enum Severity {
     Critical,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FindingCategory {
+    Validity,
+    Structure,
+    Composition,
+    Duplication,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FindingConfidence {
+    High,
+    Moderate,
+    Low,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Finding {
     pub id: String,
+    pub category: FindingCategory,
     pub severity: Severity,
+    pub confidence: FindingConfidence,
+    pub requires_followup_tool: bool,
     pub profile: String,
     pub affected_count: u64,
     pub affected_fraction: f64,
@@ -268,7 +301,10 @@ impl FastaguardReport {
     pub fn from_invalid_fasta(config: RunConfig, profile: &ProfileConfig, message: String) -> Self {
         let findings = vec![Finding {
             id: "invalid_fasta_structure".to_string(),
+            category: FindingCategory::Validity,
             severity: Severity::Critical,
+            confidence: FindingConfidence::High,
+            requires_followup_tool: false,
             profile: config.profile.clone(),
             affected_count: 0,
             affected_fraction: 0.0,
@@ -442,6 +478,7 @@ fn build_machine_summary(status: VerdictStatus, findings: &[Finding]) -> Machine
         safe_for_downstream: status == VerdictStatus::Pass,
         top_findings: findings.iter().map(|finding| finding.id.clone()).collect(),
         recommended_next_tools: recommended_next_tools(status, findings),
+        routing_hints: Vec::new(),
     }
 }
 
@@ -507,6 +544,11 @@ fn fasta_preflight_scope() -> Scope {
 }
 
 fn build_provenance(config: &RunConfig, profile: &ProfileConfig) -> Provenance {
+    let completed_at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+    let input_size_bytes = std::fs::metadata(&config.input)
+        .map(|metadata| metadata.len())
+        .unwrap_or(0);
+
     Provenance {
         profile: profile.name.clone(),
         threads: config.threads,
@@ -518,6 +560,11 @@ fn build_provenance(config: &RunConfig, profile: &ProfileConfig) -> Provenance {
             max_gap_run: profile.max_gap_run,
             gc_outlier_zscore: profile.gc_outlier_zscore,
         },
+        command: config.command.clone(),
+        started_at: config.started_at.clone(),
+        completed_at,
+        duration_ms: 0,
+        input_size_bytes,
     }
 }
 

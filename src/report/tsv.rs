@@ -93,6 +93,7 @@ mod tests {
                 safe_for_downstream: status == VerdictStatus::Pass,
                 top_findings: Vec::new(),
                 recommended_next_tools: Vec::new(),
+                routing_hints: Vec::new(),
             },
             scope: Scope {
                 level: "fasta_preflight".to_string(),
@@ -110,6 +111,11 @@ mod tests {
                     max_gap_run: 100,
                     gc_outlier_zscore: 3.0,
                 },
+                command: "fastaguard input.fa".to_string(),
+                started_at: "2026-05-23T00:00:00Z".to_string(),
+                completed_at: "2026-05-23T00:00:00Z".to_string(),
+                duration_ms: 0,
+                input_size_bytes: 100,
             },
             summary: Summary {
                 sequence_count: 2,

@@ -517,9 +517,9 @@ mod tests {
     use super::*;
     use crate::models::{
         empty_evidence, empty_plots, Artifacts, EvidenceRecord, FastaguardReport, Finding,
-        FindingAction, FindingEvidence, InputInfo, MachineSummary, Provenance,
-        ProvenanceThresholds, RecommendedTool, Scope, Severity, Summary, ToolInfo, Verdict,
-        VerdictStatus,
+        FindingAction, FindingCategory, FindingConfidence, FindingEvidence, InputInfo,
+        MachineSummary, Provenance, ProvenanceThresholds, RecommendedTool, Scope, Severity,
+        Summary, ToolInfo, Verdict, VerdictStatus,
     };
 
     #[test]
@@ -527,7 +527,10 @@ mod tests {
         let mut report = test_report();
         report.findings.push(Finding {
             id: "bad_<id>".to_string(),
+            category: FindingCategory::Validity,
             severity: Severity::Major,
+            confidence: FindingConfidence::High,
+            requires_followup_tool: false,
             profile: "assembly".to_string(),
             affected_count: 1,
             affected_fraction: 0.5,
@@ -560,12 +563,16 @@ mod tests {
                 tool: "QUAST".to_string(),
                 reason: "inspect assembly-level effects".to_string(),
             }],
+            routing_hints: Vec::new(),
         };
         report.scope.can_conclude = vec!["FASTA parse validity".to_string()];
         report.scope.cannot_conclude = vec!["biological completeness".to_string()];
         report.findings.push(Finding {
             id: "high_n_rate".to_string(),
+            category: FindingCategory::Composition,
             severity: Severity::Major,
+            confidence: FindingConfidence::High,
+            requires_followup_tool: false,
             profile: "assembly".to_string(),
             affected_count: 1,
             affected_fraction: 0.5,
@@ -634,6 +641,7 @@ mod tests {
                 safe_for_downstream: true,
                 top_findings: Vec::new(),
                 recommended_next_tools: Vec::new(),
+                routing_hints: Vec::new(),
             },
             scope: Scope {
                 level: "fasta_preflight".to_string(),
@@ -651,6 +659,11 @@ mod tests {
                     max_gap_run: 100,
                     gc_outlier_zscore: 3.0,
                 },
+                command: "fastaguard input.fa".to_string(),
+                started_at: "2026-05-23T00:00:00Z".to_string(),
+                completed_at: "2026-05-23T00:00:00Z".to_string(),
+                duration_ms: 0,
+                input_size_bytes: 100,
             },
             summary: Summary {
                 sequence_count: 2,

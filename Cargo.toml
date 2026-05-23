@@ -8,6 +8,7 @@ repository = "https://github.com/ehsanestaji/FastaGuard"
 
 [dependencies]
 anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 clap = { version = "4", features = ["derive"] }
 flate2 = "1"
 hex = "0.4"

@@ -2,7 +2,8 @@ use crate::cli::RuleConfig;
 use crate::metrics::AssemblyMetrics;
 use crate::metrics::SequenceSummary;
 use crate::models::{
-    finding_actions, EvidenceRecord, Finding, FindingEvidence, Severity, VerdictStatus,
+    finding_actions, EvidenceRecord, Finding, FindingCategory, FindingConfidence, FindingEvidence,
+    Severity, VerdictStatus,
 };
 use crate::profile::ProfileConfig;
 use crate::stats::composition::round2;
@@ -231,7 +232,10 @@ fn finding(
 ) -> Finding {
     Finding {
         id: id.to_string(),
+        category: finding_category(id),
         severity,
+        confidence: finding_confidence(id),
+        requires_followup_tool: false,
         profile: profile.name.clone(),
         affected_count,
         affected_fraction,
@@ -240,6 +244,23 @@ fn finding(
         suggested_next_step: text.suggested_next_step.to_string(),
         evidence,
         actions: finding_actions(id),
+    }
+}
+
+fn finding_category(id: &str) -> FindingCategory {
+    match id {
+        "duplicate_ids" | "duplicate_sequences" => FindingCategory::Duplication,
+        "invalid_chars" | "invalid_fasta_structure" => FindingCategory::Validity,
+        "high_n_rate" => FindingCategory::Composition,
+        "tiny_contigs" | "gap_runs" => FindingCategory::Structure,
+        _ => FindingCategory::Validity,
+    }
+}
+
+fn finding_confidence(id: &str) -> FindingConfidence {
+    match id {
+        "tiny_contigs" => FindingConfidence::Moderate,
+        _ => FindingConfidence::High,
     }
 }
 

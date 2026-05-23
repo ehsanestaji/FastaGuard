@@ -75,6 +75,8 @@ pub struct RunConfig {
     pub rules: RuleConfig,
     pub thresholds: ThresholdOverrides,
     pub threads: usize,
+    pub command: String,
+    pub started_at: String,
 }
 
 #[derive(Debug, Clone)]
@@ -129,8 +131,14 @@ impl Cli {
                 min_contig_length: self.min_contig_length,
             },
             threads: self.threads,
+            command: std::env::args().collect::<Vec<_>>().join(" "),
+            started_at: current_utc_timestamp(),
         })
     }
+}
+
+fn current_utc_timestamp() -> String {
+    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
 }
 
 fn normalize_rules(values: &[String]) -> BTreeSet<String> {
