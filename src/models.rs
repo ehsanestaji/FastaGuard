@@ -249,6 +249,7 @@ impl FastaguardReport {
         profile: &ProfileConfig,
         metrics: AssemblyMetrics,
         analysis: Analysis,
+        duration_ms: u64,
     ) -> Self {
         let findings = analysis.findings;
         let plots = build_plots(&metrics, profile);
@@ -269,7 +270,7 @@ impl FastaguardReport {
             },
             machine_summary: build_machine_summary(analysis.status, &findings),
             scope: fasta_preflight_scope(),
-            provenance: build_provenance(&config, profile),
+            provenance: build_provenance(&config, profile, duration_ms),
             summary: Summary {
                 sequence_count: metrics.sequence_count,
                 total_length: metrics.total_length,
@@ -302,7 +303,12 @@ impl FastaguardReport {
         }
     }
 
-    pub fn from_invalid_fasta(config: RunConfig, profile: &ProfileConfig, message: String) -> Self {
+    pub fn from_invalid_fasta(
+        config: RunConfig,
+        profile: &ProfileConfig,
+        message: String,
+        duration_ms: u64,
+    ) -> Self {
         let findings = vec![Finding {
             id: "invalid_fasta_structure".to_string(),
             category: FindingCategory::Validity,
@@ -339,7 +345,7 @@ impl FastaguardReport {
             },
             machine_summary: build_machine_summary(VerdictStatus::Fail, &findings),
             scope: fasta_preflight_scope(),
-            provenance: build_provenance(&config, profile),
+            provenance: build_provenance(&config, profile, duration_ms),
             summary: Summary {
                 sequence_count: 0,
                 total_length: 0,
@@ -577,7 +583,7 @@ fn fasta_preflight_scope() -> Scope {
     }
 }
 
-fn build_provenance(config: &RunConfig, profile: &ProfileConfig) -> Provenance {
+fn build_provenance(config: &RunConfig, profile: &ProfileConfig, duration_ms: u64) -> Provenance {
     let completed_at = config
         .provenance_timestamp_override
         .clone()
@@ -600,7 +606,7 @@ fn build_provenance(config: &RunConfig, profile: &ProfileConfig) -> Provenance {
         command: config.command.clone(),
         started_at: config.started_at.clone(),
         completed_at,
-        duration_ms: 0,
+        duration_ms,
         input_size_bytes,
     }
 }

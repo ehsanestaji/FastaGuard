@@ -32,7 +32,7 @@ pub struct Cli {
     #[arg(long, value_name = "ID")]
     pub explain_finding: Option<String>,
 
-    /// QC profile. v0.1 supports assembly.
+    /// QC profile. The current release supports assembly.
     #[arg(long, default_value = "assembly")]
     pub profile: String,
 
@@ -102,7 +102,7 @@ impl Cli {
         })?;
         if self.profile != "assembly" {
             return Err(anyhow!(
-                "unsupported profile '{}'; v0.1 supports assembly",
+                "unsupported profile '{}'; the current release supports assembly",
                 self.profile
             ));
         }

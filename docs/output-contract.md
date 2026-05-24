@@ -19,14 +19,14 @@ schema/finding-catalog.json
 
 ## JSON Contract
 
-Example v0.1 shape:
+Example v0.2 shape:
 
 ```json
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "input": {
     "path": "sample.fa",
@@ -46,7 +46,8 @@ Example v0.1 shape:
         "tool": "QUAST",
         "reason": "Assembly-level evaluation can show whether ambiguity affects broader assembly quality."
       }
-    ]
+    ],
+    "routing_hints": []
   },
   "scope": {
     "level": "fasta_preflight",
@@ -57,6 +58,11 @@ Example v0.1 shape:
     "profile": "assembly",
     "threads": 1,
     "fail_on": [],
+    "command": "fastaguard sample.fa --profile assembly",
+    "started_at": "2026-05-23T00:00:00Z",
+    "completed_at": "2026-05-23T00:00:01Z",
+    "duration_ms": 842,
+    "input_size_bytes": 5120340,
     "thresholds": {
       "high_n_sequence_fraction": 0.2,
       "high_global_n_fraction": 0.05,
@@ -110,7 +116,10 @@ Example v0.1 shape:
   "findings": [
     {
       "id": "high_n_rate",
+      "category": "composition",
       "severity": "major",
+      "confidence": "high",
+      "requires_followup_tool": false,
       "profile": "assembly",
       "affected_count": 62,
       "affected_fraction": 0.128,
@@ -139,6 +148,43 @@ Example v0.1 shape:
           "requires_external_database": false
         }
       ]
+    },
+    {
+      "id": "composite_anomalies",
+      "category": "composition",
+      "severity": "major",
+      "confidence": "moderate",
+      "requires_followup_tool": true,
+      "profile": "assembly",
+      "affected_count": 1,
+      "affected_fraction": 0.002,
+      "message": "1 records have multiple FastaGuard anomaly signals.",
+      "why_it_matters": "Records with multiple independent signals are higher priority for manual or downstream triage.",
+      "suggested_next_step": "Prioritize these records for inspection before running heavier assembly QC or taxonomy workflows.",
+      "evidence": {
+        "total_records": 1,
+        "truncated": false,
+        "records": [
+          {
+            "id": "scaffold_42",
+            "length": 18004,
+            "reason": "record has multiple assembly anomaly signals",
+            "gc_percent": 51.2,
+            "n_fraction": 0.37,
+            "n_percent": 37.0,
+            "signals": ["high_n", "gap_run"]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action_type": "prioritize_records",
+          "target": "records with multiple anomaly signals",
+          "reason": "Records with multiple independent signals are better candidates for manual or downstream triage.",
+          "recommended_tool": "BlobToolKit",
+          "requires_external_database": true
+        }
+      ]
     }
   ],
   "artifacts": {
@@ -151,7 +197,7 @@ Example v0.1 shape:
 
 ## Stability Rules
 
-Stable from v0.1:
+Stable in the v0.2 contract:
 
 - `schema_version`
 - `tool.name`
@@ -162,10 +208,17 @@ Stable from v0.1:
 - `machine_summary.verdict`
 - `machine_summary.safe_for_downstream`
 - `machine_summary.top_findings`
+- `machine_summary.recommended_next_tools`
+- `machine_summary.routing_hints`
 - `scope.level`
 - `scope.can_conclude`
 - `scope.cannot_conclude`
 - `provenance.profile`
+- `provenance.command`
+- `provenance.started_at`
+- `provenance.completed_at`
+- `provenance.duration_ms`
+- `provenance.input_size_bytes`
 - `provenance.thresholds`
 - `summary.sequence_count`
 - `summary.total_length`
@@ -178,7 +231,10 @@ Stable from v0.1:
 - `plots.length_histogram`
 - `plots.gc_length_plot`
 - `findings[].id`
+- `findings[].category`
 - `findings[].severity`
+- `findings[].confidence`
+- `findings[].requires_followup_tool`
 - `findings[].message`
 - `findings[].why_it_matters`
 - `findings[].suggested_next_step`
@@ -232,7 +288,7 @@ Recommended first rows:
 
 ```text
 metric	value
-schema_version	0.1.0
+schema_version	0.2.0
 profile	assembly
 verdict	WARN
 sequence_count	481
@@ -244,6 +300,9 @@ l90	81
 gc_percent	51.8
 n_percent	3.4
 finding_count	2
+gc_outlier_count	1
+length_outlier_count	1
+composite_anomaly_count	1
 ```
 
 ## MultiQC Contract
@@ -263,7 +322,8 @@ The top-level shape should be deliberately boring:
 - `pconfig`
 - `data`
 
-This keeps FastaGuard easy to integrate before a custom MultiQC module exists.
+This keeps FastaGuard easy to integrate as MultiQC custom content and as input
+to the native FastaGuard MultiQC plugin.
 
 ## HTML Report
 
@@ -288,4 +348,6 @@ Report layers:
    suggested next tools and remediation steps
 ```
 
-Outlier findings and richer plot interactivity are planned beyond the v0.1 report contract.
+Outlier findings are part of the v0.2 report contract. They are preflight
+triage signals only; GC and composite anomalies do not by themselves prove
+contamination, cobionts, plasmids, or misassembly.
