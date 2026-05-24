@@ -35,16 +35,24 @@ Example v0.2 shape:
   },
   "verdict": {
     "status": "WARN",
-    "reasons": ["high_n_rate", "duplicate_ids"]
+    "reasons": ["high_n_rate", "composite_anomalies"]
   },
   "machine_summary": {
     "verdict": "WARN",
     "safe_for_downstream": false,
-    "top_findings": ["high_n_rate", "duplicate_ids"],
+    "top_findings": ["high_n_rate", "composite_anomalies"],
     "recommended_next_tools": [
+      {
+        "tool": "seqkit",
+        "reason": "High ambiguity may indicate unresolved assembly regions or masking problems."
+      },
       {
         "tool": "QUAST",
         "reason": "Assembly-level evaluation can show whether ambiguity affects broader assembly quality."
+      },
+      {
+        "tool": "BlobToolKit",
+        "reason": "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review."
       }
     ],
     "routing_hints": [
@@ -54,9 +62,9 @@ Example v0.2 shape:
         "requires_external_database": false
       },
       {
-        "condition": "duplication_issue",
-        "suggested_route": "deduplicate_or_rename_records",
-        "requires_external_database": false
+        "condition": "composition_anomaly",
+        "suggested_route": "contamination_or_cobiont_triage",
+        "requires_external_database": true
       }
     ]
   },
@@ -97,7 +105,7 @@ Example v0.2 shape:
     "at_percent": 44.8,
     "n_percent": 3.4,
     "ambiguity_percent": 3.7,
-    "duplicate_id_count": 1,
+    "duplicate_id_count": 0,
     "duplicate_sequence_count": 0,
     "invalid_sequence_count": 0,
     "high_n_sequence_count": 62,
