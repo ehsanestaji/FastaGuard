@@ -518,8 +518,72 @@ fn build_machine_summary(status: VerdictStatus, findings: &[Finding]) -> Machine
         safe_for_downstream: status == VerdictStatus::Pass,
         top_findings: findings.iter().map(|finding| finding.id.clone()).collect(),
         recommended_next_tools: recommended_next_tools(status, findings),
-        routing_hints: Vec::new(),
+        routing_hints: routing_hints(findings),
     }
+}
+
+fn routing_hints(findings: &[Finding]) -> Vec<RoutingHint> {
+    let mut hints = Vec::new();
+
+    for finding in findings {
+        match finding.id.as_str() {
+            "duplicate_ids" | "duplicate_sequences" => push_routing_hint(
+                &mut hints,
+                "duplication_issue",
+                "deduplicate_or_rename_records",
+                false,
+            ),
+            "invalid_chars" | "invalid_fasta_structure" => push_routing_hint(
+                &mut hints,
+                "validity_failure",
+                "repair_fasta_before_downstream_qc",
+                false,
+            ),
+            "high_n_rate" | "gap_runs" => push_routing_hint(
+                &mut hints,
+                "assembly_ambiguity",
+                "gap_closing_or_polishing_review",
+                false,
+            ),
+            "tiny_contigs" => push_routing_hint(
+                &mut hints,
+                "small_record_review",
+                "review_or_filter_short_records",
+                false,
+            ),
+            "length_outliers" => {
+                push_routing_hint(&mut hints, "length_outlier", "record_length_review", false)
+            }
+            "gc_outliers" | "composite_anomalies" => push_routing_hint(
+                &mut hints,
+                "composition_anomaly",
+                "contamination_or_cobiont_triage",
+                true,
+            ),
+            _ => {}
+        }
+    }
+
+    hints
+}
+
+fn push_routing_hint(
+    hints: &mut Vec<RoutingHint>,
+    condition: &str,
+    suggested_route: &str,
+    requires_external_database: bool,
+) {
+    if hints.iter().any(|existing| {
+        existing.condition == condition && existing.suggested_route == suggested_route
+    }) {
+        return;
+    }
+
+    hints.push(RoutingHint {
+        condition: condition.to_string(),
+        suggested_route: suggested_route.to_string(),
+        requires_external_database,
+    });
 }
 
 fn recommended_next_tools(status: VerdictStatus, findings: &[Finding]) -> Vec<RecommendedTool> {

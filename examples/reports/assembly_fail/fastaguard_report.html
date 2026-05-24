@@ -476,7 +476,38 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
         &quot;reason&quot;: &quot;Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.&quot;
       }
     ],
-    &quot;routing_hints&quot;: []
+    &quot;routing_hints&quot;: [
+      {
+        &quot;condition&quot;: &quot;duplication_issue&quot;,
+        &quot;suggested_route&quot;: &quot;deduplicate_or_rename_records&quot;,
+        &quot;requires_external_database&quot;: false
+      },
+      {
+        &quot;condition&quot;: &quot;validity_failure&quot;,
+        &quot;suggested_route&quot;: &quot;repair_fasta_before_downstream_qc&quot;,
+        &quot;requires_external_database&quot;: false
+      },
+      {
+        &quot;condition&quot;: &quot;assembly_ambiguity&quot;,
+        &quot;suggested_route&quot;: &quot;gap_closing_or_polishing_review&quot;,
+        &quot;requires_external_database&quot;: false
+      },
+      {
+        &quot;condition&quot;: &quot;small_record_review&quot;,
+        &quot;suggested_route&quot;: &quot;review_or_filter_short_records&quot;,
+        &quot;requires_external_database&quot;: false
+      },
+      {
+        &quot;condition&quot;: &quot;length_outlier&quot;,
+        &quot;suggested_route&quot;: &quot;record_length_review&quot;,
+        &quot;requires_external_database&quot;: false
+      },
+      {
+        &quot;condition&quot;: &quot;composition_anomaly&quot;,
+        &quot;suggested_route&quot;: &quot;contamination_or_cobiont_triage&quot;,
+        &quot;requires_external_database&quot;: true
+      }
+    ]
   },
   &quot;scope&quot;: {
     &quot;level&quot;: &quot;fasta_preflight&quot;,

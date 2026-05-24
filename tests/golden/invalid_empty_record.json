@@ -27,7 +27,13 @@
         "reason": "Every record needs a valid header and sequence data before downstream tools can consume it safely."
       }
     ],
-    "routing_hints": []
+    "routing_hints": [
+      {
+        "condition": "validity_failure",
+        "suggested_route": "repair_fasta_before_downstream_qc",
+        "requires_external_database": false
+      }
+    ]
   },
   "scope": {
     "level": "fasta_preflight",

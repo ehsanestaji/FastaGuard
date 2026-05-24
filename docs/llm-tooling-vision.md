@@ -83,6 +83,13 @@ Example fields that make FastaGuard easier for machines and LLM agents to consum
         "tool": "BUSCO",
         "reason": "biological completeness after structural issues are handled"
       }
+    ],
+    "routing_hints": [
+      {
+        "condition": "assembly_ambiguity",
+        "suggested_route": "gap_closing_or_polishing_review",
+        "requires_external_database": false
+      }
     ]
   },
   "findings": [

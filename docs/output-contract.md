@@ -47,7 +47,18 @@ Example v0.2 shape:
         "reason": "Assembly-level evaluation can show whether ambiguity affects broader assembly quality."
       }
     ],
-    "routing_hints": []
+    "routing_hints": [
+      {
+        "condition": "assembly_ambiguity",
+        "suggested_route": "gap_closing_or_polishing_review",
+        "requires_external_database": false
+      },
+      {
+        "condition": "duplication_issue",
+        "suggested_route": "deduplicate_or_rename_records",
+        "requires_external_database": false
+      }
+    ]
   },
   "scope": {
     "level": "fasta_preflight",
@@ -299,10 +310,10 @@ l50	12
 l90	81
 gc_percent	51.8
 n_percent	3.4
-finding_count	2
 gc_outlier_count	1
 length_outlier_count	1
 composite_anomaly_count	1
+finding_count	2
 ```
 
 ## MultiQC Contract

@@ -42,7 +42,38 @@
         "reason": "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review."
       }
     ],
-    "routing_hints": []
+    "routing_hints": [
+      {
+        "condition": "duplication_issue",
+        "suggested_route": "deduplicate_or_rename_records",
+        "requires_external_database": false
+      },
+      {
+        "condition": "validity_failure",
+        "suggested_route": "repair_fasta_before_downstream_qc",
+        "requires_external_database": false
+      },
+      {
+        "condition": "assembly_ambiguity",
+        "suggested_route": "gap_closing_or_polishing_review",
+        "requires_external_database": false
+      },
+      {
+        "condition": "small_record_review",
+        "suggested_route": "review_or_filter_short_records",
+        "requires_external_database": false
+      },
+      {
+        "condition": "length_outlier",
+        "suggested_route": "record_length_review",
+        "requires_external_database": false
+      },
+      {
+        "condition": "composition_anomaly",
+        "suggested_route": "contamination_or_cobiont_triage",
+        "requires_external_database": true
+      }
+    ]
   },
   "scope": {
     "level": "fasta_preflight",

@@ -29,12 +29,27 @@ Capabilities:
 - JSON, TSV, HTML, and MultiQC-compatible outputs
 - deterministic exit codes
 
-## Later Assembly Enhancements
+## v0.2: Assembly Trust + Pipeline Adoption
 
-- length and composition outlier findings
-- richer plot interactivity
+Goal:
 
-## v0.2: Transcriptome Profile
+```text
+Make assembly preflight reports easier to trust, route, and consume in real pipelines.
+```
+
+Capabilities:
+
+- GC, length, and composite assembly outlier findings
+- finding taxonomy, confidence, and follow-up-tool metadata
+- structured routing hints for workflow engines and tool agents
+- richer provenance with command, timestamps, duration, and input size
+- expanded TSV summary rows for outlier counts
+- hardened MultiQC plugin and custom-content support
+- Snakemake and nf-core starter material
+- staged Bioconda recipe metadata for the next release submission
+- benchmark evidence guidance for adoption decisions
+
+## v0.3: Transcriptome Profile
 
 Potential additions:
 
@@ -44,7 +59,7 @@ Potential additions:
 - extreme GC outliers
 - isoform-heavy warning heuristics
 
-## v0.3: Protein Profile
+## v0.4: Protein Profile
 
 Potential additions:
 
@@ -54,7 +69,7 @@ Potential additions:
 - low-complexity regions
 - suspicious nucleotide-looking proteins
 
-## v0.4: Reference Panel Profile
+## v0.5: Reference Panel Profile
 
 Potential additions:
 
@@ -64,7 +79,7 @@ Potential additions:
 - panel consistency summaries
 - submission-readiness warnings
 
-## v0.5: Compare Mode
+## v0.6: Compare Mode
 
 Example:
 
@@ -79,16 +94,16 @@ Potential additions:
 - sample-to-sample summary
 - batch pipeline reports
 
-## v1.x: Integration Layer
+## Pipeline Integration Maturity
 
 Potential additions:
 
-- Bioconda recipe
-- nf-core module
-- Snakemake wrapper
+- publish the v0.2 Bioconda update after the source archive SHA exists
+- upstream nf-core module submission
+- official Snakemake wrapper submission
 - Galaxy wrapper
-- dedicated MultiQC module
-- Docker image
+- upstream MultiQC distribution path
+- BioContainers verification for the v0.2 package
 - Homebrew formula
 
 ## Later Innovation
@@ -112,13 +127,14 @@ Completed foundation:
 - document a stable finding catalog
 - add structured `actions[]` records to findings
 - add bounded per-record evidence to findings
-- add provenance for profile, thresholds, fail rules, and thread count
+- add provenance for profile, thresholds, fail rules, thread count, command, timestamps, duration, and input size
 - add explicit scope fields for what FastaGuard can and cannot conclude
+- add structured routing hints for workflow engines and tool agents
 - add `--schema`, `--finding-catalog`, and `--explain-finding <id>` commands
 - add golden JSON conformance tests
 
 Recommended next sequence:
 
 - extend evidence tables across future transcriptome, protein, reference, and compare modes
-- enrich provenance with command, timestamps, input size, and checksums
+- enrich provenance with input checksums
 - explore an MCP or tool-server interface after the CLI schema is stable

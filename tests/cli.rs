@@ -386,6 +386,13 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
         &report["machine_summary"]["top_findings"],
         "composite_anomalies"
     ));
+    assert_routing_hint(
+        &report,
+        "composition_anomaly",
+        "contamination_or_cobiont_triage",
+        true,
+    );
+    assert_routing_hint(&report, "length_outlier", "record_length_review", false);
 
     assert_finding_taxonomy(&report, "gc_outliers", "composition", "moderate", true);
     assert_finding_taxonomy(&report, "length_outliers", "structure", "moderate", false);
@@ -867,6 +874,25 @@ fn assert_finding_taxonomy(
     assert_eq!(
         finding["requires_followup_tool"],
         json!(requires_followup_tool)
+    );
+}
+
+fn assert_routing_hint(
+    report: &Value,
+    condition: &str,
+    suggested_route: &str,
+    requires_external_database: bool,
+) {
+    let hints = report["machine_summary"]["routing_hints"]
+        .as_array()
+        .unwrap();
+    assert!(
+        hints.iter().any(|hint| {
+            hint["condition"] == json!(condition)
+                && hint["suggested_route"] == json!(suggested_route)
+                && hint["requires_external_database"] == json!(requires_external_database)
+        }),
+        "missing routing hint {condition}/{suggested_route}: {hints:?}"
     );
 }
 
