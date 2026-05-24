@@ -8,10 +8,11 @@ Treat packaging as part of the product, not as a later chore. For bioinformatics
 Bioconda -> GitHub release binaries -> Docker image -> BioContainers -> Homebrew later
 ```
 
-FastaGuard v0.1.1 is published on Bioconda and GitHub release binaries are
-available for Linux and macOS. Docker remains useful for local smoke tests and
-pipeline containers, while BioContainers should be confirmed after the
-Bioconda publication pipeline catches up.
+FastaGuard v0.2.0 is published on GitHub with Linux and macOS release binaries.
+Bioconda currently publishes v0.1.1 until the upstream v0.2.0 recipe update is
+merged. Docker remains useful for local smoke tests and pipeline containers,
+while BioContainers should be confirmed after the Bioconda publication pipeline
+catches up.
 
 ## Bioconda
 
@@ -84,13 +85,13 @@ docker run --rm \
 
 ## GitHub Release Binaries
 
-For the first public release:
+For a public release:
 
 1. Tag the release:
 
    ```bash
-   git tag v0.1.1
-   git push origin v0.1.1
+   git tag v0.2.0
+   git push origin v0.2.0
    ```
 
 2. Push the tag to trigger `.github/workflows/release.yml`.
@@ -119,7 +120,7 @@ Keep future releases compatible with Bioconda expectations:
 
 - keep a single static-ish CLI binary target
 - keep deterministic tests and tiny fixtures
-- avoid runtime databases for v0.1
+- avoid runtime databases for early releases
 - maintain stable exit codes
 - maintain a versioned JSON Schema
 

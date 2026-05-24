@@ -1,5 +1,4 @@
 import json
-import os
 import re
 import subprocess
 import tomllib
@@ -26,35 +25,27 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn("FastaGuard v0.2.0", text)
         self.assertIn("Assembly Trust", text)
         self.assertIn("Pipeline Adoption", text)
-        self.assertIn("Once v0.2.0 is published on Bioconda", text)
-        self.assertIn(
-            "Bioconda currently serves the latest published package, v0.1.1",
-            text,
-        )
-        self.assertIn("staged", text)
+        self.assertIn("After the v0.2.0 Bioconda update merges", text)
+        self.assertIn("v0.2.0 GitHub release binaries and source archive", text)
+        self.assertIn("may still serve v0.1.1", text)
 
-    def test_bioconda_recipe_is_staged_for_v0_2_0_until_archive_sha_is_known(self):
-        if os.environ.get("FASTAGUARD_RELEASE_READY") == "1":
-            self.skipTest("release-ready mode requires the real v0.2.0 source SHA")
-
+    def test_bioconda_recipe_has_publishable_v0_2_0_source_sha(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         marker = "REPLACE" + "_WITH_"
-        placeholder = marker + "V0_2_0_SOURCE_ARCHIVE_SHA256"
 
         self.assertEqual(cargo["package"]["version"], "0.2.0")
         self.assertTrue((ROOT / "docs" / "releases" / "v0.2.0.md").exists())
-        self.assertIn(
-            "# Update sha256 after the v0.2.0 GitHub source archive is published.",
-            recipe,
+        self.assertNotIn(marker, recipe)
+
+        match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
+        self.assertIsNotNone(match, recipe)
+        self.assertEqual(
+            match.group(1),
+            "ad1c2243a7feeb25622bd139b609de942be8219ad5f62176e8e98f46f0d155cf",
         )
-        self.assertIn(f"sha256: {placeholder}", recipe)
-        self.assertIn(marker, recipe)
 
     def test_release_ready_bioconda_recipe_requires_real_sha(self):
-        if os.environ.get("FASTAGUARD_RELEASE_READY") != "1":
-            self.skipTest("set FASTAGUARD_RELEASE_READY=1 to require publishable metadata")
-
         tracked_paths = subprocess.check_output(
             ["git", "ls-files"],
             cwd=ROOT,
@@ -71,6 +62,10 @@ class ReleaseMetadataTest(unittest.TestCase):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
         self.assertIsNotNone(match, recipe)
+        self.assertEqual(
+            match.group(1),
+            "ad1c2243a7feeb25622bd139b609de942be8219ad5f62176e8e98f46f0d155cf",
+        )
         self.assertNotIn(marker + "PUBLIC_SOURCE_ARCHIVE_SHA256", recipe)
 
     def test_committed_example_reports_match_cargo_package_version(self):

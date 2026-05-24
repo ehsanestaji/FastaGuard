@@ -5,10 +5,9 @@ package:
   name: {{ name|lower }}
   version: {{ version }}
 
-# Update sha256 after the v0.2.0 GitHub source archive is published.
 source:
   url: https://github.com/ehsanestaji/FastaGuard/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: REPLACE_WITH_V0_2_0_SOURCE_ARCHIVE_SHA256
+  sha256: ad1c2243a7feeb25622bd139b609de942be8219ad5f62176e8e98f46f0d155cf
 
 build:
   number: 0

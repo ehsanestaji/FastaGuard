@@ -15,7 +15,8 @@ Bioconda published -> BioContainers confirmation -> MultiQC plugin -> public ben
 
 Goal: make installation natural for bioinformatics users.
 
-Status: Bioconda is live for FastaGuard v0.1.1.
+Status: Bioconda is live for FastaGuard v0.1.1, and the v0.2.0 recipe update
+is ready with the published GitHub source archive SHA.
 
 - Keep GitHub release binaries working.
 - Keep Docker smoke tests passing.
@@ -30,7 +31,8 @@ mamba install -c conda-forge -c bioconda fastaguard
 fastaguard --schema
 ```
 
-works in a clean environment. This has been verified locally on macOS for v0.1.1.
+works in a clean environment. This has been verified locally on macOS for
+v0.1.1; repeat this check for v0.2.0 after the Bioconda update merges.
 
 ## Phase 2: Aggregate
 

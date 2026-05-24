@@ -46,7 +46,7 @@ Capabilities:
 - expanded TSV summary rows for outlier counts
 - hardened MultiQC plugin and custom-content support
 - Snakemake and nf-core starter material
-- staged Bioconda recipe metadata for the next release submission
+- ready Bioconda recipe metadata for the v0.2.0 update
 - benchmark evidence guidance for adoption decisions
 
 ## v0.3: Transcriptome Profile
@@ -98,7 +98,7 @@ Potential additions:
 
 Potential additions:
 
-- publish the v0.2 Bioconda update after the source archive SHA exists
+- merge and verify the v0.2 Bioconda update
 - upstream nf-core module submission
 - official Snakemake wrapper submission
 - Galaxy wrapper

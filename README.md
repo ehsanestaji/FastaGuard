@@ -27,12 +27,12 @@ fastaguard --schema
 GitHub release binaries are also available for Linux and macOS:
 
 ```bash
-tar -xzf fastaguard-v0.1.1-x86_64-unknown-linux-gnu.tar.gz
-./fastaguard-v0.1.1-x86_64-unknown-linux-gnu/fastaguard --help
+tar -xzf fastaguard-v0.2.0-x86_64-unknown-linux-gnu.tar.gz
+./fastaguard-v0.2.0-x86_64-unknown-linux-gnu/fastaguard --help
 ```
 
-The v0.1.1 binary archive remains the latest published release asset until the
-v0.2.0 release archive and Bioconda source SHA are published.
+The v0.2.0 GitHub release binaries and source archive are published. Bioconda
+may still serve v0.1.1 until the upstream v0.2.0 recipe update is merged.
 
 Local development build:
 
@@ -175,8 +175,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 ## Status
 
-v0.2 release metadata is staged in the repository. FastaGuard v0.1.1 remains
-the current published Bioconda package for `linux-64`, `linux-aarch64`,
-`osx-64`, and `osx-arm64` until the v0.2.0 source archive is published and the
-Bioconda recipe SHA is updated. BioContainers image availability is still
-pending confirmation.
+v0.2.0 is published on GitHub with Linux and macOS release binaries. The
+Bioconda v0.2.0 recipe metadata is ready with the published source archive SHA;
+Bioconda may still serve v0.1.1 until the upstream recipe update is merged.
+BioContainers image availability is still pending confirmation.

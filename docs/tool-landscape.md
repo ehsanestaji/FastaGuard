@@ -45,12 +45,14 @@ machine-readable FASTA preflight contract.
 
 ## Product Evidence We Have
 
-Current v0.1 evidence:
+Current product evidence:
 
 - Rust CLI builds and runs as a single binary.
 - Docker build and smoke test pass.
 - GitHub release workflow builds Linux and macOS binaries.
-- FastaGuard v0.1.1 is published on Bioconda for Linux and macOS platforms.
+- FastaGuard v0.2.0 is published on GitHub with Linux and macOS binaries.
+- FastaGuard v0.1.1 is published on Bioconda for Linux and macOS platforms,
+  with the v0.2.0 recipe update ready for upstream merge.
 - Clean Bioconda install has been smoke-tested with `fastaguard --schema`.
 - JSON Schema validates committed golden reports.
 - Reports include bounded evidence records and suggested actions.
