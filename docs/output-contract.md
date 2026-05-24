@@ -35,12 +35,12 @@ Example v0.2 shape:
   },
   "verdict": {
     "status": "WARN",
-    "reasons": ["high_n_rate", "composite_anomalies"]
+    "reasons": ["high_n_rate", "tiny_contigs"]
   },
   "machine_summary": {
     "verdict": "WARN",
     "safe_for_downstream": false,
-    "top_findings": ["high_n_rate", "composite_anomalies"],
+    "top_findings": ["high_n_rate", "tiny_contigs"],
     "recommended_next_tools": [
       {
         "tool": "seqkit",
@@ -49,10 +49,6 @@ Example v0.2 shape:
       {
         "tool": "QUAST",
         "reason": "Assembly-level evaluation can show whether ambiguity affects broader assembly quality."
-      },
-      {
-        "tool": "BlobToolKit",
-        "reason": "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review."
       }
     ],
     "routing_hints": [
@@ -62,9 +58,9 @@ Example v0.2 shape:
         "requires_external_database": false
       },
       {
-        "condition": "composition_anomaly",
-        "suggested_route": "contamination_or_cobiont_triage",
-        "requires_external_database": true
+        "condition": "small_record_review",
+        "suggested_route": "review_or_filter_short_records",
+        "requires_external_database": false
       }
     ]
   },
@@ -93,7 +89,7 @@ Example v0.2 shape:
   "summary": {
     "sequence_count": 481,
     "total_length": 5042301,
-    "min_length": 203,
+    "min_length": 120,
     "max_length": 512044,
     "mean_length": 10483.0,
     "median_length": 6012.0,
@@ -115,7 +111,7 @@ Example v0.2 shape:
   "plots": {
     "length_histogram": [
       {
-        "min_length": 203,
+        "min_length": 120,
         "max_length": 50400,
         "sequence_count": 41,
         "total_length": 993002
@@ -169,39 +165,36 @@ Example v0.2 shape:
       ]
     },
     {
-      "id": "composite_anomalies",
-      "category": "composition",
-      "severity": "major",
+      "id": "tiny_contigs",
+      "category": "structure",
+      "severity": "minor",
       "confidence": "moderate",
-      "requires_followup_tool": true,
+      "requires_followup_tool": false,
       "profile": "assembly",
-      "affected_count": 1,
-      "affected_fraction": 0.002,
-      "message": "1 records have multiple FastaGuard anomaly signals.",
-      "why_it_matters": "Records with multiple independent signals are higher priority for manual or downstream triage.",
-      "suggested_next_step": "Prioritize these records for inspection before running heavier assembly QC or taxonomy workflows.",
+      "affected_count": 4,
+      "affected_fraction": 0.008,
+      "message": "4 contigs are shorter than the 200 bp profile minimum.",
+      "why_it_matters": "Very short contigs often add noise to assembly statistics and downstream annotation.",
+      "suggested_next_step": "Filter or review tiny contigs before using the assembly in production workflows.",
       "evidence": {
-        "total_records": 1,
+        "total_records": 4,
         "truncated": false,
         "records": [
           {
-            "id": "scaffold_42",
-            "length": 18004,
-            "reason": "record has multiple assembly anomaly signals",
-            "gc_percent": 51.2,
-            "n_fraction": 0.37,
-            "n_percent": 37.0,
-            "signals": ["high_n", "gap_run"]
+            "id": "contig_17",
+            "length": 120,
+            "reason": "shorter than profile minimum contig length",
+            "gc_percent": 49.2
           }
         ]
       },
       "actions": [
         {
-          "action_type": "prioritize_records",
-          "target": "records with multiple anomaly signals",
-          "reason": "Records with multiple independent signals are better candidates for manual or downstream triage.",
-          "recommended_tool": "BlobToolKit",
-          "requires_external_database": true
+          "action_type": "filter_or_review_records",
+          "target": "tiny contigs",
+          "reason": "Short records may be noise, but should be reviewed before automatic removal.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
         }
       ]
     }
