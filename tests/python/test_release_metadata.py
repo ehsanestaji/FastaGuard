@@ -34,6 +34,9 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn("staged", text)
 
     def test_bioconda_recipe_is_staged_for_v0_2_0_until_archive_sha_is_known(self):
+        if os.environ.get("FASTAGUARD_RELEASE_READY") == "1":
+            self.skipTest("release-ready mode requires the real v0.2.0 source SHA")
+
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         marker = "REPLACE" + "_WITH_"
