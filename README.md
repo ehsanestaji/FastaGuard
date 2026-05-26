@@ -166,6 +166,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [Adoption plan](docs/adoption-plan.md)
 - [LLM and tooling vision](docs/llm-tooling-vision.md)
 - [Benchmarking](docs/benchmarking.md)
+- [v0.2 evidence pack](docs/evidence/fastaguard-v0.2-evidence.md)
 - [Packaging](docs/packaging.md)
 - [v0.2.0 release notes](docs/releases/v0.2.0.md)
 - [v0.1.1 release notes](docs/releases/v0.1.1.md)
@@ -179,3 +180,8 @@ v0.2.0 is published on GitHub with Linux and macOS release binaries. The
 Bioconda v0.2.0 recipe metadata is ready with the published source archive SHA;
 Bioconda may still serve v0.1.1 until the upstream recipe update is merged.
 BioContainers image availability is still pending confirmation.
+
+The next internal milestone is the
+[v0.2 evidence pack](docs/evidence/fastaguard-v0.2-evidence.md): reproducible
+local and public FASTA runs that document runtime, verdicts, and top findings
+before new biological profiles are added.

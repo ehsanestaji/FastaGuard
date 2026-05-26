@@ -60,10 +60,12 @@ Current product evidence:
 - A native MultiQC plugin starter exists under `integrations/multiqc/`.
 - Bioconda recipe mirror exists under `packaging/bioconda/`.
 - nf-core, Nextflow, and Snakemake starters exist under `examples/`.
+- The v0.2 evidence workflow is documented in
+  `docs/evidence/fastaguard-v0.2-evidence.md`.
 
 Evidence still needed:
 
-- benchmarks on public assemblies
+- committed benchmark summaries from public assemblies
 - user feedback from real pipeline authors
 - BioContainers image/tag confirmation
 - official MultiQC module or packaged plugin
