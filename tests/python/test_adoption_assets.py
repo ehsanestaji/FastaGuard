@@ -416,6 +416,32 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
                 self.assertGreater(case["elapsed_seconds"], 0)
                 self.assertIn("command", case)
 
+    def test_deep_release_vision_is_documented_and_memorized(self):
+        vision = (ROOT / "docs" / "vision-plan.md").read_text()
+        memory = (ROOT / "AGENTS.md").read_text()
+        readme = (ROOT / "README.md").read_text()
+
+        required_phrases = [
+            "FASTA preflight operating system",
+            "evidence before expansion",
+            "assembly gate",
+            "compare mode",
+            "transcriptome",
+            "protein",
+            "reference-panel",
+            "MCP",
+            "machine-actionable",
+            "local-metrics-only",
+        ]
+
+        for phrase in required_phrases:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, vision)
+
+        self.assertIn("Deep Release Vision", memory)
+        self.assertIn("FASTA preflight operating system", memory)
+        self.assertIn("docs/vision-plan.md", readme)
+
     def test_snakemake_wrapper_declares_bioconda_environment(self):
         environment = (
             ROOT / "examples" / "snakemake" / "wrapper" / "environment.yaml"

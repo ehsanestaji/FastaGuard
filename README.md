@@ -160,6 +160,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 - [Example reports](examples/reports/README.md)
 - [Product thesis](docs/product-thesis.md)
+- [Vision plan](docs/vision-plan.md)
 - [MVP spec](docs/mvp-spec.md)
 - [Output contract](docs/output-contract.md)
 - [Tool landscape](docs/tool-landscape.md)

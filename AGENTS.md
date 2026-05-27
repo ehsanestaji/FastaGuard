@@ -87,6 +87,44 @@ next: richer evidence tables for additional profiles and compare mode
 later: MCP/tool-agent interface and optional local summaries
 ```
 
+## Deep Release Vision
+
+Durable vision document:
+
+```text
+docs/vision-plan.md
+```
+
+FastaGuard should become the FASTA preflight operating system for modern
+bioinformatics pipelines: validate the FASTA, explain red flags, emit a stable
+contract, and route to the right downstream tools.
+
+The release strategy is evidence before expansion:
+
+```text
+v0.3: evidence pack + assembly gate + provenance checksums
+v0.4: compare mode for many FASTA files
+v0.5: transcriptome profile
+v0.6: protein profile
+v0.7: reference-panel profile
+later: MCP/tool-agent interface and optional local summaries
+```
+
+Default product boundaries:
+
+- stay fast and database-free by default
+- keep JSON as the source of truth
+- keep HTML as a human view
+- make findings machine-actionable with stable IDs, severity, evidence, thresholds, actions, and scope
+- keep optional generated summaries local-metrics-only and traceable back to structured fields
+- never claim to replace QUAST, BUSCO, BlobToolKit, CheckM, seqkit, MultiQC, or annotation workflows
+
+Recommended next big release:
+
+```text
+v0.3 should make FastaGuard credible as the default assembly gate before adding broad new biological profiles.
+```
+
 ## Collaboration Preference
 
 When moving the project forward, provide a clear recommendation first, then proceed when the user approves or explicitly asks to continue. The default recommendation should favor boring, stable contracts over flashy AI features.
