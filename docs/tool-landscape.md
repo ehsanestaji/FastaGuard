@@ -51,9 +51,11 @@ Current product evidence:
 - Docker build and smoke test pass.
 - GitHub release workflow builds Linux and macOS binaries.
 - FastaGuard v0.2.0 is published on GitHub with Linux and macOS binaries.
-- FastaGuard v0.1.1 is published on Bioconda for Linux and macOS platforms,
-  with the v0.2.0 recipe update ready for upstream merge.
+- FastaGuard v0.2.0 is published on Bioconda for `linux-64`,
+  `linux-aarch64`, `osx-64`, and `osx-arm64`.
 - Clean Bioconda install has been smoke-tested with `fastaguard --schema`.
+- BioContainers publishes
+  `quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0`.
 - JSON Schema validates committed golden reports.
 - Reports include bounded evidence records and suggested actions.
 - MultiQC custom-content JSON is emitted as `fastaguard_mqc.json`.
@@ -67,7 +69,7 @@ Evidence still needed:
 
 - committed benchmark summaries from public assemblies
 - user feedback from real pipeline authors
-- BioContainers image/tag confirmation
+- broader public assembly evidence runs
 - official MultiQC module or packaged plugin
 - comparison examples showing what FastaGuard catches before QUAST/BUSCO/BlobToolKit
 

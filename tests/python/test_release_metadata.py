@@ -25,9 +25,9 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn("FastaGuard v0.2.0", text)
         self.assertIn("Assembly Trust", text)
         self.assertIn("Pipeline Adoption", text)
-        self.assertIn("After the v0.2.0 Bioconda update merges", text)
+        self.assertIn("Install the v0.2.0 Bioconda package", text)
         self.assertIn("v0.2.0 GitHub release binaries and source archive", text)
-        self.assertIn("may still serve v0.1.1", text)
+        self.assertIn("quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0", text)
 
     def test_bioconda_recipe_has_publishable_v0_2_0_source_sha(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())

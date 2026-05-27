@@ -272,6 +272,9 @@ class AdoptionAssetsTest(unittest.TestCase):
 
     def test_workflow_docs_reference_bioconda_and_container_status(self):
         nfcore_readme = (ROOT / "examples" / "nf-core" / "README.md").read_text()
+        nfcore_module = (
+            ROOT / "examples" / "nf-core" / "modules" / "local" / "fastaguard" / "main.nf"
+        ).read_text()
         snakemake_readme = (
             ROOT / "examples" / "snakemake" / "wrapper" / "README.md"
         ).read_text()
@@ -280,8 +283,16 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn(install, nfcore_readme)
         self.assertIn(install, snakemake_readme)
         self.assertIn(
-            "Once a BioContainers image is confirmed, the module can add a pinned container directive.",
+            "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
             nfcore_readme,
+        )
+        self.assertIn(
+            "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
+            nfcore_module,
+        )
+        self.assertIn(
+            "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
+            snakemake_readme,
         )
 
     def test_benchmarking_docs_include_v0_2_evidence_topics(self):
@@ -457,7 +468,7 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
                 "  - conda-forge",
                 "  - bioconda",
                 "dependencies:",
-                "  - fastaguard=0.1.1",
+                "  - fastaguard=0.2.0",
             ],
         )
         self.assertIn('conda: "environment.yaml"', snakefile.read_text())

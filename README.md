@@ -32,7 +32,8 @@ tar -xzf fastaguard-v0.2.0-x86_64-unknown-linux-gnu.tar.gz
 ```
 
 The v0.2.0 GitHub release binaries and source archive are published. Bioconda
-may still serve v0.1.1 until the upstream v0.2.0 recipe update is merged.
+serves v0.2.0 for Linux x86_64, Linux ARM64, macOS Intel, and macOS Apple
+Silicon.
 
 Local development build:
 
@@ -67,7 +68,7 @@ fastaguard --finding-catalog
 fastaguard --explain-finding high_n_rate
 ```
 
-Build and run the Docker image:
+Build and run the local Docker image:
 
 ```bash
 docker build -t fastaguard:local .
@@ -77,6 +78,12 @@ docker run --rm -v "$PWD:/data" fastaguard:local /data/sample.fa \
   --json /data/fastaguard.json \
   --tsv /data/fastaguard.tsv \
   --multiqc /data/fastaguard_mqc.json
+```
+
+Use the generated BioContainers image in workflow engines:
+
+```bash
+docker pull quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0
 ```
 
 Exit codes:
@@ -177,10 +184,10 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 ## Status
 
-v0.2.0 is published on GitHub with Linux and macOS release binaries. The
-Bioconda v0.2.0 recipe metadata is ready with the published source archive SHA;
-Bioconda may still serve v0.1.1 until the upstream recipe update is merged.
-BioContainers image availability is still pending confirmation.
+v0.2.0 is published on GitHub with Linux and macOS release binaries. Bioconda
+serves v0.2.0 for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`.
+BioContainers also publishes the pinned workflow image
+`quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0`.
 
 The next internal milestone is the
 [v0.2 evidence pack](docs/evidence/fastaguard-v0.2-evidence.md): reproducible
