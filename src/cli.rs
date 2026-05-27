@@ -5,6 +5,7 @@ use std::collections::BTreeSet;
 use std::env::VarError;
 use std::path::PathBuf;
 
+use crate::gate::{self, GateMode};
 use crate::profile::ThresholdOverrides;
 
 #[derive(Debug, Parser)]
@@ -35,6 +36,10 @@ pub struct Cli {
     /// QC profile. The current release supports assembly.
     #[arg(long, default_value = "assembly")]
     pub profile: String,
+
+    /// Gate preset for pipeline-friendly failure behavior.
+    #[arg(long, value_enum, default_value_t = GateMode::None)]
+    pub gate: GateMode,
 
     /// HTML report path.
     #[arg(long, default_value = "fastaguard_report.html")]
@@ -73,6 +78,7 @@ pub struct Cli {
 pub struct RunConfig {
     pub input: PathBuf,
     pub profile: String,
+    pub gate_mode: GateMode,
     pub outputs: OutputPaths,
     pub rules: RuleConfig,
     pub thresholds: ThresholdOverrides,
@@ -122,6 +128,7 @@ impl Cli {
         Ok(RunConfig {
             input,
             profile: self.profile.clone(),
+            gate_mode: self.gate,
             outputs: OutputPaths {
                 html: self.out.clone(),
                 json: self.json.clone(),
@@ -129,7 +136,7 @@ impl Cli {
                 multiqc: self.multiqc.clone(),
             },
             rules: RuleConfig {
-                fail_on: normalize_rules(&self.fail_on),
+                fail_on: gate::final_fail_on(self.gate, &self.fail_on),
             },
             thresholds: ThresholdOverrides {
                 max_n_rate: self.max_n_rate,
@@ -179,19 +186,10 @@ fn current_utc_timestamp() -> String {
     Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true)
 }
 
-fn normalize_rules(values: &[String]) -> BTreeSet<String> {
-    values
-        .iter()
-        .flat_map(|value| value.split(','))
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(ToOwned::to_owned)
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::gate::GateMode;
     use clap::Parser;
 
     fn cli_with_max_n_rate(max_n_rate: Option<f64>) -> Cli {
@@ -201,6 +199,7 @@ mod tests {
             finding_catalog: false,
             explain_finding: None,
             profile: "assembly".to_string(),
+            gate: GateMode::None,
             out: PathBuf::from("fastaguard_report.html"),
             json: PathBuf::from("fastaguard.json"),
             tsv: PathBuf::from("fastaguard.tsv"),
@@ -242,5 +241,63 @@ mod tests {
         let config = cli.to_run_config().unwrap();
 
         assert_eq!(config.outputs.multiqc, PathBuf::from("fastaguard_mqc.json"));
+    }
+
+    #[test]
+    fn gate_none_preserves_explicit_fail_rules() {
+        let cli = Cli::parse_from([
+            "fastaguard",
+            "input.fa",
+            "--gate",
+            "none",
+            "--fail-on",
+            "gc_outliers",
+        ]);
+        let config = cli.to_run_config().unwrap();
+
+        assert_eq!(config.gate_mode, GateMode::None);
+        assert_eq!(
+            config.rules.fail_on,
+            ["gc_outliers"].into_iter().map(str::to_string).collect()
+        );
+    }
+
+    #[test]
+    fn gate_pipeline_adds_conservative_fail_rules() {
+        let cli = Cli::parse_from(["fastaguard", "input.fa", "--gate", "pipeline"]);
+        let config = cli.to_run_config().unwrap();
+
+        assert_eq!(config.gate_mode, GateMode::Pipeline);
+        assert_eq!(
+            config.rules.fail_on,
+            [
+                "duplicate_ids",
+                "high_n_rate",
+                "invalid_chars",
+                "invalid_fasta_structure",
+            ]
+            .into_iter()
+            .map(str::to_string)
+            .collect()
+        );
+    }
+
+    #[test]
+    fn gate_pipeline_unions_explicit_fail_rules() {
+        let cli = Cli::parse_from([
+            "fastaguard",
+            "input.fa",
+            "--gate",
+            "pipeline",
+            "--fail-on",
+            "gc_outliers",
+        ]);
+        let config = cli.to_run_config().unwrap();
+
+        assert!(config.rules.fail_on.contains("duplicate_ids"));
+        assert!(config.rules.fail_on.contains("invalid_chars"));
+        assert!(config.rules.fail_on.contains("invalid_fasta_structure"));
+        assert!(config.rules.fail_on.contains("high_n_rate"));
+        assert!(config.rules.fail_on.contains("gc_outliers"));
     }
 }

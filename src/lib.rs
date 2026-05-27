@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod contract;
 pub mod findings;
+pub mod gate;
 pub mod metrics;
 pub mod models;
 pub mod parser;
@@ -68,6 +69,7 @@ fn measured_duration_ms(config: &cli::RunConfig, started: Instant) -> u64 {
 mod tests {
     use super::*;
     use crate::cli::{OutputPaths, RuleConfig, RunConfig};
+    use crate::gate::GateMode;
     use crate::profile::ThresholdOverrides;
     use std::collections::BTreeSet;
     use std::path::PathBuf;
@@ -97,6 +99,7 @@ mod tests {
         RunConfig {
             input: PathBuf::from("input.fa"),
             profile: "assembly".to_string(),
+            gate_mode: GateMode::None,
             outputs: OutputPaths {
                 html: PathBuf::from("fastaguard_report.html"),
                 json: PathBuf::from("fastaguard.json"),

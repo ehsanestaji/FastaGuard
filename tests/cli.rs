@@ -754,6 +754,15 @@ fn unsupported_profile_is_tool_error() {
 }
 
 #[test]
+fn unknown_gate_value_is_cli_error() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["testdata/valid_assembly.fa", "--gate", "strict"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("invalid value 'strict'"));
+}
+
+#[test]
 fn invalid_provenance_timestamp_override_is_tool_error() {
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     cmd.env("FASTAGUARD_PROVENANCE_TIMESTAMP", "now")
