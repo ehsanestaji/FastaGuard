@@ -468,6 +468,17 @@ class AdoptionAssetsTest(unittest.TestCase):
                     "docs/evidence/fastaguard-v0.2-evidence.md", path.read_text()
                 )
 
+    def test_v0_3_evidence_docs_reference_gate_and_checksum(self):
+        evidence = ROOT / "docs" / "evidence" / "fastaguard-v0.3-evidence.md"
+
+        self.assertTrue(evidence.exists())
+        evidence_text = evidence.read_text()
+        self.assertIn("--gate pipeline", evidence_text)
+        self.assertIn("input_sha256", evidence_text)
+        self.assertIn("not biological completeness", evidence_text)
+        self.assertIn("not contamination confirmation", evidence_text)
+        self.assertIn("python3 scripts/collect_evidence.py", evidence_text)
+
     def test_collect_evidence_local_only_smoke_does_not_require_network(self):
         with TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
@@ -480,6 +491,8 @@ from pathlib import Path
 
 args = sys.argv[1:]
 input_path = Path(args[0])
+if "--gate" not in args or args[args.index("--gate") + 1] != "pipeline":
+    raise SystemExit("unexpected gate mode")
 
 def option_path(flag):
     try:
@@ -500,6 +513,12 @@ summary = {
 report = {
     "tool": {"name": "fastaguard", "version": "test"},
     "verdict": {"status": "PASS"},
+    "gate": {
+        "mode": "pipeline",
+        "status": "PASS",
+        "blocking_findings": [],
+    },
+    "provenance": {"input_sha256": "0" * 64},
     "summary": summary,
     "findings": [],
 }
@@ -541,8 +560,143 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
             self.assertTrue((out_dir / "evidence_summary.tsv").exists())
             for case in summary["cases"]:
                 self.assertEqual(case["verdict"], "PASS")
+                self.assertEqual(case["gate_mode"], "pipeline")
+                self.assertEqual(case["gate_status"], "PASS")
+                self.assertEqual(case["gate_blocking_findings"], "")
+                self.assertEqual(case["input_sha256"], "0" * 64)
+                self.assertIn("--gate pipeline", case["command"])
                 self.assertGreater(case["elapsed_seconds"], 0)
                 self.assertIn("command", case)
+
+    def test_collect_evidence_rejects_reports_without_gate_contract(self):
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            fake_binary = temp_path / "old_fastaguard.py"
+            fake_binary.write_text(
+                """#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+args = sys.argv[1:]
+input_path = Path(args[0])
+
+def option_path(flag):
+    try:
+        return Path(args[args.index(flag) + 1])
+    except ValueError:
+        return None
+
+json_path = option_path("--json")
+html_path = option_path("--out")
+tsv_path = option_path("--tsv")
+multiqc_path = option_path("--multiqc")
+summary = {
+    "sequence_count": 1,
+    "total_length": input_path.stat().st_size,
+    "n50": input_path.stat().st_size,
+    "n90": input_path.stat().st_size,
+}
+report = {
+    "tool": {"name": "fastaguard", "version": "old"},
+    "verdict": {"status": "PASS"},
+    "summary": summary,
+    "findings": [],
+}
+json_path.write_text(json.dumps(report))
+html_path.write_text("<html>fake</html>")
+tsv_path.write_text("metric\\tvalue\\n")
+multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
+"""
+            )
+            fake_binary.chmod(fake_binary.stat().st_mode | 0o111)
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "collect_evidence.py"),
+                    "--binary",
+                    str(fake_binary),
+                    "--out-dir",
+                    str(temp_path / "evidence"),
+                    "--local-only",
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("missing gate", completed.stderr)
+
+    def test_collect_evidence_rejects_non_pipeline_gate_reports(self):
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            fake_binary = temp_path / "wrong_gate_fastaguard.py"
+            fake_binary.write_text(
+                """#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+args = sys.argv[1:]
+input_path = Path(args[0])
+
+def option_path(flag):
+    try:
+        return Path(args[args.index(flag) + 1])
+    except ValueError:
+        return None
+
+json_path = option_path("--json")
+html_path = option_path("--out")
+tsv_path = option_path("--tsv")
+multiqc_path = option_path("--multiqc")
+summary = {
+    "sequence_count": 1,
+    "total_length": input_path.stat().st_size,
+    "n50": input_path.stat().st_size,
+    "n90": input_path.stat().st_size,
+}
+report = {
+    "tool": {"name": "fastaguard", "version": "test"},
+    "verdict": {"status": "PASS"},
+    "gate": {
+        "mode": "none",
+        "status": "PASS",
+        "blocking_findings": [],
+    },
+    "provenance": {"input_sha256": "0" * 64},
+    "summary": summary,
+    "findings": [],
+}
+json_path.write_text(json.dumps(report))
+html_path.write_text("<html>fake</html>")
+tsv_path.write_text("metric\\tvalue\\n")
+multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
+"""
+            )
+            fake_binary.chmod(fake_binary.stat().st_mode | 0o111)
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "collect_evidence.py"),
+                    "--binary",
+                    str(fake_binary),
+                    "--out-dir",
+                    str(temp_path / "evidence"),
+                    "--local-only",
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("expected gate.mode pipeline", completed.stderr)
 
     def test_deep_release_vision_is_documented_and_memorized(self):
         vision = (ROOT / "docs" / "vision-plan.md").read_text()
