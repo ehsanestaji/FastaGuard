@@ -1,4 +1,5 @@
 import json
+import subprocess
 import sys
 import types
 import unittest
@@ -271,6 +272,9 @@ class AdoptionAssetsTest(unittest.TestCase):
 
     def test_workflow_docs_reference_bioconda_and_container_status(self):
         nfcore_readme = (ROOT / "examples" / "nf-core" / "README.md").read_text()
+        nfcore_module = (
+            ROOT / "examples" / "nf-core" / "modules" / "local" / "fastaguard" / "main.nf"
+        ).read_text()
         snakemake_readme = (
             ROOT / "examples" / "snakemake" / "wrapper" / "README.md"
         ).read_text()
@@ -279,8 +283,16 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn(install, nfcore_readme)
         self.assertIn(install, snakemake_readme)
         self.assertIn(
-            "Once a BioContainers image is confirmed, the module can add a pinned container directive.",
+            "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
             nfcore_readme,
+        )
+        self.assertIn(
+            "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
+            nfcore_module,
+        )
+        self.assertIn(
+            "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
+            snakemake_readme,
         )
 
     def test_benchmarking_docs_include_v0_2_evidence_topics(self):
@@ -294,6 +306,152 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("QUAST", text)
         self.assertIn("BUSCO", text)
         self.assertIn("BlobToolKit", text)
+
+    def test_public_evidence_manifest_declares_default_assemblies(self):
+        manifest = json.loads(
+            (ROOT / "docs" / "evidence" / "public_assemblies.json").read_text()
+        )
+
+        self.assertEqual(manifest["schema_version"], 1)
+        cases = manifest["assemblies"]
+        self.assertGreaterEqual(len(cases), 2)
+        accessions = {case["accession"] for case in cases}
+        self.assertIn("GCF_000005845.2", accessions)
+        self.assertIn("GCF_000182925.2", accessions)
+
+        for case in cases:
+            with self.subTest(case=case):
+                self.assertEqual(
+                    set(case),
+                    {"id", "accession", "label", "category", "source_url"},
+                )
+                self.assertRegex(case["id"], r"^[a-z0-9][a-z0-9_-]+$")
+                self.assertRegex(case["accession"], r"^GC[AF]_[0-9]+\.[0-9]+$")
+                self.assertTrue(case["label"])
+                self.assertIn(case["category"], {"bacterial", "fungal"})
+                self.assertTrue(case["source_url"].startswith("https://"))
+
+    def test_evidence_docs_reference_local_and_public_workflows(self):
+        evidence = (ROOT / "docs" / "evidence" / "fastaguard-v0.2-evidence.md")
+        benchmarking = ROOT / "docs" / "benchmarking.md"
+        readme = ROOT / "README.md"
+        landscape = ROOT / "docs" / "tool-landscape.md"
+
+        evidence_text = evidence.read_text()
+        self.assertIn("python3 scripts/collect_evidence.py", evidence_text)
+        self.assertIn("--local-only", evidence_text)
+        self.assertIn("datasets download genome accession", evidence_text)
+        self.assertIn("evidence_summary.json", evidence_text)
+        self.assertIn("not biological completeness", evidence_text)
+        self.assertIn("not contamination confirmation", evidence_text)
+
+        for path in (benchmarking, readme, landscape):
+            with self.subTest(path=path):
+                self.assertIn(
+                    "docs/evidence/fastaguard-v0.2-evidence.md", path.read_text()
+                )
+
+    def test_collect_evidence_local_only_smoke_does_not_require_network(self):
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            fake_binary = temp_path / "fake_fastaguard.py"
+            fake_binary.write_text(
+                """#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+args = sys.argv[1:]
+input_path = Path(args[0])
+
+def option_path(flag):
+    try:
+        return Path(args[args.index(flag) + 1])
+    except ValueError:
+        return None
+
+json_path = option_path("--json")
+html_path = option_path("--out")
+tsv_path = option_path("--tsv")
+multiqc_path = option_path("--multiqc")
+summary = {
+    "sequence_count": 1,
+    "total_length": input_path.stat().st_size,
+    "n50": input_path.stat().st_size,
+    "n90": input_path.stat().st_size,
+}
+report = {
+    "tool": {"name": "fastaguard", "version": "test"},
+    "verdict": {"status": "PASS"},
+    "summary": summary,
+    "findings": [],
+}
+json_path.write_text(json.dumps(report))
+html_path.write_text("<html>fake</html>")
+tsv_path.write_text("metric\\tvalue\\n")
+multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
+"""
+            )
+            fake_binary.chmod(fake_binary.stat().st_mode | 0o111)
+            out_dir = temp_path / "evidence"
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "collect_evidence.py"),
+                    "--binary",
+                    str(fake_binary),
+                    "--out-dir",
+                    str(out_dir),
+                    "--local-only",
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertNotIn("datasets download", completed.stdout)
+            summary_path = out_dir / "evidence_summary.json"
+            self.assertTrue(summary_path.exists())
+            summary = json.loads(summary_path.read_text())
+            case_ids = {case["id"] for case in summary["cases"]}
+            self.assertEqual(
+                case_ids,
+                {"synthetic_valid", "problem_fixture", "gzipped_valid"},
+            )
+            self.assertTrue((out_dir / "evidence_summary.tsv").exists())
+            for case in summary["cases"]:
+                self.assertEqual(case["verdict"], "PASS")
+                self.assertGreater(case["elapsed_seconds"], 0)
+                self.assertIn("command", case)
+
+    def test_deep_release_vision_is_documented_and_memorized(self):
+        vision = (ROOT / "docs" / "vision-plan.md").read_text()
+        memory = (ROOT / "AGENTS.md").read_text()
+        readme = (ROOT / "README.md").read_text()
+
+        required_phrases = [
+            "FASTA preflight operating system",
+            "evidence before expansion",
+            "assembly gate",
+            "compare mode",
+            "transcriptome",
+            "protein",
+            "reference-panel",
+            "MCP",
+            "machine-actionable",
+            "local-metrics-only",
+        ]
+
+        for phrase in required_phrases:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, vision)
+
+        self.assertIn("Deep Release Vision", memory)
+        self.assertIn("FASTA preflight operating system", memory)
+        self.assertIn("docs/vision-plan.md", readme)
 
     def test_snakemake_wrapper_declares_bioconda_environment(self):
         environment = (
@@ -310,7 +468,7 @@ class AdoptionAssetsTest(unittest.TestCase):
                 "  - conda-forge",
                 "  - bioconda",
                 "dependencies:",
-                "  - fastaguard=0.1.1",
+                "  - fastaguard=0.2.0",
             ],
         )
         self.assertIn('conda: "environment.yaml"', snakefile.read_text())

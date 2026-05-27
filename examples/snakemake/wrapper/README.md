@@ -20,6 +20,12 @@ The wrapper also includes a Conda environment:
 snakemake -s Snakefile --cores 1 --use-conda
 ```
 
+For containerized workflow runs, use the pinned BioContainers image:
+
+```text
+quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0
+```
+
 The wrapper emits:
 
 - `fastaguard_report.html`

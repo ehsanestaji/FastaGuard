@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "assemblies": [
+    {
+      "id": "ecoli_k12_mg1655",
+      "accession": "GCF_000005845.2",
+      "label": "Escherichia coli K-12 MG1655",
+      "category": "bacterial",
+      "source_url": "https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000005845.2/"
+    },
+    {
+      "id": "neurospora_crassa_or74a",
+      "accession": "GCF_000182925.2",
+      "label": "Neurospora crassa OR74A",
+      "category": "fungal",
+      "source_url": "https://www.ncbi.nlm.nih.gov/bioproject/132"
+    }
+  ]
+}

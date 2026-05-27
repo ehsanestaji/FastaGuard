@@ -49,7 +49,40 @@ Capabilities:
 - ready Bioconda recipe metadata for the v0.2.0 update
 - benchmark evidence guidance for adoption decisions
 
-## v0.3: Transcriptome Profile
+## v0.3: Evidence And Assembly Gate
+
+Goal:
+
+```text
+Make FastaGuard credible enough for pipeline authors to add as a default assembly gate.
+```
+
+Potential additions:
+
+- public evidence pack from local fixtures and public assemblies
+- Bioconda and BioContainers v0.2 availability documented
+- input checksum provenance
+- clearer machine-readable threshold metadata
+- assembly gate preset for common pipeline behavior
+- clearer blocking vs follow-up recommendations
+
+## v0.4: Compare Mode
+
+Goal:
+
+```text
+Make many FASTA files easy to rank, filter, and route.
+```
+
+Potential additions:
+
+- cross-file metrics table
+- cohort-level outliers
+- sample-to-sample summary
+- batch pipeline reports
+- combined JSON, TSV, HTML, and MultiQC outputs
+
+## v0.5: Transcriptome Profile
 
 Potential additions:
 
@@ -59,7 +92,7 @@ Potential additions:
 - extreme GC outliers
 - isoform-heavy warning heuristics
 
-## v0.4: Protein Profile
+## v0.6: Protein Profile
 
 Potential additions:
 
@@ -69,7 +102,7 @@ Potential additions:
 - low-complexity regions
 - suspicious nucleotide-looking proteins
 
-## v0.5: Reference Panel Profile
+## v0.7: Reference Panel Profile
 
 Potential additions:
 
@@ -78,21 +111,6 @@ Potential additions:
 - sequence uniqueness checks
 - panel consistency summaries
 - submission-readiness warnings
-
-## v0.6: Compare Mode
-
-Example:
-
-```bash
-fastaguard compare *.fa --profile assembly --out cohort_report.html
-```
-
-Potential additions:
-
-- cross-file metrics table
-- cohort-level outliers
-- sample-to-sample summary
-- batch pipeline reports
 
 ## Pipeline Integration Maturity
 

@@ -9,10 +9,9 @@ Bioconda -> GitHub release binaries -> Docker image -> BioContainers -> Homebrew
 ```
 
 FastaGuard v0.2.0 is published on GitHub with Linux and macOS release binaries.
-Bioconda currently publishes v0.1.1 until the upstream v0.2.0 recipe update is
-merged. Docker remains useful for local smoke tests and pipeline containers,
-while BioContainers should be confirmed after the Bioconda publication pipeline
-catches up.
+Bioconda serves v0.2.0 on Linux and macOS x86_64/ARM64 platforms. Docker remains
+useful for local smoke tests, while BioContainers now provides the pinned
+workflow image generated from the Bioconda package.
 
 ## Bioconda
 
@@ -38,7 +37,7 @@ fastaguard --finding-catalog
 
 Current published package:
 
-- Version: `0.1.1`
+- Version: `0.2.0`
 - Platforms: `linux-64`, `linux-aarch64`, `osx-64`, `osx-arm64`
 - Package page: [anaconda.org/bioconda/fastaguard](https://anaconda.org/bioconda/fastaguard)
 
@@ -141,12 +140,14 @@ The Docker image should stay boring:
 
 That makes it easy to run in Nextflow, Snakemake, Galaxy, and CI systems.
 
-The Bioconda recipe has merged upstream. BioContainers should be confirmed
-separately by checking the generated registry image/tag once it appears. That
-path is preferable to maintaining a separate BioContainers Dockerfile unless
-automated container publication proves unavailable.
+The Bioconda recipe has merged upstream and generated a BioContainers image.
+Use the pinned tag in workflow examples:
 
-BioContainers image availability is still pending confirmation.
+```bash
+docker pull quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0
+```
+
+That path is preferable to maintaining a separate BioContainers Dockerfile.
 
 ## MultiQC
 

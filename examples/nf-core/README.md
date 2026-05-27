@@ -16,13 +16,18 @@ Emitted outputs:
 - `mqc`
 - `versions`
 
-The module assumes `fastaguard` is available on `PATH`. The recommended install is now:
+The module assumes `fastaguard` is available on `PATH` when run without a
+container. The recommended install is:
 
 ```bash
 mamba install -c conda-forge -c bioconda fastaguard
 ```
 
-Once a BioContainers image is confirmed, the module can add a pinned container directive.
+The local module also includes the pinned BioContainers image:
+
+```text
+quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0
+```
 
 Example include:
 

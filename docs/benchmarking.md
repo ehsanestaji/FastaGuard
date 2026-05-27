@@ -117,3 +117,30 @@ For each run, record:
 - whether downstream tools would have been blocked or recommended
 
 This evidence matters more than synthetic speed alone because it shows the wedge: cheap FASTA preflight before expensive downstream QC.
+
+## Evidence Pack Workflow
+
+The v0.2 evidence workflow is documented in
+`docs/evidence/fastaguard-v0.2-evidence.md`.
+
+CI-safe local run:
+
+```bash
+python3 scripts/collect_evidence.py \
+  --binary target/release/fastaguard \
+  --out-dir target/evidence/local-smoke \
+  --local-only
+```
+
+Public NCBI run:
+
+```bash
+python3 scripts/collect_evidence.py \
+  --binary target/release/fastaguard \
+  --out-dir target/evidence/v0.2
+```
+
+The public run uses NCBI Datasets commands such as
+`datasets download genome accession <ACCESSION> --include genome --filename <zip>`.
+It writes compact `evidence_summary.json` and `evidence_summary.tsv` files while
+leaving downloaded FASTA files and full reports under `target/`.
