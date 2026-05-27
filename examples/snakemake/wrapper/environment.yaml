@@ -2,4 +2,4 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - fastaguard=0.2.0
+  - fastaguard=0.3.0

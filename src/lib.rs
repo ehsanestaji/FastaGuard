@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod contract;
 pub mod findings;
+pub mod gate;
 pub mod metrics;
 pub mod models;
 pub mod parser;
@@ -37,7 +38,7 @@ pub fn run(cli: Cli) -> Result<i32> {
                 &profile,
                 error.to_string(),
                 measured_duration_ms(&config, run_started),
-            );
+            )?;
             report::write_all(&output, &config.outputs)?;
             return Ok(output.exit_code());
         }
@@ -51,7 +52,7 @@ pub fn run(cli: Cli) -> Result<i32> {
         metrics,
         analysis,
         duration_ms,
-    );
+    )?;
     report::write_all(&output, &config.outputs)?;
     Ok(output.exit_code())
 }
@@ -68,6 +69,7 @@ fn measured_duration_ms(config: &cli::RunConfig, started: Instant) -> u64 {
 mod tests {
     use super::*;
     use crate::cli::{OutputPaths, RuleConfig, RunConfig};
+    use crate::gate::GateMode;
     use crate::profile::ThresholdOverrides;
     use std::collections::BTreeSet;
     use std::path::PathBuf;
@@ -97,6 +99,7 @@ mod tests {
         RunConfig {
             input: PathBuf::from("input.fa"),
             profile: "assembly".to_string(),
+            gate_mode: GateMode::None,
             outputs: OutputPaths {
                 html: PathBuf::from("fastaguard_report.html"),
                 json: PathBuf::from("fastaguard.json"),

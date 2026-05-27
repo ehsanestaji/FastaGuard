@@ -8,8 +8,10 @@ rule fastaguard:
         multiqc="fastaguard_mqc.json"
     shell:
         """
+        # Gate failures intentionally exit 2 after writing reports.
         fastaguard {input.fasta} \
           --profile assembly \
+          --gate pipeline \
           --out {output.html} \
           --json {output.json} \
           --tsv {output.tsv} \

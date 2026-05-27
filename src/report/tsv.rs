@@ -18,6 +18,23 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
         "verdict",
         verdict_status(report.verdict.status),
     )?;
+    write_metric(&mut writer, "gate_mode", &report.gate.mode)?;
+    write_metric(
+        &mut writer,
+        "gate_status",
+        verdict_status(report.gate.status),
+    )?;
+    write_metric(
+        &mut writer,
+        "gate_blocking_findings",
+        report.gate.blocking_findings.join(","),
+    )?;
+    write_metric(
+        &mut writer,
+        "gate_advisory_findings",
+        report.gate.advisory_findings.join(","),
+    )?;
+    write_metric(&mut writer, "input_sha256", &report.provenance.input_sha256)?;
     write_metric(&mut writer, "sequence_count", report.summary.sequence_count)?;
     write_metric(&mut writer, "total_length", report.summary.total_length)?;
     write_metric(&mut writer, "n50", report.summary.n50)?;
@@ -82,8 +99,8 @@ mod tests {
     use super::*;
     use crate::models::{
         empty_evidence, empty_plots, Artifacts, FastaguardReport, Finding, FindingCategory,
-        FindingConfidence, InputInfo, MachineSummary, Provenance, ProvenanceThresholds, Scope,
-        Severity, Summary, ToolInfo, Verdict, VerdictStatus,
+        FindingConfidence, GateDecision, InputInfo, MachineSummary, Provenance,
+        ProvenanceThresholds, Scope, Severity, Summary, ToolInfo, Verdict, VerdictStatus,
     };
 
     #[test]
@@ -115,6 +132,36 @@ mod tests {
         assert!(output.contains("composite_anomaly_count\t1\n"), "{output}");
     }
 
+    #[test]
+    fn writes_gate_and_checksum_rows() {
+        let mut report = test_report(VerdictStatus::Fail);
+        report.gate.mode = "pipeline".to_string();
+        report.gate.status = VerdictStatus::Fail;
+        report.gate.blocking_findings = vec!["duplicate_ids".to_string()];
+        report.gate.advisory_findings = vec!["gc_outliers".to_string()];
+        report.provenance.input_sha256 = "a".repeat(64);
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let checksum = "a".repeat(64);
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(output.contains("gate_mode\tpipeline\n"), "{output}");
+        assert!(output.contains("gate_status\tFAIL\n"), "{output}");
+        assert!(
+            output.contains("gate_blocking_findings\tduplicate_ids\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("gate_advisory_findings\tgc_outliers\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains(&format!("input_sha256\t{checksum}\n")),
+            "{output}"
+        );
+    }
+
     fn test_report(status: VerdictStatus) -> FastaguardReport {
         FastaguardReport {
             schema_version: "0.1.0".to_string(),
@@ -130,6 +177,13 @@ mod tests {
             verdict: Verdict {
                 status,
                 reasons: Vec::new(),
+            },
+            gate: GateDecision {
+                mode: "none".to_string(),
+                status,
+                blocking_findings: Vec::new(),
+                advisory_findings: Vec::new(),
+                fail_on: Vec::new(),
             },
             machine_summary: MachineSummary {
                 verdict: status,
@@ -159,6 +213,7 @@ mod tests {
                 completed_at: "2026-05-23T00:00:00Z".to_string(),
                 duration_ms: 0,
                 input_size_bytes: 100,
+                input_sha256: "0".repeat(64),
             },
             summary: Summary {
                 sequence_count: 2,

@@ -19,6 +19,9 @@ REQUIRED_SUMMARY_FIELDS = (
 )
 
 OPTIONAL_SUMMARY_FIELDS = (
+    "gate_mode",
+    "gate_status",
+    "gate_blocking_findings",
     "duplicate_id_count",
     "invalid_sequence_count",
     "high_n_sequence_count",

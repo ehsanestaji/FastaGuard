@@ -9,6 +9,7 @@
     "tool",
     "input",
     "verdict",
+    "gate",
     "machine_summary",
     "scope",
     "provenance",
@@ -19,7 +20,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.2.0",
+      "const": "0.3.0",
       "description": "Version of the FastaGuard report schema."
     },
     "tool": {
@@ -58,6 +59,47 @@
           "enum": ["PASS", "WARN", "FAIL"]
         },
         "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": [
+        "mode",
+        "status",
+        "blocking_findings",
+        "advisory_findings",
+        "fail_on"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["none", "pipeline"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PASS", "WARN", "FAIL"]
+        },
+        "blocking_findings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "advisory_findings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "fail_on": {
           "type": "array",
           "items": {
             "type": "string"
@@ -135,7 +177,8 @@
         "started_at",
         "completed_at",
         "duration_ms",
-        "input_size_bytes"
+        "input_size_bytes",
+        "input_sha256"
       ],
       "properties": {
         "profile": {
@@ -204,6 +247,10 @@
         "input_size_bytes": {
           "type": "integer",
           "minimum": 0
+        },
+        "input_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
         }
       }
     },

@@ -35,6 +35,29 @@ fn schema_requires_emitted_finding_taxonomy_fields() {
 }
 
 #[test]
+fn schema_requires_gate_and_input_sha256() {
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let report_required = schema["required"].as_array().unwrap();
+    let gate_required = schema["properties"]["gate"]["required"].as_array().unwrap();
+    let provenance_required = schema["properties"]["provenance"]["required"]
+        .as_array()
+        .unwrap();
+
+    assert_eq!(schema["properties"]["schema_version"]["const"], "0.3.0");
+    assert!(report_required.contains(&serde_json::json!("gate")));
+    assert!(gate_required.contains(&serde_json::json!("mode")));
+    assert!(gate_required.contains(&serde_json::json!("status")));
+    assert!(gate_required.contains(&serde_json::json!("blocking_findings")));
+    assert!(gate_required.contains(&serde_json::json!("advisory_findings")));
+    assert!(gate_required.contains(&serde_json::json!("fail_on")));
+    assert!(provenance_required.contains(&serde_json::json!("input_sha256")));
+    assert_eq!(
+        schema["properties"]["provenance"]["properties"]["input_sha256"]["pattern"],
+        "^[a-f0-9]{64}$"
+    );
+}
+
+#[test]
 fn freshly_generated_outlier_report_validates_against_json_schema() {
     let temp_dir = TempDir::new().unwrap();
     let input = temp_dir.path().join("outliers.fa");

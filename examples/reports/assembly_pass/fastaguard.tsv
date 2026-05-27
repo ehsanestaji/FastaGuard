@@ -1,7 +1,12 @@
 metric	value
-schema_version	0.2.0
+schema_version	0.3.0
 profile	assembly
 verdict	PASS
+gate_mode	none
+gate_status	PASS
+gate_blocking_findings
+gate_advisory_findings
+input_sha256	373699c0422b364607fc6879c46c053c105413c81df9403998d3d26a7122d2e8
 sequence_count	3
 total_length	47
 n50	16

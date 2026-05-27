@@ -25,6 +25,9 @@ struct MultiqcPlotConfig {
 #[derive(Serialize)]
 struct MultiqcSummaryRow {
     verdict: &'static str,
+    gate_mode: String,
+    gate_status: &'static str,
+    gate_blocking_findings: String,
     sequence_count: u64,
     total_length: u64,
     n50: u64,
@@ -80,6 +83,9 @@ fn sample_name(path: &str) -> String {
 fn summary_row(report: &FastaguardReport) -> MultiqcSummaryRow {
     MultiqcSummaryRow {
         verdict: verdict_status(report.verdict.status),
+        gate_mode: report.gate.mode.clone(),
+        gate_status: verdict_status(report.gate.status),
+        gate_blocking_findings: report.gate.blocking_findings.join(","),
         sequence_count: report.summary.sequence_count,
         total_length: report.summary.total_length,
         n50: report.summary.n50,
@@ -124,8 +130,8 @@ mod tests {
 
     use super::*;
     use crate::models::{
-        empty_plots, Artifacts, FastaguardReport, InputInfo, MachineSummary, Provenance,
-        ProvenanceThresholds, Scope, Summary, ToolInfo, Verdict, VerdictStatus,
+        empty_plots, Artifacts, FastaguardReport, GateDecision, InputInfo, MachineSummary,
+        Provenance, ProvenanceThresholds, Scope, Summary, ToolInfo, Verdict, VerdictStatus,
     };
 
     #[test]
@@ -141,6 +147,9 @@ mod tests {
         assert_eq!(output["plot_type"], "table");
         assert_eq!(output["pconfig"]["id"], "fastaguard_summary");
         assert_eq!(output["data"]["sample"]["verdict"], "PASS");
+        assert_eq!(output["data"]["sample"]["gate_mode"], "none");
+        assert_eq!(output["data"]["sample"]["gate_status"], "PASS");
+        assert_eq!(output["data"]["sample"]["gate_blocking_findings"], "");
         assert_eq!(output["data"]["sample"]["sequence_count"], 2);
         assert_eq!(output["data"]["sample"]["duplicate_id_count"], 0);
         assert_eq!(output["data"]["sample"]["invalid_sequence_count"], 0);
@@ -175,6 +184,13 @@ mod tests {
                 status: VerdictStatus::Pass,
                 reasons: Vec::new(),
             },
+            gate: GateDecision {
+                mode: "none".to_string(),
+                status: VerdictStatus::Pass,
+                blocking_findings: Vec::new(),
+                advisory_findings: Vec::new(),
+                fail_on: Vec::new(),
+            },
             machine_summary: MachineSummary {
                 verdict: VerdictStatus::Pass,
                 safe_for_downstream: true,
@@ -203,6 +219,7 @@ mod tests {
                 completed_at: "2026-05-23T00:00:00Z".to_string(),
                 duration_ms: 0,
                 input_size_bytes: 100,
+                input_sha256: "0".repeat(64),
             },
             summary: Summary {
                 sequence_count: 2,

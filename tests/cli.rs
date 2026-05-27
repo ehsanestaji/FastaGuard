@@ -1,6 +1,7 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
@@ -46,7 +47,7 @@ fn contract_finding_catalog_can_be_printed_without_input() {
     cmd.arg("--finding-catalog")
         .assert()
         .success()
-        .stdout(predicate::str::contains(r#""schema_version": "0.2.0""#))
+        .stdout(predicate::str::contains(r#""schema_version": "0.3.0""#))
         .stdout(predicate::str::contains(r#""duplicate_ids""#))
         .stdout(predicate::str::contains(r#""invalid_fasta_structure""#))
         .stdout(predicate::str::contains(r#""gc_outliers""#))
@@ -196,7 +197,7 @@ fn valid_report_includes_machine_summary_scope_and_provenance() {
 }
 
 #[test]
-fn report_includes_v0_2_provenance_and_routing_hints() {
+fn report_includes_v0_3_provenance_and_routing_hints() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "v02_contract");
 
@@ -218,7 +219,11 @@ fn report_includes_v0_2_provenance_and_routing_hints() {
     .success();
 
     let report = read_json(&outputs.json);
-    assert_eq!(report["schema_version"], json!("0.2.0"));
+    assert_eq!(report["schema_version"], json!("0.3.0"));
+    assert_eq!(report["gate"]["mode"], json!("none"));
+    assert_eq!(report["gate"]["status"], json!("PASS"));
+    assert_eq!(report["gate"]["blocking_findings"], json!([]));
+    assert_eq!(report["gate"]["advisory_findings"], json!([]));
     assert!(report["provenance"]["command"]
         .as_str()
         .unwrap()
@@ -233,6 +238,10 @@ fn report_includes_v0_2_provenance_and_routing_hints() {
         .ends_with('Z'));
     assert!(report["provenance"]["duration_ms"].as_u64().is_some());
     assert!(report["provenance"]["input_size_bytes"].as_u64().unwrap() > 0);
+    assert_eq!(
+        report["provenance"]["input_sha256"],
+        json!(sha256_file(Path::new("testdata/valid_assembly.fa")))
+    );
     assert!(report["machine_summary"]["routing_hints"]
         .as_array()
         .unwrap()
@@ -489,6 +498,138 @@ fn problem_assembly_returns_failure_for_default_critical_findings() {
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     assert_all_outputs_exist(&outputs);
+}
+
+#[test]
+fn pipeline_gate_report_lists_blocking_and_advisory_findings() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "pipeline_gate");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/problem_assembly.fa",
+        "--gate",
+        "pipeline",
+        "--out",
+    ])
+    .arg(&outputs.html)
+    .arg("--json")
+    .arg(&outputs.json)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["schema_version"], json!("0.3.0"));
+    assert_eq!(report["gate"]["mode"], json!("pipeline"));
+    assert_eq!(report["gate"]["status"], json!("FAIL"));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "duplicate_ids"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "invalid_chars"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "high_n_rate"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["advisory_findings"],
+        "gap_runs"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["fail_on"],
+        "invalid_fasta_structure"
+    ));
+    assert_eq!(
+        report["provenance"]["input_sha256"],
+        json!(sha256_file(Path::new("testdata/problem_assembly.fa")))
+    );
+}
+
+#[test]
+fn html_report_shows_gate_decision() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "html_gate");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/problem_assembly.fa",
+        "--gate",
+        "pipeline",
+        "--out",
+    ])
+    .arg(&outputs.html)
+    .arg("--json")
+    .arg(&outputs.json)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let html = std::fs::read_to_string(&outputs.html).unwrap();
+    assert!(html.contains("Gate Decision"), "{html}");
+    assert!(html.contains("Blocking"), "{html}");
+    assert!(html.contains("Advisory"), "{html}");
+}
+
+#[test]
+fn gate_none_report_preserves_warning_behavior_and_checksum() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "gate_none");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/problem_assembly.fa",
+        "--gate",
+        "none",
+        "--fail-on",
+        "duplicate_ids,invalid_chars",
+        "--out",
+    ])
+    .arg(&outputs.html)
+    .arg("--json")
+    .arg(&outputs.json)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["gate"]["mode"], json!("none"));
+    assert_eq!(report["gate"]["status"], json!("FAIL"));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "duplicate_ids"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "invalid_chars"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["advisory_findings"],
+        "high_n_rate"
+    ));
+    assert_eq!(
+        report["gate"]["fail_on"],
+        json!(["duplicate_ids", "invalid_chars"])
+    );
+    assert_eq!(
+        report["provenance"]["input_sha256"],
+        json!(sha256_file(Path::new("testdata/problem_assembly.fa")))
+    );
 }
 
 #[test]
@@ -754,6 +895,15 @@ fn unsupported_profile_is_tool_error() {
 }
 
 #[test]
+fn unknown_gate_value_is_cli_error() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["testdata/valid_assembly.fa", "--gate", "strict"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("invalid value 'strict'"));
+}
+
+#[test]
 fn invalid_provenance_timestamp_override_is_tool_error() {
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     cmd.env("FASTAGUARD_PROVENANCE_TIMESTAMP", "now")
@@ -828,6 +978,13 @@ fn golden_provenance_command(stem: &str) -> &'static str {
 
 fn read_json(path: &Path) -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn sha256_file(path: &Path) -> String {
+    let mut hasher = Sha256::new();
+    let bytes = std::fs::read(path).unwrap();
+    hasher.update(bytes);
+    hex::encode(hasher.finalize())
 }
 
 fn balanced_sequence(length: usize) -> String {

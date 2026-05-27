@@ -184,6 +184,18 @@ class MultiqcModule(BaseMultiqcModule):
                 "min": 0,
                 "scale": "OrRd",
             },
+            "gate_mode": {
+                "title": "Gate mode",
+                "description": "FastaGuard gate profile used for the report",
+            },
+            "gate_status": {
+                "title": "Gate status",
+                "description": "FastaGuard assembly gate status",
+            },
+            "gate_blocking_findings": {
+                "title": "Gate blockers",
+                "description": "Finding IDs blocking the FastaGuard gate",
+            },
             "duplicate_id_count": {
                 "title": "Duplicate IDs",
                 "description": "Number of duplicate FASTA record IDs",

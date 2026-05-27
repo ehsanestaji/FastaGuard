@@ -30,6 +30,10 @@ SUMMARY_COLUMNS = [
     "elapsed_seconds",
     "exit_code",
     "verdict",
+    "gate_mode",
+    "gate_status",
+    "gate_blocking_findings",
+    "input_sha256",
     "sequence_count",
     "total_length",
     "n50",
@@ -94,7 +98,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--out-dir",
         type=Path,
-        default=Path("target/evidence/v0.2"),
+        default=Path("target/evidence/v0.3"),
         help="Directory for evidence outputs and summaries.",
     )
     parser.add_argument(
@@ -244,6 +248,8 @@ def run_case(binary: Path, case: dict[str, Any]) -> dict[str, Any]:
         str(case["input_path"]),
         "--profile",
         "assembly",
+        "--gate",
+        "pipeline",
         "--min-contig-length",
         "1",
         "--out",
@@ -272,6 +278,30 @@ def run_case(binary: Path, case: dict[str, Any]) -> dict[str, Any]:
     summary = report["summary"]
     findings = report.get("findings", [])
     top_findings = [finding.get("id", "unknown") for finding in findings[:5]]
+    gate = required_mapping(report, "gate", case["id"])
+    provenance = required_mapping(report, "provenance", case["id"])
+    gate_mode = required_value(gate, "mode", "gate.mode", case["id"])
+    gate_status = required_value(gate, "status", "gate.status", case["id"])
+    blocking_findings = required_list(
+        gate, "blocking_findings", "gate.blocking_findings", case["id"]
+    )
+    input_sha256 = required_value(
+        provenance, "input_sha256", "provenance.input_sha256", case["id"]
+    )
+    if not is_sha256(input_sha256):
+        raise SystemExit(
+            f"FastaGuard evidence report for {case['id']} has invalid "
+            "provenance.input_sha256"
+        )
+    if gate_mode != "pipeline":
+        raise SystemExit(
+            f"FastaGuard evidence report for {case['id']} expected "
+            f"gate.mode pipeline, got {gate_mode!r}"
+        )
+    if gate_status not in {"PASS", "WARN", "FAIL"}:
+        raise SystemExit(
+            f"FastaGuard evidence report for {case['id']} has invalid gate.status"
+        )
 
     return {
         "id": case["id"],
@@ -284,6 +314,10 @@ def run_case(binary: Path, case: dict[str, Any]) -> dict[str, Any]:
         "elapsed_seconds": round(elapsed, 4),
         "exit_code": completed.returncode,
         "verdict": report["verdict"]["status"],
+        "gate_mode": gate_mode,
+        "gate_status": gate_status,
+        "gate_blocking_findings": ",".join(blocking_findings),
+        "input_sha256": input_sha256,
         "sequence_count": summary["sequence_count"],
         "total_length": summary["total_length"],
         "n50": summary["n50"],
@@ -298,6 +332,35 @@ def run_case(binary: Path, case: dict[str, Any]) -> dict[str, Any]:
             "multiqc": str(multiqc_path),
         },
     }
+
+
+def required_mapping(report: dict[str, Any], key: str, case_id: str) -> dict[str, Any]:
+    value = report.get(key)
+    if not isinstance(value, dict):
+        raise SystemExit(f"FastaGuard evidence report for {case_id} missing {key}")
+    return value
+
+
+def required_value(
+    mapping: dict[str, Any], key: str, label: str, case_id: str
+) -> str:
+    value = mapping.get(key)
+    if not isinstance(value, str) or not value:
+        raise SystemExit(f"FastaGuard evidence report for {case_id} missing {label}")
+    return value
+
+
+def required_list(
+    mapping: dict[str, Any], key: str, label: str, case_id: str
+) -> list[str]:
+    value = mapping.get(key)
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise SystemExit(f"FastaGuard evidence report for {case_id} missing {label}")
+    return value
+
+
+def is_sha256(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdef" for character in value)
 
 
 def write_summary(out_dir: Path, summary: dict[str, Any]) -> None:

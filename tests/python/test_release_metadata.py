@@ -10,11 +10,14 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ReleaseMetadataTest(unittest.TestCase):
-    def test_package_and_bioconda_recipe_target_v0_2_0(self):
+    def test_package_targets_v0_3_0(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
+
+        self.assertEqual(cargo["package"]["version"], "0.3.0")
+
+    def test_bioconda_recipe_remains_on_published_v0_2_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
 
-        self.assertEqual(cargo["package"]["version"], "0.2.0")
         self.assertIn('{% set version = "0.2.0" %}', recipe)
 
     def test_v0_2_0_release_notes_exist(self):
@@ -29,13 +32,22 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn("v0.2.0 GitHub release binaries and source archive", text)
         self.assertIn("quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0", text)
 
+    def test_v0_3_0_release_notes_exist(self):
+        notes = ROOT / "docs" / "releases" / "v0.3.0.md"
+
+        self.assertTrue(notes.exists())
+        text = notes.read_text()
+        self.assertIn("FastaGuard v0.3.0", text)
+        self.assertIn("Evidence And Assembly Gate", text)
+        self.assertIn("--gate pipeline", text)
+        self.assertIn("input_sha256", text)
+
     def test_bioconda_recipe_has_publishable_v0_2_0_source_sha(self):
-        cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         marker = "REPLACE" + "_WITH_"
 
-        self.assertEqual(cargo["package"]["version"], "0.2.0")
         self.assertTrue((ROOT / "docs" / "releases" / "v0.2.0.md").exists())
+        self.assertIn('{% set version = "0.2.0" %}', recipe)
         self.assertNotIn(marker, recipe)
 
         match = re.search(r"sha256: ([a-f0-9]{64})", recipe)

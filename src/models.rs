@@ -1,14 +1,19 @@
+use anyhow::{Context, Result};
+use sha2::{Digest, Sha256};
+use std::fs::File;
+use std::io::{BufReader, Read};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
 use crate::cli::RunConfig;
 use crate::findings::Analysis;
+use crate::gate;
 use crate::metrics::AssemblyMetrics;
 use crate::profile::ProfileConfig;
 use crate::stats::composition::percent;
 
-pub const SCHEMA_VERSION: &str = "0.2.0";
+pub const SCHEMA_VERSION: &str = "0.3.0";
 pub const TOOL_NAME: &str = "FastaGuard";
 pub const TOOL_VERSION: &str = env!("CARGO_PKG_VERSION");
 const LENGTH_HISTOGRAM_BIN_COUNT: u64 = 10;
@@ -20,6 +25,7 @@ pub struct FastaguardReport {
     pub tool: ToolInfo,
     pub input: InputInfo,
     pub verdict: Verdict,
+    pub gate: GateDecision,
     pub machine_summary: MachineSummary,
     pub scope: Scope,
     pub provenance: Provenance,
@@ -46,6 +52,15 @@ pub struct InputInfo {
 pub struct Verdict {
     pub status: VerdictStatus,
     pub reasons: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GateDecision {
+    pub mode: String,
+    pub status: VerdictStatus,
+    pub blocking_findings: Vec<String>,
+    pub advisory_findings: Vec<String>,
+    pub fail_on: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,6 +103,7 @@ pub struct Provenance {
     pub completed_at: String,
     pub duration_ms: u64,
     pub input_size_bytes: u64,
+    pub input_sha256: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -250,10 +266,12 @@ impl FastaguardReport {
         metrics: AssemblyMetrics,
         analysis: Analysis,
         duration_ms: u64,
-    ) -> Self {
+    ) -> Result<Self> {
         let findings = analysis.findings;
         let plots = build_plots(&metrics, profile);
-        Self {
+        let provenance = build_provenance(&config, profile, duration_ms)?;
+
+        Ok(Self {
             schema_version: SCHEMA_VERSION.to_string(),
             tool: ToolInfo {
                 name: TOOL_NAME.to_string(),
@@ -268,9 +286,15 @@ impl FastaguardReport {
                 status: analysis.status,
                 reasons: analysis.reasons,
             },
+            gate: gate::decision(
+                config.gate_mode,
+                analysis.status,
+                &findings,
+                &config.rules.fail_on,
+            ),
             machine_summary: build_machine_summary(analysis.status, &findings),
             scope: fasta_preflight_scope(),
-            provenance: build_provenance(&config, profile, duration_ms),
+            provenance,
             summary: Summary {
                 sequence_count: metrics.sequence_count,
                 total_length: metrics.total_length,
@@ -300,7 +324,7 @@ impl FastaguardReport {
                 tsv: config.outputs.tsv.display().to_string(),
                 multiqc: config.outputs.multiqc.display().to_string(),
             },
-        }
+        })
     }
 
     pub fn from_invalid_fasta(
@@ -308,7 +332,7 @@ impl FastaguardReport {
         profile: &ProfileConfig,
         message: String,
         duration_ms: u64,
-    ) -> Self {
+    ) -> Result<Self> {
         let findings = vec![Finding {
             id: "invalid_fasta_structure".to_string(),
             category: FindingCategory::Validity,
@@ -327,8 +351,9 @@ impl FastaguardReport {
             evidence: empty_evidence(),
             actions: finding_actions("invalid_fasta_structure"),
         }];
+        let provenance = build_provenance(&config, profile, duration_ms)?;
 
-        Self {
+        Ok(Self {
             schema_version: SCHEMA_VERSION.to_string(),
             tool: ToolInfo {
                 name: TOOL_NAME.to_string(),
@@ -343,9 +368,15 @@ impl FastaguardReport {
                 status: VerdictStatus::Fail,
                 reasons: vec!["invalid_fasta_structure".to_string()],
             },
+            gate: gate::decision(
+                config.gate_mode,
+                VerdictStatus::Fail,
+                &findings,
+                &config.rules.fail_on,
+            ),
             machine_summary: build_machine_summary(VerdictStatus::Fail, &findings),
             scope: fasta_preflight_scope(),
-            provenance: build_provenance(&config, profile, duration_ms),
+            provenance,
             summary: Summary {
                 sequence_count: 0,
                 total_length: 0,
@@ -375,7 +406,7 @@ impl FastaguardReport {
                 tsv: config.outputs.tsv.display().to_string(),
                 multiqc: config.outputs.multiqc.display().to_string(),
             },
-        }
+        })
     }
 
     pub fn exit_code(&self) -> i32 {
@@ -647,16 +678,26 @@ fn fasta_preflight_scope() -> Scope {
     }
 }
 
-fn build_provenance(config: &RunConfig, profile: &ProfileConfig, duration_ms: u64) -> Provenance {
+fn build_provenance(
+    config: &RunConfig,
+    profile: &ProfileConfig,
+    duration_ms: u64,
+) -> Result<Provenance> {
     let completed_at = config
         .provenance_timestamp_override
         .clone()
         .unwrap_or_else(|| chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true));
+    let input_sha256 = input_sha256(&config.input)?;
     let input_size_bytes = std::fs::metadata(&config.input)
-        .map(|metadata| metadata.len())
-        .unwrap_or(0);
+        .with_context(|| {
+            format!(
+                "failed to inspect input size for {}",
+                config.input.display()
+            )
+        })?
+        .len();
 
-    Provenance {
+    Ok(Provenance {
         profile: profile.name.clone(),
         threads: config.threads,
         fail_on: config.rules.fail_on.iter().cloned().collect(),
@@ -672,7 +713,28 @@ fn build_provenance(config: &RunConfig, profile: &ProfileConfig, duration_ms: u6
         completed_at,
         duration_ms,
         input_size_bytes,
+        input_sha256,
+    })
+}
+
+fn input_sha256(path: &Path) -> Result<String> {
+    let file = File::open(path)
+        .with_context(|| format!("failed to open {} for SHA256", path.display()))?;
+    let mut reader = BufReader::new(file);
+    let mut hasher = Sha256::new();
+    let mut buffer = [0_u8; 64 * 1024];
+
+    loop {
+        let read = reader
+            .read(&mut buffer)
+            .with_context(|| format!("failed to read {} for SHA256", path.display()))?;
+        if read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..read]);
     }
+
+    Ok(hex::encode(hasher.finalize()))
 }
 
 fn build_plots(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Plots {
@@ -771,11 +833,25 @@ fn path_is_gzip(path: &Path) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use crate::cli::{OutputPaths, RuleConfig, RunConfig};
+    use crate::gate::GateMode;
     use crate::metrics::AssemblyMetrics;
     use crate::parser::FastaRecord;
     use crate::profile::{ProfileConfig, ThresholdOverrides};
+    use std::collections::BTreeSet;
+    use std::path::PathBuf;
 
     use super::*;
+
+    #[test]
+    fn build_provenance_errors_when_input_checksum_cannot_be_read() {
+        let profile = profile();
+        let config = test_config(PathBuf::from("target/missing-for-sha.fa"));
+
+        let error = build_provenance(&config, &profile, 0).unwrap_err();
+
+        assert!(error.to_string().contains("SHA256"), "{error:?}");
+    }
 
     #[test]
     fn plot_histogram_uses_deterministic_linear_bins() {
@@ -802,6 +878,31 @@ mod tests {
             max_n_rate: None,
             min_contig_length: Some(1),
         })
+    }
+
+    fn test_config(input: PathBuf) -> RunConfig {
+        RunConfig {
+            input,
+            profile: "assembly".to_string(),
+            gate_mode: GateMode::None,
+            outputs: OutputPaths {
+                html: PathBuf::from("fastaguard_report.html"),
+                json: PathBuf::from("fastaguard.json"),
+                tsv: PathBuf::from("fastaguard.tsv"),
+                multiqc: PathBuf::from("fastaguard_mqc.json"),
+            },
+            rules: RuleConfig {
+                fail_on: BTreeSet::new(),
+            },
+            thresholds: ThresholdOverrides {
+                max_n_rate: None,
+                min_contig_length: Some(1),
+            },
+            threads: 1,
+            command: "fastaguard input.fa".to_string(),
+            started_at: "2026-05-23T00:00:00Z".to_string(),
+            provenance_timestamp_override: Some("2026-05-23T00:00:00Z".to_string()),
+        }
     }
 
     fn record(id: &str, length: usize) -> FastaRecord {
