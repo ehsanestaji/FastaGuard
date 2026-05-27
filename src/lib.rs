@@ -38,7 +38,7 @@ pub fn run(cli: Cli) -> Result<i32> {
                 &profile,
                 error.to_string(),
                 measured_duration_ms(&config, run_started),
-            );
+            )?;
             report::write_all(&output, &config.outputs)?;
             return Ok(output.exit_code());
         }
@@ -52,7 +52,7 @@ pub fn run(cli: Cli) -> Result<i32> {
         metrics,
         analysis,
         duration_ms,
-    );
+    )?;
     report::write_all(&output, &config.outputs)?;
     Ok(output.exit_code())
 }

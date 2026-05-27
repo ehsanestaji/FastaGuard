@@ -517,9 +517,9 @@ mod tests {
     use super::*;
     use crate::models::{
         empty_evidence, empty_plots, Artifacts, EvidenceRecord, FastaguardReport, Finding,
-        FindingAction, FindingCategory, FindingConfidence, FindingEvidence, InputInfo,
-        MachineSummary, Provenance, ProvenanceThresholds, RecommendedTool, Scope, Severity,
-        Summary, ToolInfo, Verdict, VerdictStatus,
+        FindingAction, FindingCategory, FindingConfidence, FindingEvidence, GateDecision,
+        InputInfo, MachineSummary, Provenance, ProvenanceThresholds, RecommendedTool, Scope,
+        Severity, Summary, ToolInfo, Verdict, VerdictStatus,
     };
 
     #[test]
@@ -638,6 +638,13 @@ mod tests {
                 status: VerdictStatus::Pass,
                 reasons: Vec::new(),
             },
+            gate: GateDecision {
+                mode: "none".to_string(),
+                status: VerdictStatus::Pass,
+                blocking_findings: Vec::new(),
+                advisory_findings: Vec::new(),
+                fail_on: Vec::new(),
+            },
             machine_summary: MachineSummary {
                 verdict: VerdictStatus::Pass,
                 safe_for_downstream: true,
@@ -666,6 +673,7 @@ mod tests {
                 completed_at: "2026-05-23T00:00:00Z".to_string(),
                 duration_ms: 0,
                 input_size_bytes: 100,
+                input_sha256: "0".repeat(64),
             },
             summary: Summary {
                 sequence_count: 2,
