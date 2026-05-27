@@ -1,7 +1,12 @@
 metric	value
-schema_version	0.2.0
+schema_version	0.3.0
 profile	assembly
 verdict	FAIL
+gate_mode	none
+gate_status	FAIL
+gate_blocking_findings	duplicate_ids,invalid_chars
+gate_advisory_findings	high_n_rate,tiny_contigs,gap_runs,length_outliers,composite_anomalies
+input_sha256	4b8551daeda739b62c8e7aaa1ebf300e4118167ca582c51eeccfa1549c96f0a5
 sequence_count	5
 total_length	145
 n50	110

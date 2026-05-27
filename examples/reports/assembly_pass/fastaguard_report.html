@@ -42,6 +42,22 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <h1>FastaGuard Report</h1>
 <div class="verdict">Verdict: PASS</div>
 <p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
+<h2>Gate Decision</h2>
+<div class="grid">
+<section class="panel">
+<h3>Gate</h3>
+<p><span class="label">Mode:</span> none</p>
+<p><span class="label">Status:</span> PASS</p>
+</section>
+<section class="panel">
+<h3>Blocking</h3>
+<p>None</p>
+</section>
+<section class="panel">
+<h3>Advisory</h3>
+<p>None</p>
+</section>
+</div>
 <h2>Machine Summary</h2>
 <div class="grid">
 <section class="panel">
@@ -120,10 +136,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <p>No findings.</p>
 <h2>JSON</h2>
 <pre>{
-  &quot;schema_version&quot;: &quot;0.2.0&quot;,
+  &quot;schema_version&quot;: &quot;0.3.0&quot;,
   &quot;tool&quot;: {
     &quot;name&quot;: &quot;FastaGuard&quot;,
-    &quot;version&quot;: &quot;0.2.0&quot;
+    &quot;version&quot;: &quot;0.3.0&quot;
   },
   &quot;input&quot;: {
     &quot;path&quot;: &quot;testdata/valid_assembly.fa&quot;,
@@ -133,6 +149,13 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
   &quot;verdict&quot;: {
     &quot;status&quot;: &quot;PASS&quot;,
     &quot;reasons&quot;: []
+  },
+  &quot;gate&quot;: {
+    &quot;mode&quot;: &quot;none&quot;,
+    &quot;status&quot;: &quot;PASS&quot;,
+    &quot;blocking_findings&quot;: [],
+    &quot;advisory_findings&quot;: [],
+    &quot;fail_on&quot;: []
   },
   &quot;machine_summary&quot;: {
     &quot;verdict&quot;: &quot;PASS&quot;,
@@ -185,7 +208,8 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     &quot;started_at&quot;: &quot;2026-05-23T00:00:00Z&quot;,
     &quot;completed_at&quot;: &quot;2026-05-23T00:00:00Z&quot;,
     &quot;duration_ms&quot;: 0,
-    &quot;input_size_bytes&quot;: 92
+    &quot;input_size_bytes&quot;: 92,
+    &quot;input_sha256&quot;: &quot;373699c0422b364607fc6879c46c053c105413c81df9403998d3d26a7122d2e8&quot;
   },
   &quot;summary&quot;: {
     &quot;sequence_count&quot;: 3,

@@ -10,6 +10,9 @@
   "data": {
     "valid_assembly": {
       "verdict": "PASS",
+      "gate_mode": "none",
+      "gate_status": "PASS",
+      "gate_blocking_findings": "",
       "sequence_count": 3,
       "total_length": 47,
       "n50": 16,

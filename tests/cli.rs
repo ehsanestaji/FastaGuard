@@ -47,7 +47,7 @@ fn contract_finding_catalog_can_be_printed_without_input() {
     cmd.arg("--finding-catalog")
         .assert()
         .success()
-        .stdout(predicate::str::contains(r#""schema_version": "0.2.0""#))
+        .stdout(predicate::str::contains(r#""schema_version": "0.3.0""#))
         .stdout(predicate::str::contains(r#""duplicate_ids""#))
         .stdout(predicate::str::contains(r#""invalid_fasta_structure""#))
         .stdout(predicate::str::contains(r#""gc_outliers""#))

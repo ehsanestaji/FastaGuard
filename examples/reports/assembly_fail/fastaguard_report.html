@@ -42,6 +42,27 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <h1>FastaGuard Report</h1>
 <div class="verdict">Verdict: FAIL</div>
 <p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
+<h2>Gate Decision</h2>
+<div class="grid">
+<section class="panel">
+<h3>Gate</h3>
+<p><span class="label">Mode:</span> none</p>
+<p><span class="label">Status:</span> FAIL</p>
+</section>
+<section class="panel">
+<h3>Blocking</h3>
+<ul><li>duplicate_ids</li>
+<li>invalid_chars</li></ul>
+</section>
+<section class="panel">
+<h3>Advisory</h3>
+<ul><li>high_n_rate</li>
+<li>tiny_contigs</li>
+<li>gap_runs</li>
+<li>length_outliers</li>
+<li>composite_anomalies</li></ul>
+</section>
+</div>
 <h2>Machine Summary</h2>
 <div class="grid">
 <section class="panel">
@@ -433,10 +454,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </section>
 <h2>JSON</h2>
 <pre>{
-  &quot;schema_version&quot;: &quot;0.2.0&quot;,
+  &quot;schema_version&quot;: &quot;0.3.0&quot;,
   &quot;tool&quot;: {
     &quot;name&quot;: &quot;FastaGuard&quot;,
-    &quot;version&quot;: &quot;0.2.0&quot;
+    &quot;version&quot;: &quot;0.3.0&quot;
   },
   &quot;input&quot;: {
     &quot;path&quot;: &quot;testdata/problem_assembly.fa&quot;,
@@ -449,6 +470,22 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       &quot;duplicate_ids&quot;,
       &quot;invalid_chars&quot;
     ]
+  },
+  &quot;gate&quot;: {
+    &quot;mode&quot;: &quot;none&quot;,
+    &quot;status&quot;: &quot;FAIL&quot;,
+    &quot;blocking_findings&quot;: [
+      &quot;duplicate_ids&quot;,
+      &quot;invalid_chars&quot;
+    ],
+    &quot;advisory_findings&quot;: [
+      &quot;high_n_rate&quot;,
+      &quot;tiny_contigs&quot;,
+      &quot;gap_runs&quot;,
+      &quot;length_outliers&quot;,
+      &quot;composite_anomalies&quot;
+    ],
+    &quot;fail_on&quot;: []
   },
   &quot;machine_summary&quot;: {
     &quot;verdict&quot;: &quot;FAIL&quot;,
@@ -540,7 +577,8 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     &quot;started_at&quot;: &quot;2026-05-23T00:00:00Z&quot;,
     &quot;completed_at&quot;: &quot;2026-05-23T00:00:00Z&quot;,
     &quot;duration_ms&quot;: 0,
-    &quot;input_size_bytes&quot;: 187
+    &quot;input_size_bytes&quot;: 187,
+    &quot;input_sha256&quot;: &quot;4b8551daeda739b62c8e7aaa1ebf300e4118167ca582c51eeccfa1549c96f0a5&quot;
   },
   &quot;summary&quot;: {
     &quot;sequence_count&quot;: 5,

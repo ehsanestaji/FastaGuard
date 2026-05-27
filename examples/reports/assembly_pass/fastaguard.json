@@ -1,8 +1,8 @@
 {
-  "schema_version": "0.2.0",
+  "schema_version": "0.3.0",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "input": {
     "path": "testdata/valid_assembly.fa",
@@ -12,6 +12,13 @@
   "verdict": {
     "status": "PASS",
     "reasons": []
+  },
+  "gate": {
+    "mode": "none",
+    "status": "PASS",
+    "blocking_findings": [],
+    "advisory_findings": [],
+    "fail_on": []
   },
   "machine_summary": {
     "verdict": "PASS",
@@ -64,7 +71,8 @@
     "started_at": "2026-05-23T00:00:00Z",
     "completed_at": "2026-05-23T00:00:00Z",
     "duration_ms": 0,
-    "input_size_bytes": 92
+    "input_size_bytes": 92,
+    "input_sha256": "373699c0422b364607fc6879c46c053c105413c81df9403998d3d26a7122d2e8"
   },
   "summary": {
     "sequence_count": 3,

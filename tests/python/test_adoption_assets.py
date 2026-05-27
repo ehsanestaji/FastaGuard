@@ -34,6 +34,9 @@ class AdoptionAssetsTest(unittest.TestCase):
             summary["problem_assembly"],
             {
                 "verdict": "FAIL",
+                "gate_mode": "none",
+                "gate_status": "FAIL",
+                "gate_blocking_findings": "duplicate_ids,invalid_chars",
                 "sequence_count": 5,
                 "total_length": 145,
                 "n50": 110,
