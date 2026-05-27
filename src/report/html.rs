@@ -11,6 +11,7 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
 
 fn render(report: &FastaguardReport) -> Result<String> {
     let summary = &report.summary;
+    let gate = render_gate(report);
     let machine_summary = render_machine_summary(report);
     let scope = render_scope(report);
     let plots = render_plots(report);
@@ -62,6 +63,8 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
 <h1>FastaGuard Report</h1>
 <div class="verdict">Verdict: {verdict}</div>
 <p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
+<h2>Gate Decision</h2>
+{gate}
 <h2>Machine Summary</h2>
 {machine_summary}
 <h2>Summary</h2>
@@ -96,11 +99,36 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
         n90 = summary.n90,
         gc_percent = summary.gc_percent,
         n_percent = summary.n_percent,
+        gate = gate,
         scope = scope,
         plots = plots,
         findings = findings,
         json = escape_html(&json),
     ))
+}
+
+fn render_gate(report: &FastaguardReport) -> String {
+    format!(
+        r#"<div class="grid">
+<section class="panel">
+<h3>Gate</h3>
+<p><span class="label">Mode:</span> {mode}</p>
+<p><span class="label">Status:</span> {status}</p>
+</section>
+<section class="panel">
+<h3>Blocking</h3>
+{blocking}
+</section>
+<section class="panel">
+<h3>Advisory</h3>
+{advisory}
+</section>
+</div>"#,
+        mode = escape_html(&report.gate.mode),
+        status = escape_html(verdict_status(report.gate.status)),
+        blocking = render_string_list_or_none(&report.gate.blocking_findings),
+        advisory = render_string_list_or_none(&report.gate.advisory_findings),
+    )
 }
 
 fn render_machine_summary(report: &FastaguardReport) -> String {
@@ -454,6 +482,14 @@ fn render_string_list(values: &[String]) -> String {
         .collect::<Vec<_>>()
         .join("\n");
     format!("<ul>{items}</ul>")
+}
+
+fn render_string_list_or_none(values: &[String]) -> String {
+    if values.is_empty() {
+        "<p>None</p>".to_string()
+    } else {
+        render_string_list(values)
+    }
 }
 
 fn render_optional_u64(value: Option<u64>) -> String {

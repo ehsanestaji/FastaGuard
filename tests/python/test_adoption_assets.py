@@ -110,6 +110,44 @@ class AdoptionAssetsTest(unittest.TestCase):
                 },
             )
 
+    def test_multiqc_parser_preserves_gate_fields(self):
+        with TemporaryDirectory() as temp_dir:
+            fixture = Path(temp_dir) / "fastaguard_mqc.json"
+            fixture.write_text(
+                json.dumps(
+                    {
+                        "id": "fastaguard",
+                        "section_name": "FastaGuard",
+                        "description": "FASTA preflight QC summary",
+                        "plot_type": "table",
+                        "pconfig": {"id": "fastaguard_summary", "title": "FastaGuard"},
+                        "data": {
+                            "sample": {
+                                "verdict": "FAIL",
+                                "sequence_count": 8,
+                                "total_length": 2000,
+                                "n50": 500,
+                                "n90": 100,
+                                "gc_percent": 50.0,
+                                "n_percent": 2.5,
+                                "finding_count": 4,
+                                "gate_mode": "pipeline",
+                                "gate_status": "FAIL",
+                                "gate_blocking_findings": "duplicate_ids,high_n_rate",
+                            }
+                        },
+                    }
+                )
+            )
+
+            summary = load_custom_content_summary(fixture)
+            self.assertEqual(summary["sample"]["gate_mode"], "pipeline")
+            self.assertEqual(summary["sample"]["gate_status"], "FAIL")
+            self.assertEqual(
+                summary["sample"]["gate_blocking_findings"],
+                "duplicate_ids,high_n_rate",
+            )
+
     def test_multiqc_parser_rejects_missing_required_summary_fields(self):
         with TemporaryDirectory() as temp_dir:
             fixture = Path(temp_dir) / "fastaguard_mqc.json"
@@ -197,6 +235,21 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn('[project.entry-points."multiqc.modules.v1"]', pyproject)
         self.assertIn('fastaguard = "fastaguard_multiqc:MultiqcModule"', pyproject)
         self.assertIn("multiqc", pyproject)
+
+    def test_multiqc_plugin_summary_headers_include_gate_fields(self):
+        module_source = (
+            ROOT
+            / "integrations"
+            / "multiqc"
+            / "src"
+            / "fastaguard_multiqc"
+            / "multiqc_module.py"
+        ).read_text()
+
+        self.assertIn('"gate_mode"', module_source)
+        self.assertIn('"gate_status"', module_source)
+        self.assertIn('"gate_blocking_findings"', module_source)
+        self.assertIn("Finding IDs blocking the FastaGuard gate", module_source)
 
     def test_multiqc_plugin_registers_filename_first_fastaguard_search_pattern(self):
         patterns = getattr(multiqc_parser, "FASTAGUARD_SEARCH_PATTERN", {})

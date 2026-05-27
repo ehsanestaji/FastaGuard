@@ -554,6 +554,35 @@ fn pipeline_gate_report_lists_blocking_and_advisory_findings() {
 }
 
 #[test]
+fn html_report_shows_gate_decision() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "html_gate");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/problem_assembly.fa",
+        "--gate",
+        "pipeline",
+        "--out",
+    ])
+    .arg(&outputs.html)
+    .arg("--json")
+    .arg(&outputs.json)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let html = std::fs::read_to_string(&outputs.html).unwrap();
+    assert!(html.contains("Gate Decision"), "{html}");
+    assert!(html.contains("Blocking"), "{html}");
+    assert!(html.contains("Advisory"), "{html}");
+}
+
+#[test]
 fn gate_none_report_preserves_warning_behavior_and_checksum() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "gate_none");

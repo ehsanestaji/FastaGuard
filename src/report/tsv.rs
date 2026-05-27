@@ -18,6 +18,23 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
         "verdict",
         verdict_status(report.verdict.status),
     )?;
+    write_metric(&mut writer, "gate_mode", &report.gate.mode)?;
+    write_metric(
+        &mut writer,
+        "gate_status",
+        verdict_status(report.gate.status),
+    )?;
+    write_metric(
+        &mut writer,
+        "gate_blocking_findings",
+        report.gate.blocking_findings.join(","),
+    )?;
+    write_metric(
+        &mut writer,
+        "gate_advisory_findings",
+        report.gate.advisory_findings.join(","),
+    )?;
+    write_metric(&mut writer, "input_sha256", &report.provenance.input_sha256)?;
     write_metric(&mut writer, "sequence_count", report.summary.sequence_count)?;
     write_metric(&mut writer, "total_length", report.summary.total_length)?;
     write_metric(&mut writer, "n50", report.summary.n50)?;
@@ -113,6 +130,36 @@ mod tests {
         assert!(output.contains("gc_outlier_count\t2\n"), "{output}");
         assert!(output.contains("length_outlier_count\t3\n"), "{output}");
         assert!(output.contains("composite_anomaly_count\t1\n"), "{output}");
+    }
+
+    #[test]
+    fn writes_gate_and_checksum_rows() {
+        let mut report = test_report(VerdictStatus::Fail);
+        report.gate.mode = "pipeline".to_string();
+        report.gate.status = VerdictStatus::Fail;
+        report.gate.blocking_findings = vec!["duplicate_ids".to_string()];
+        report.gate.advisory_findings = vec!["gc_outliers".to_string()];
+        report.provenance.input_sha256 = "a".repeat(64);
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let checksum = "a".repeat(64);
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(output.contains("gate_mode\tpipeline\n"), "{output}");
+        assert!(output.contains("gate_status\tFAIL\n"), "{output}");
+        assert!(
+            output.contains("gate_blocking_findings\tduplicate_ids\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("gate_advisory_findings\tgc_outliers\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains(&format!("input_sha256\t{checksum}\n")),
+            "{output}"
+        );
     }
 
     fn test_report(status: VerdictStatus) -> FastaguardReport {
