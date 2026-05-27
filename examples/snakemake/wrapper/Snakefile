@@ -8,6 +8,7 @@ rule fastaguard_wrapped:
         multiqc="fastaguard_mqc.json"
     params:
         profile="assembly",
+        gate="pipeline",
         extra=""
     conda: "environment.yaml"
     wrapper:

@@ -19,14 +19,14 @@ schema/finding-catalog.json
 
 ## JSON Contract
 
-Example v0.2 shape:
+Example v0.3 shape:
 
 ```json
 {
-  "schema_version": "0.2.0",
+  "schema_version": "0.3.0",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "input": {
     "path": "sample.fa",
@@ -34,11 +34,18 @@ Example v0.2 shape:
     "compressed": false
   },
   "verdict": {
-    "status": "WARN",
-    "reasons": ["high_n_rate", "tiny_contigs"]
+    "status": "FAIL",
+    "reasons": ["duplicate_ids", "invalid_chars", "high_n_rate"]
+  },
+  "gate": {
+    "mode": "pipeline",
+    "status": "FAIL",
+    "blocking_findings": ["duplicate_ids", "invalid_chars", "high_n_rate"],
+    "advisory_findings": ["tiny_contigs", "gc_outliers"],
+    "fail_on": ["duplicate_ids", "high_n_rate", "invalid_chars", "invalid_fasta_structure"]
   },
   "machine_summary": {
-    "verdict": "WARN",
+    "verdict": "FAIL",
     "safe_for_downstream": false,
     "top_findings": ["high_n_rate", "tiny_contigs"],
     "recommended_next_tools": [
@@ -72,12 +79,13 @@ Example v0.2 shape:
   "provenance": {
     "profile": "assembly",
     "threads": 1,
-    "fail_on": [],
-    "command": "fastaguard sample.fa --profile assembly",
+    "fail_on": ["duplicate_ids", "high_n_rate", "invalid_chars", "invalid_fasta_structure"],
+    "command": "fastaguard sample.fa --profile assembly --gate pipeline",
     "started_at": "2026-05-23T00:00:00Z",
     "completed_at": "2026-05-23T00:00:01Z",
     "duration_ms": 842,
     "input_size_bytes": 5120340,
+    "input_sha256": "3f786850e387550fdab836ed7e6dc881de23001b3a28c9f1f4b2d0a4c6e7f8aa",
     "thresholds": {
       "high_n_sequence_fraction": 0.2,
       "high_global_n_fraction": 0.05,
@@ -101,9 +109,9 @@ Example v0.2 shape:
     "at_percent": 44.8,
     "n_percent": 3.4,
     "ambiguity_percent": 3.7,
-    "duplicate_id_count": 0,
+    "duplicate_id_count": 1,
     "duplicate_sequence_count": 0,
-    "invalid_sequence_count": 0,
+    "invalid_sequence_count": 1,
     "high_n_sequence_count": 62,
     "tiny_contig_count": 4,
     "max_gap_run": 25
@@ -209,7 +217,7 @@ Example v0.2 shape:
 
 ## Stability Rules
 
-Stable in the v0.2 contract:
+Stable in the v0.3 contract:
 
 - `schema_version`
 - `tool.name`
@@ -217,6 +225,11 @@ Stable in the v0.2 contract:
 - `input.profile`
 - `verdict.status`
 - `verdict.reasons`
+- `gate.mode`
+- `gate.status`
+- `gate.blocking_findings`
+- `gate.advisory_findings`
+- `gate.fail_on`
 - `machine_summary.verdict`
 - `machine_summary.safe_for_downstream`
 - `machine_summary.top_findings`
@@ -231,6 +244,7 @@ Stable in the v0.2 contract:
 - `provenance.completed_at`
 - `provenance.duration_ms`
 - `provenance.input_size_bytes`
+- `provenance.input_sha256`
 - `provenance.thresholds`
 - `summary.sequence_count`
 - `summary.total_length`
@@ -254,6 +268,32 @@ Stable in the v0.2 contract:
 - `findings[].actions`
 
 Fields can be added in later schema versions, but existing meanings should not drift casually.
+
+## Gate Contract
+
+The v0.3 assembly gate makes workflow stop/go behavior explicit in JSON:
+
+```json
+"gate": {
+  "mode": "pipeline",
+  "status": "FAIL",
+  "blocking_findings": ["duplicate_ids", "invalid_chars", "high_n_rate"],
+  "advisory_findings": ["tiny_contigs", "gc_outliers"],
+  "fail_on": ["duplicate_ids", "high_n_rate", "invalid_chars", "invalid_fasta_structure"]
+}
+```
+
+Machines should use `gate.blocking_findings` for workflow stop/go decisions.
+This list is the stable explanation of why a gated run blocked downstream work.
+
+Humans should inspect the HTML evidence before deciding how to repair or route
+the assembly. Advisory findings such as GC or length outliers can indicate
+records worth reviewing, but they are not blocking unless the user explicitly
+adds them with `--fail-on`.
+
+`provenance.input_sha256` identifies the exact input bytes used for the report.
+That checksum lets workflow engines, reviewers, and future audit tools connect a
+gate decision to one immutable FASTA input.
 
 ## Machine-Actionable Contract
 
@@ -300,9 +340,14 @@ Recommended first rows:
 
 ```text
 metric	value
-schema_version	0.2.0
+schema_version	0.3.0
 profile	assembly
-verdict	WARN
+verdict	FAIL
+gate_mode	pipeline
+gate_status	FAIL
+gate_blocking_findings	duplicate_ids,invalid_chars,high_n_rate
+gate_advisory_findings	tiny_contigs,gc_outliers
+input_sha256	3f786850e387550fdab836ed7e6dc881de23001b3a28c9f1f4b2d0a4c6e7f8aa
 sequence_count	481
 total_length	5042301
 n50	128003
@@ -360,6 +405,6 @@ Report layers:
    suggested next tools and remediation steps
 ```
 
-Outlier findings are part of the v0.2 report contract. They are preflight
+Outlier findings are part of the v0.3 report contract. They are preflight
 triage signals only; GC and composite anomalies do not by themselves prove
 contamination, cobionts, plasmids, or misassembly.

@@ -19,6 +19,12 @@ python3 scripts/benchmark_large_fasta.py \
 
 This should finish quickly and produce `fastaguard.json`, `fastaguard.tsv`, `fastaguard_report.html`, and `fastaguard_mqc.json` in `target/bench-smoke/`.
 
+For the v0.3 assembly gate contract, add the pipeline gate preset:
+
+```bash
+fastaguard sample.fa --profile assembly --gate pipeline
+```
+
 ## Larger Local Benchmark
 
 Build an optimized binary:
@@ -84,17 +90,21 @@ Do not use it to claim performance on contaminated assemblies, highly ambiguous 
 ## v0.2 Evidence Targets
 
 FastaGuard should prove four preflight categories with small reproducible
-fixtures:
+fixtures. For v0.3, the same evidence should also show whether each category
+blocks the pipeline gate:
 
-| Evidence case | What FastaGuard catches | Why it should run before heavier tools |
-| --- | --- | --- |
-| duplicate IDs | repeated FASTA identifiers | helps prevent workflow joins, indexes, and annotations from becoming ambiguous |
-| invalid characters | non-IUPAC sequence symbols | flags inputs that may trigger downstream parser and aligner failures |
-| high-N | ambiguous scaffolds and gap-heavy records | flags low-confidence mapping and annotation inputs before they are treated as clean |
-| GC outliers | composition-anomalous records | supports routing suspicious records to BlobToolKit, sourmash, Kraken, or other follow-up tools |
+| Evidence case | Gate behavior | What FastaGuard catches | Why it should run before heavier tools |
+| --- | --- | --- | --- |
+| duplicate IDs | blocking | repeated FASTA identifiers | helps prevent workflow joins, indexes, and annotations from becoming ambiguous |
+| invalid characters | blocking | non-IUPAC sequence symbols | flags inputs that may trigger downstream parser and aligner failures |
+| high-N | blocking | ambiguous scaffolds and gap-heavy records | flags low-confidence mapping and annotation inputs before they are treated as clean |
+| GC outliers | advisory by default | composition-anomalous records | supports routing suspicious records to BlobToolKit, sourmash, Kraken, or other follow-up tools |
 
 FastaGuard should not replace QUAST, BUSCO, or BlobToolKit. It should make their
 inputs safer and make obvious FASTA-level problems visible before those tools run.
+For automated workflows, record `gate.blocking_findings` and
+`provenance.input_sha256` alongside runtime and verdict so the gate decision can
+be audited against exact input bytes.
 
 ## Evidence To Collect Next
 
@@ -115,6 +125,8 @@ For each run, record:
 - peak memory if measured externally
 - verdict and top findings
 - whether downstream tools would have been blocked or recommended
+- gate status and `gate.blocking_findings` when run with `--gate pipeline`
+- `provenance.input_sha256`
 
 This evidence matters more than synthetic speed alone because it shows the wedge: cheap FASTA preflight before expensive downstream QC.
 
@@ -122,6 +134,8 @@ This evidence matters more than synthetic speed alone because it shows the wedge
 
 The v0.2 evidence workflow is documented in
 `docs/evidence/fastaguard-v0.2-evidence.md`.
+The published evidence document remains v0.2-focused; v0.3 gate evidence should
+extend that workflow after the gate contract is released.
 
 CI-safe local run:
 

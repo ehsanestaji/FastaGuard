@@ -23,11 +23,24 @@ container. The recommended install is:
 mamba install -c conda-forge -c bioconda fastaguard
 ```
 
-The local module also includes the pinned BioContainers image:
+Published BioContainers currently provides the v0.2 image:
 
 ```text
 quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0
 ```
+
+Do not pair that v0.2 image with the v0.3 `--gate pipeline` command below.
+Run this starter with a current local v0.3 binary, or add a v0.3 container tag
+after the v0.3 BioContainers image is available.
+
+The command block is written for the v0.3 assembly gate and runs:
+
+```bash
+fastaguard sample.fa --profile assembly --gate pipeline
+```
+
+That gate contract blocks downstream workflow steps on duplicate IDs, invalid
+characters, invalid FASTA structure, and high-N content. Gate failures intentionally exit with code `2` after writing reports, so downstream workflow steps stop while the JSON/HTML evidence remains available.
 
 Example include:
 

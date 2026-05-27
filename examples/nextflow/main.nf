@@ -14,8 +14,10 @@ process FASTAGUARD {
 
     script:
     """
+    # Gate failures intentionally exit 2 after writing reports.
     fastaguard ${fasta} \
       --profile assembly \
+      --gate pipeline \
       --out fastaguard_report.html \
       --json fastaguard.json \
       --tsv fastaguard.tsv \

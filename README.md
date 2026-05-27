@@ -2,6 +2,8 @@
 
 FastaGuard is a fast, explainable FASTA QC tool for validating assembly FASTA files before expensive downstream analysis.
 
+The assembly FASTA gate before expensive QC.
+
 It is not intended to compete with QUAST, BUSCO, BlobToolKit, FastQC, or MultiQC. FastaGuard is the earlier preflight and triage layer: the first command that answers whether a FASTA file is valid, sane, interpretable, and ready for downstream tools.
 
 ```text
@@ -57,8 +59,14 @@ fastaguard sample.fa \
 Pipeline gate example:
 
 ```bash
-fastaguard sample.fa --fail-on duplicate_ids,invalid_chars,high_n_rate
+fastaguard sample.fa --profile assembly --gate pipeline
 ```
+
+The `pipeline` gate is the v0.3 assembly preset for workflow stop/go decisions.
+It fails on duplicate IDs, invalid characters, invalid FASTA structure, and
+high-N content. GC and length outliers remain advisory by default because they
+are routing signals, not proof of contamination or misassembly. To make an
+advisory finding block a pipeline, add it explicitly with `--fail-on`.
 
 Inspect the machine-readable contract:
 
@@ -80,7 +88,8 @@ docker run --rm -v "$PWD:/data" fastaguard:local /data/sample.fa \
   --multiqc /data/fastaguard_mqc.json
 ```
 
-Use the generated BioContainers image in workflow engines:
+Published BioContainers currently provides the v0.2 image, which does not
+include v0.3 gate behavior yet:
 
 ```bash
 docker pull quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0
@@ -116,6 +125,7 @@ FastaGuard is assembly-first.
 ```bash
 fastaguard sample.fa \
   --profile assembly \
+  --gate pipeline \
   --out fastaguard_report.html \
   --json fastaguard.json \
   --tsv fastaguard.tsv \
@@ -146,6 +156,14 @@ v0.2 expands the assembly preflight layer with:
 - composition outliers
 - richer provenance, taxonomy context, and routing hints
 - hardened MultiQC and pipeline adoption material
+
+v0.3 adds the assembly gate contract:
+
+- `--gate pipeline` for default workflow blocking behavior
+- `gate.blocking_findings` for machine stop/go decisions
+- checksum provenance with `provenance.input_sha256`
+- explicit advisory findings for evidence that should route follow-up QC rather
+  than stop a pipeline by default
 
 ## Positioning
 
@@ -189,7 +207,6 @@ serves v0.2.0 for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`.
 BioContainers also publishes the pinned workflow image
 `quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0`.
 
-The next internal milestone is the
-[v0.2 evidence pack](docs/evidence/fastaguard-v0.2-evidence.md): reproducible
-local and public FASTA runs that document runtime, verdicts, and top findings
-before new biological profiles are added.
+The current development milestone is v0.3: evidence, checksum provenance, and
+the assembly gate contract. Published Bioconda and BioContainers packages remain
+v0.2.0 until a v0.3 release is cut.

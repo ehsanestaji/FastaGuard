@@ -57,14 +57,18 @@ Goal:
 Make FastaGuard credible enough for pipeline authors to add as a default assembly gate.
 ```
 
-Potential additions:
+Development scope:
 
 - public evidence pack from local fixtures and public assemblies
-- Bioconda and BioContainers v0.2 availability documented
-- input checksum provenance
+- Bioconda and BioContainers v0.2 availability documented without implying a
+  v0.3 package exists yet
+- input checksum provenance with `provenance.input_sha256`
 - clearer machine-readable threshold metadata
-- assembly gate preset for common pipeline behavior
-- clearer blocking vs follow-up recommendations
+- assembly gate preset with `--gate pipeline`
+- explicit `gate.blocking_findings` and `gate.advisory_findings` for workflow
+  engines and humans
+- clearer blocking vs follow-up recommendations; GC and length outliers remain
+  advisory unless added with `--fail-on`
 
 ## v0.4: Compare Mode
 
@@ -116,12 +120,12 @@ Potential additions:
 
 Potential additions:
 
-- merge and verify the v0.2 Bioconda update
+- publish and verify a v0.3 Bioconda update after the gate contract is released
 - upstream nf-core module submission
 - official Snakemake wrapper submission
 - Galaxy wrapper
 - upstream MultiQC distribution path
-- BioContainers verification for the v0.2 package
+- BioContainers verification for each published package
 - Homebrew formula
 
 ## Later Innovation
@@ -146,6 +150,7 @@ Completed foundation:
 - add structured `actions[]` records to findings
 - add bounded per-record evidence to findings
 - add provenance for profile, thresholds, fail rules, thread count, command, timestamps, duration, and input size
+- add input checksum provenance with `provenance.input_sha256`
 - add explicit scope fields for what FastaGuard can and cannot conclude
 - add structured routing hints for workflow engines and tool agents
 - add `--schema`, `--finding-catalog`, and `--explain-finding <id>` commands
@@ -154,5 +159,5 @@ Completed foundation:
 Recommended next sequence:
 
 - extend evidence tables across future transcriptome, protein, reference, and compare modes
-- enrich provenance with input checksums
+- keep the v0.3 gate contract stable through workflow adoption examples
 - explore an MCP or tool-server interface after the CLI schema is stable

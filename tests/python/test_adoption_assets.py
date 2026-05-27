@@ -15,6 +15,70 @@ from fastaguard_multiqc.parser import load_custom_content_summary
 
 
 class AdoptionAssetsTest(unittest.TestCase):
+    def test_v0_3_gate_docs_and_examples_are_present(self):
+        readme = (ROOT / "README.md").read_text()
+        output_contract = (ROOT / "docs" / "output-contract.md").read_text()
+        nf_core_module = (
+            ROOT
+            / "examples"
+            / "nf-core"
+            / "modules"
+            / "local"
+            / "fastaguard"
+            / "main.nf"
+        ).read_text()
+        snakemake = (ROOT / "examples" / "snakemake" / "Snakefile").read_text()
+
+        self.assertIn("--gate pipeline", readme)
+        self.assertIn("The assembly FASTA gate before expensive QC.", readme)
+        self.assertIn('"gate"', output_contract)
+        self.assertIn("provenance.input_sha256", output_contract)
+        self.assertIn("--gate pipeline", nf_core_module)
+        self.assertIn("--gate pipeline", snakemake)
+        self.assertIn(
+            '"blocking_findings": ["duplicate_ids", "invalid_chars", "high_n_rate"]',
+            output_contract,
+        )
+        self.assertIn(
+            '"command": "fastaguard sample.fa --profile assembly --gate pipeline"',
+            output_contract,
+        )
+        self.assertIn('"duplicate_id_count": 1', output_contract)
+        self.assertIn('"invalid_sequence_count": 1', output_contract)
+
+    def test_v0_3_gate_examples_do_not_pin_v0_2_runtimes(self):
+        nf_core_module = (
+            ROOT
+            / "examples"
+            / "nf-core"
+            / "modules"
+            / "local"
+            / "fastaguard"
+            / "main.nf"
+        ).read_text()
+        wrapper_env = (
+            ROOT / "examples" / "snakemake" / "wrapper" / "environment.yaml"
+        ).read_text()
+        wrapper_py = (
+            ROOT
+            / "examples"
+            / "snakemake"
+            / "wrapper"
+            / "wrapper"
+            / "fastaguard"
+            / "wrapper.py"
+        ).read_text()
+        nf_core_readme = (ROOT / "examples" / "nf-core" / "README.md").read_text()
+        snakemake_readme = (
+            ROOT / "examples" / "snakemake" / "wrapper" / "README.md"
+        ).read_text()
+
+        self.assertNotIn("0.2.0--", nf_core_module)
+        self.assertNotIn("fastaguard=0.2.0", wrapper_env)
+        self.assertIn("--gate {gate}", wrapper_py)
+        self.assertIn("Gate failures intentionally exit with code `2`", nf_core_readme)
+        self.assertIn("Gate failures intentionally exit with code `2`", snakemake_readme)
+
     def test_multiqc_parser_reads_fastaguard_custom_content(self):
         fixture = ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard_mqc.json"
 
@@ -342,10 +406,7 @@ class AdoptionAssetsTest(unittest.TestCase):
             "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
             nfcore_readme,
         )
-        self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
-            nfcore_module,
-        )
+        self.assertNotIn("0.2.0--", nfcore_module)
         self.assertIn(
             "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
             snakemake_readme,
@@ -524,7 +585,7 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
                 "  - conda-forge",
                 "  - bioconda",
                 "dependencies:",
-                "  - fastaguard=0.2.0",
+                "  - fastaguard=0.3.0",
             ],
         )
         self.assertIn('conda: "environment.yaml"', snakefile.read_text())

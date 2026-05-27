@@ -17,6 +17,12 @@ Long-form positioning:
 The FASTA preflight QC layer for modern bioinformatics pipelines.
 ```
 
+v0.3 positioning:
+
+```text
+The assembly FASTA gate before expensive QC.
+```
+
 ## Where FastaGuard Fits
 
 | Tool | Primary role | When it runs | What FastaGuard adds before it |
@@ -58,6 +64,8 @@ Current product evidence:
   `quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0`.
 - JSON Schema validates committed golden reports.
 - Reports include bounded evidence records and suggested actions.
+- The v0.3 gate contract exposes `gate.blocking_findings`,
+  `gate.advisory_findings`, and `provenance.input_sha256` for workflow engines.
 - MultiQC custom-content JSON is emitted as `fastaguard_mqc.json`.
 - A native MultiQC plugin starter exists under `integrations/multiqc/`.
 - Bioconda recipe mirror exists under `packaging/bioconda/`.
@@ -68,6 +76,7 @@ Current product evidence:
 Evidence still needed:
 
 - committed benchmark summaries from public assemblies
+- v0.3 assembly gate evidence runs using `--gate pipeline`
 - user feedback from real pipeline authors
 - broader public assembly evidence runs
 - official MultiQC module or packaged plugin
