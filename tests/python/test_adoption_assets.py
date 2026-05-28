@@ -30,7 +30,8 @@ class AdoptionAssetsTest(unittest.TestCase):
         snakemake = (ROOT / "examples" / "snakemake" / "Snakefile").read_text()
 
         self.assertIn("--gate pipeline", readme)
-        self.assertIn("The assembly FASTA gate before expensive QC.", readme)
+        self.assertIn("FASTA preflight QC for modern bioinformatics pipelines.", readme)
+        self.assertIn("Run FastaGuard first.", readme)
         self.assertIn('"gate"', output_contract)
         self.assertIn("provenance.input_sha256", output_contract)
         self.assertIn("--gate pipeline", nf_core_module)
