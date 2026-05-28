@@ -1,6 +1,7 @@
 process FASTAGUARD {
     tag "$meta.id"
     label 'process_low'
+    container 'quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0'
 
     input:
     tuple val(meta), path(fasta)

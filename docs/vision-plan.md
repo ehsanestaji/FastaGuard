@@ -48,7 +48,7 @@ Make FastaGuard credible enough for pipeline authors to add as a default assembl
 Priorities:
 
 - publish a small evidence pack from local fixtures and public assemblies
-- document Bioconda and BioContainers v0.2 availability
+- document Bioconda and BioContainers v0.3 availability
 - add input checksums to provenance
 - add clearer machine-readable threshold metadata
 - add an assembly gate preset for common pipeline behavior

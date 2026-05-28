@@ -28,13 +28,31 @@ Run FastaGuard first.
 | Channel | Status |
 | --- | --- |
 | GitHub release | `v0.3.0` is live with Linux and macOS binaries |
-| Bioconda | `v0.2.0` is live; `v0.3.0` update is under Bioconda review |
-| BioContainers | `v0.2.0` is live; `v0.3.0` follows the Bioconda update |
+| Bioconda | `v0.3.0` is live for Linux and macOS x86_64/ARM64 |
+| BioContainers | `v0.3.0` is live as a pinned workflow image |
 | Source build | `v0.3.0` can be built from the Git tag |
 
 ## Install
 
-Latest release binary for Linux x86_64:
+Recommended bioinformatics install:
+
+```bash
+mamba install -c conda-forge -c bioconda fastaguard=0.3.0
+```
+
+Containerized workflow install:
+
+```bash
+docker pull quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0
+```
+
+Run through BioContainers:
+
+```bash
+docker run --rm quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0 fastaguard --version
+```
+
+GitHub release binary for Linux x86_64:
 
 ```bash
 curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.3.0/fastaguard-v0.3.0-x86_64-unknown-linux-gnu.tar.gz
@@ -42,7 +60,7 @@ tar -xzf fastaguard-v0.3.0-x86_64-unknown-linux-gnu.tar.gz
 ./fastaguard-v0.3.0-x86_64-unknown-linux-gnu/fastaguard --version
 ```
 
-Latest release binary for macOS Apple Silicon:
+GitHub release binary for macOS Apple Silicon:
 
 ```bash
 curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.3.0/fastaguard-v0.3.0-aarch64-apple-darwin.tar.gz
@@ -55,13 +73,6 @@ Build from the released Git tag:
 ```bash
 cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v0.3.0
 fastaguard --version
-```
-
-Bioconda install, currently serving the published `v0.2.0` package until the
-`v0.3.0` recipe update merges:
-
-```bash
-mamba install -c conda-forge -c bioconda fastaguard
 ```
 
 Verify any installed CLI:
@@ -124,12 +135,10 @@ docker run --rm -v "$PWD:/data" fastaguard:local /data/sample.fa \
   --multiqc /data/fastaguard_mqc.json
 ```
 
-Published BioContainers currently provides the v0.2 image, which does not
-include v0.3 gate behavior yet. Use it for v0.2 workflows until the Bioconda
-v0.3 update propagates:
+Published BioContainers provides the v0.3 image for workflow engines:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0
 ```
 
 Exit codes:
@@ -244,7 +253,6 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 v0.3.0 is published on GitHub with Linux and macOS release binaries. It adds the
 assembly gate contract, checksum provenance, and evidence workflow.
 
-Bioconda currently serves v0.2.0 for `linux-64`, `linux-aarch64`, `osx-64`,
-and `osx-arm64`; the v0.3.0 Bioconda update is open and passing CI. The
-BioContainers v0.3 image will become available after the Bioconda package
-propagates.
+Bioconda serves v0.3.0 for `linux-64`, `linux-aarch64`, `osx-64`, and
+`osx-arm64`. BioContainers publishes the pinned v0.3 workflow image
+`quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0`.

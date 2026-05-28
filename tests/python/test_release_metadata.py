@@ -15,10 +15,11 @@ class ReleaseMetadataTest(unittest.TestCase):
 
         self.assertEqual(cargo["package"]["version"], "0.3.0")
 
-    def test_bioconda_recipe_remains_on_published_v0_2_0_archive(self):
+    def test_bioconda_recipe_tracks_published_v0_3_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
 
-        self.assertIn('{% set version = "0.2.0" %}', recipe)
+        self.assertIn('{% set version = "0.3.0" %}', recipe)
+        self.assertIn("fastaguard --version | grep {{ version }}", recipe)
 
     def test_v0_2_0_release_notes_exist(self):
         notes = ROOT / "docs" / "releases" / "v0.2.0.md"
@@ -42,19 +43,19 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn("--gate pipeline", text)
         self.assertIn("input_sha256", text)
 
-    def test_bioconda_recipe_has_publishable_v0_2_0_source_sha(self):
+    def test_bioconda_recipe_has_publishable_v0_3_0_source_sha(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         marker = "REPLACE" + "_WITH_"
 
-        self.assertTrue((ROOT / "docs" / "releases" / "v0.2.0.md").exists())
-        self.assertIn('{% set version = "0.2.0" %}', recipe)
+        self.assertTrue((ROOT / "docs" / "releases" / "v0.3.0.md").exists())
+        self.assertIn('{% set version = "0.3.0" %}', recipe)
         self.assertNotIn(marker, recipe)
 
         match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
         self.assertIsNotNone(match, recipe)
         self.assertEqual(
             match.group(1),
-            "ad1c2243a7feeb25622bd139b609de942be8219ad5f62176e8e98f46f0d155cf",
+            "643d5d0107b6dc237f3be782a8463414880b95c45964397b773dac7e794e4fde",
         )
 
     def test_release_ready_bioconda_recipe_requires_real_sha(self):
@@ -76,7 +77,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIsNotNone(match, recipe)
         self.assertEqual(
             match.group(1),
-            "ad1c2243a7feeb25622bd139b609de942be8219ad5f62176e8e98f46f0d155cf",
+            "643d5d0107b6dc237f3be782a8463414880b95c45964397b773dac7e794e4fde",
         )
         self.assertNotIn(marker + "PUBLIC_SOURCE_ARCHIVE_SHA256", recipe)
 
@@ -113,6 +114,8 @@ class ReleaseMetadataTest(unittest.TestCase):
 
     def test_docs_reference_published_bioconda_install(self):
         install_command = "mamba install -c conda-forge -c bioconda fastaguard"
+        pinned_install = install_command + "=0.3.0"
+        container = "quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0"
         docs = [
             ROOT / "README.md",
             ROOT / "docs" / "packaging.md",
@@ -124,6 +127,10 @@ class ReleaseMetadataTest(unittest.TestCase):
             with self.subTest(path=path):
                 text = path.read_text()
                 self.assertIn(install_command, text)
+                self.assertIn(pinned_install, text)
+                self.assertIn(container, text)
+                self.assertNotIn("under Bioconda review", text)
+                self.assertNotIn("does not include v0.3 gate behavior yet", text)
 
         packaging = (ROOT / "docs" / "packaging.md").read_text()
         self.assertNotIn("GitHub repository is private", packaging)

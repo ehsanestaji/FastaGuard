@@ -60,8 +60,7 @@ Make FastaGuard credible enough for pipeline authors to add as a default assembl
 Development scope:
 
 - public evidence pack from local fixtures and public assemblies
-- Bioconda and BioContainers v0.2 availability documented without implying a
-  v0.3 package exists yet
+- Bioconda and BioContainers v0.3 availability documented as live
 - input checksum provenance with `provenance.input_sha256`
 - clearer machine-readable threshold metadata
 - assembly gate preset with `--gate pipeline`

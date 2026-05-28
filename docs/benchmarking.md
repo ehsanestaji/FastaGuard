@@ -87,11 +87,11 @@ Use it to answer:
 
 Do not use it to claim performance on contaminated assemblies, highly ambiguous assemblies, or compressed FASTA until separate fixtures cover those cases.
 
-## v0.2 Evidence Targets
+## Evidence Targets
 
 FastaGuard should prove four preflight categories with small reproducible
-fixtures. For v0.3, the same evidence should also show whether each category
-blocks the pipeline gate:
+fixtures. For v0.3, the evidence should also show whether each category blocks
+the pipeline gate:
 
 | Evidence case | Gate behavior | What FastaGuard catches | Why it should run before heavier tools |
 | --- | --- | --- | --- |
@@ -132,10 +132,9 @@ This evidence matters more than synthetic speed alone because it shows the wedge
 
 ## Evidence Pack Workflow
 
-The v0.2 evidence workflow is documented in
-`docs/evidence/fastaguard-v0.2-evidence.md`.
-The published evidence document remains v0.2-focused; v0.3 gate evidence should
-extend that workflow after the gate contract is released.
+The original v0.2 evidence workflow is documented in
+`docs/evidence/fastaguard-v0.2-evidence.md`. The v0.3 gate evidence workflow is
+documented in `docs/evidence/fastaguard-v0.3-evidence.md`.
 
 CI-safe local run:
 
@@ -151,7 +150,7 @@ Public NCBI run:
 ```bash
 python3 scripts/collect_evidence.py \
   --binary target/release/fastaguard \
-  --out-dir target/evidence/v0.2
+  --out-dir target/evidence/v0.3
 ```
 
 The public run uses NCBI Datasets commands such as

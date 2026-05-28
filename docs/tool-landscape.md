@@ -56,12 +56,12 @@ Current product evidence:
 - Rust CLI builds and runs as a single binary.
 - Docker build and smoke test pass.
 - GitHub release workflow builds Linux and macOS binaries.
-- FastaGuard v0.2.0 is published on GitHub with Linux and macOS binaries.
-- FastaGuard v0.2.0 is published on Bioconda for `linux-64`,
+- FastaGuard v0.3.0 is published on GitHub with Linux and macOS binaries.
+- FastaGuard v0.3.0 is published on Bioconda for `linux-64`,
   `linux-aarch64`, `osx-64`, and `osx-arm64`.
 - Clean Bioconda install has been smoke-tested with `fastaguard --schema`.
 - BioContainers publishes
-  `quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0`.
+  `quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0`.
 - JSON Schema validates committed golden reports.
 - Reports include bounded evidence records and suggested actions.
 - The v0.3 gate contract exposes `gate.blocking_findings`,
@@ -72,11 +72,12 @@ Current product evidence:
 - nf-core, Nextflow, and Snakemake starters exist under `examples/`.
 - The v0.2 evidence workflow is documented in
   `docs/evidence/fastaguard-v0.2-evidence.md`.
+- The v0.3 gate evidence workflow is documented in
+  `docs/evidence/fastaguard-v0.3-evidence.md`.
 
 Evidence still needed:
 
 - committed benchmark summaries from public assemblies
-- v0.3 assembly gate evidence runs using `--gate pipeline`
 - user feedback from real pipeline authors
 - broader public assembly evidence runs
 - official MultiQC module or packaged plugin

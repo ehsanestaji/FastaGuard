@@ -15,9 +15,9 @@ Bioconda published -> BioContainers available -> MultiQC plugin -> public benchm
 
 Goal: make installation natural for bioinformatics users.
 
-Status: Bioconda is live for FastaGuard v0.2.0 on Linux and macOS x86_64/ARM64
+Status: Bioconda is live for FastaGuard v0.3.0 on Linux and macOS x86_64/ARM64
 platforms. BioContainers publishes the pinned workflow image
-`quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0`.
+`quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0`.
 
 - Keep GitHub release binaries working.
 - Keep Docker smoke tests passing.
@@ -27,7 +27,7 @@ platforms. BioContainers publishes the pinned workflow image
 Done when:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard
+mamba install -c conda-forge -c bioconda fastaguard=0.3.0
 fastaguard --schema
 ```
 
