@@ -5,26 +5,26 @@
 Treat packaging as part of the product, not as a later chore. For bioinformatics adoption, the order should be:
 
 ```text
-Bioconda -> GitHub release binaries -> Docker image -> BioContainers -> Homebrew later
+Bioconda -> BioContainers -> GitHub release binaries -> Docker image -> Homebrew later
 ```
 
-FastaGuard v0.2.0 is published on GitHub with Linux and macOS release binaries.
-Bioconda serves v0.2.0 on Linux and macOS x86_64/ARM64 platforms. Docker remains
-useful for local smoke tests, while BioContainers now provides the pinned
-workflow image generated from the Bioconda package.
+FastaGuard v0.3.0 is published on GitHub with Linux and macOS release binaries.
+Bioconda serves v0.3.0 on Linux and macOS x86_64/ARM64 platforms.
+BioContainers provides the pinned v0.3 workflow image generated from the
+Bioconda package. Docker remains useful for local smoke tests.
 
 ## Bioconda
 
 Recommended install:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard
+mamba install -c conda-forge -c bioconda fastaguard=0.3.0
 ```
 
 Conda equivalent:
 
 ```bash
-conda install -c conda-forge -c bioconda fastaguard
+conda install -c conda-forge -c bioconda fastaguard=0.3.0
 ```
 
 Verify the installed package:
@@ -37,7 +37,7 @@ fastaguard --finding-catalog
 
 Current published package:
 
-- Version: `0.2.0`
+- Version: `0.3.0`
 - Platforms: `linux-64`, `linux-aarch64`, `osx-64`, `osx-arm64`
 - Package page: [anaconda.org/bioconda/fastaguard](https://anaconda.org/bioconda/fastaguard)
 
@@ -89,8 +89,8 @@ For a public release:
 1. Tag the release:
 
    ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
+   git tag v0.3.0
+   git push origin v0.3.0
    ```
 
 2. Push the tag to trigger `.github/workflows/release.yml`.
@@ -144,7 +144,7 @@ The Bioconda recipe has merged upstream and generated a BioContainers image.
 Use the pinned tag in workflow examples:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0
 ```
 
 That path is preferable to maintaining a separate BioContainers Dockerfile.

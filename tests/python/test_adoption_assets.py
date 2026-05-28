@@ -75,6 +75,10 @@ class AdoptionAssetsTest(unittest.TestCase):
         ).read_text()
 
         self.assertNotIn("0.2.0--", nf_core_module)
+        self.assertIn(
+            "quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0",
+            nf_core_module,
+        )
         self.assertNotIn("fastaguard=0.2.0", wrapper_env)
         self.assertIn("--gate {gate}", wrapper_py)
         self.assertIn("Gate failures intentionally exit with code `2`", nf_core_readme)
@@ -404,19 +408,20 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn(install, nfcore_readme)
         self.assertIn(install, snakemake_readme)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0",
             nfcore_readme,
         )
         self.assertNotIn("0.2.0--", nfcore_module)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.2.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0",
             snakemake_readme,
         )
 
     def test_benchmarking_docs_include_v0_2_evidence_topics(self):
         text = (ROOT / "docs" / "benchmarking.md").read_text()
 
-        self.assertIn("## v0.2 Evidence Targets", text)
+        self.assertIn("## Evidence Targets", text)
+        self.assertIn("docs/evidence/fastaguard-v0.3-evidence.md", text)
         self.assertIn("duplicate IDs", text)
         self.assertIn("invalid characters", text)
         self.assertIn("high-N", text)
