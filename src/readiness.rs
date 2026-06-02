@@ -28,6 +28,12 @@ impl ReadinessReport {
     }
 }
 
+impl Default for ReadinessReport {
+    fn default() -> Self {
+        build_readiness(VerdictStatus::Pass, &[], &[], ReadinessScope::Single)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ReadinessOverall {
     pub status: ReadinessStatus,

@@ -27,6 +27,7 @@ pub struct FastaguardReport {
     pub input: InputInfo,
     pub verdict: Verdict,
     pub gate: GateDecision,
+    #[serde(skip)]
     pub readiness: ReadinessReport,
     pub machine_summary: MachineSummary,
     pub scope: Scope,
