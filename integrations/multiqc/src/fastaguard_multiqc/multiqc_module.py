@@ -196,6 +196,14 @@ class MultiqcModule(BaseMultiqcModule):
                 "title": "Gate blockers",
                 "description": "Finding IDs blocking the FastaGuard gate",
             },
+            "readiness_status": {
+                "title": "Readiness",
+                "description": "FastaGuard readiness status",
+            },
+            "readiness_blockers": {
+                "title": "Readiness blockers",
+                "description": "Readiness categories and finding IDs blocking downstream use",
+            },
             "duplicate_id_count": {
                 "title": "Duplicate IDs",
                 "description": "Number of duplicate FASTA record IDs",

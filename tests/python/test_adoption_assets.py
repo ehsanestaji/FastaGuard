@@ -90,7 +90,10 @@ class AdoptionAssetsTest(unittest.TestCase):
         summary = load_custom_content_summary(fixture)
 
         self.assertEqual(set(summary), {"valid_assembly"})
-        self.assertEqual(summary["valid_assembly"]["verdict"], "PASS")
+        self.assertEqual(summary["valid_assembly"]["verdict"], "WARN")
+        self.assertEqual(summary["valid_assembly"]["gate_status"], "WARN")
+        self.assertEqual(summary["valid_assembly"]["readiness_status"], "WARN")
+        self.assertEqual(summary["valid_assembly"]["readiness_blockers"], "")
         self.assertEqual(summary["valid_assembly"]["sequence_count"], 3)
         self.assertEqual(summary["valid_assembly"]["n50"], 16)
 
@@ -105,14 +108,16 @@ class AdoptionAssetsTest(unittest.TestCase):
                 "verdict": "FAIL",
                 "gate_mode": "none",
                 "gate_status": "FAIL",
-                "gate_blocking_findings": "duplicate_ids,invalid_chars",
+                "gate_blocking_findings": "duplicate_ids,duplicate_first_token_ids,invalid_chars",
+                "readiness_status": "FAIL",
+                "readiness_blockers": "index.duplicate_ids,index.duplicate_first_token_ids,alphabet.invalid_chars",
                 "sequence_count": 5,
                 "total_length": 145,
                 "n50": 110,
                 "n90": 8,
                 "gc_percent": 8.28,
                 "n_percent": 80.69,
-                "finding_count": 7,
+                "finding_count": 9,
                 "duplicate_id_count": 1,
                 "invalid_sequence_count": 1,
                 "high_n_sequence_count": 2,
@@ -153,6 +158,8 @@ class AdoptionAssetsTest(unittest.TestCase):
                                 "length_outlier_count": 1,
                                 "composite_anomaly_count": 1,
                                 "finding_count": 4,
+                                "readiness_status": "WARN",
+                                "readiness_blockers": "assembly.high_n_rate",
                             }
                         },
                     }
@@ -179,10 +186,12 @@ class AdoptionAssetsTest(unittest.TestCase):
                     "gc_outlier_count": 1,
                     "length_outlier_count": 1,
                     "composite_anomaly_count": 1,
+                    "readiness_status": "WARN",
+                    "readiness_blockers": "assembly.high_n_rate",
                 },
             )
 
-    def test_multiqc_parser_preserves_gate_fields(self):
+    def test_multiqc_parser_preserves_gate_and_readiness_fields(self):
         with TemporaryDirectory() as temp_dir:
             fixture = Path(temp_dir) / "fastaguard_mqc.json"
             fixture.write_text(
@@ -206,6 +215,8 @@ class AdoptionAssetsTest(unittest.TestCase):
                                 "gate_mode": "pipeline",
                                 "gate_status": "FAIL",
                                 "gate_blocking_findings": "duplicate_ids,high_n_rate",
+                                "readiness_status": "FAIL",
+                                "readiness_blockers": "index.duplicate_ids,assembly.high_n_rate",
                             }
                         },
                     }
@@ -218,6 +229,11 @@ class AdoptionAssetsTest(unittest.TestCase):
             self.assertEqual(
                 summary["sample"]["gate_blocking_findings"],
                 "duplicate_ids,high_n_rate",
+            )
+            self.assertEqual(summary["sample"]["readiness_status"], "FAIL")
+            self.assertEqual(
+                summary["sample"]["readiness_blockers"],
+                "index.duplicate_ids,assembly.high_n_rate",
             )
 
     def test_multiqc_parser_rejects_missing_required_summary_fields(self):
@@ -321,7 +337,10 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn('"gate_mode"', module_source)
         self.assertIn('"gate_status"', module_source)
         self.assertIn('"gate_blocking_findings"', module_source)
+        self.assertIn('"readiness_status"', module_source)
+        self.assertIn('"readiness_blockers"', module_source)
         self.assertIn("Finding IDs blocking the FastaGuard gate", module_source)
+        self.assertIn("FastaGuard readiness status", module_source)
 
     def test_multiqc_plugin_registers_filename_first_fastaguard_search_pattern(self):
         patterns = getattr(multiqc_parser, "FASTAGUARD_SEARCH_PATTERN", {})

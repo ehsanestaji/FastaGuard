@@ -4,10 +4,10 @@ profile	assembly
 verdict	WARN
 gate_mode	none
 gate_status	WARN
-gate_blocking_findings
+gate_blocking_findings	.
 gate_advisory_findings	terminal_ns
 readiness_status	WARN
-readiness_blockers
+readiness_blockers	.
 readiness_file_status	PASS
 readiness_structure_status	PASS
 readiness_alphabet_status	PASS

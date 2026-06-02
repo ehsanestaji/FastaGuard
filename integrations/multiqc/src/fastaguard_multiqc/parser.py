@@ -22,6 +22,8 @@ OPTIONAL_SUMMARY_FIELDS = (
     "gate_mode",
     "gate_status",
     "gate_blocking_findings",
+    "readiness_status",
+    "readiness_blockers",
     "duplicate_id_count",
     "invalid_sequence_count",
     "high_n_sequence_count",

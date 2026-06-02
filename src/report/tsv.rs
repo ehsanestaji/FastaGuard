@@ -124,7 +124,7 @@ fn write_metric(
 ) -> std::io::Result<()> {
     let value = value.to_string();
     if value.is_empty() {
-        writeln!(writer, "{metric}")
+        writeln!(writer, "{metric}\t.")
     } else {
         writeln!(writer, "{metric}\t{value}")
     }
@@ -264,14 +264,18 @@ mod tests {
     }
 
     #[test]
-    fn writes_empty_metric_values_without_trailing_whitespace() {
+    fn writes_empty_metric_values_as_explicit_marker_without_trailing_whitespace() {
         let report = test_report(VerdictStatus::Pass);
         let file = NamedTempFile::new().unwrap();
 
         write(&report, file.path()).unwrap();
 
         let output = fs::read_to_string(file.path()).unwrap();
+        assert!(output.contains("gate_blocking_findings\t.\n"), "{output}");
+        assert!(output.contains("gate_advisory_findings\t.\n"), "{output}");
+        assert!(output.contains("readiness_blockers\t.\n"), "{output}");
         for line in output.lines() {
+            assert_eq!(line.split('\t').count(), 2, "{line:?} in {output}");
             assert!(!line.ends_with('\t'), "{line:?} in {output}");
             assert!(!line.ends_with(' '), "{line:?} in {output}");
         }
