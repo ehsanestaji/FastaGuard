@@ -5,9 +5,10 @@ use std::time::Instant;
 
 use crate::cli::{CompareConfig, RunConfig};
 use crate::models::{
-    CompareInputInfo, CompareReport, CompareSample, CompareSummary, FastaguardReport, ToolInfo,
-    VerdictStatus, SCHEMA_VERSION, TOOL_NAME, TOOL_VERSION,
+    CohortFinding, CompareInputInfo, CompareReport, CompareSample, CompareSummary,
+    FastaguardReport, Severity, ToolInfo, VerdictStatus, SCHEMA_VERSION, TOOL_NAME, TOOL_VERSION,
 };
+use crate::stats::outliers::{iqr_outlier_indices, zscore_outlier_indices};
 
 pub fn run_compare(config: CompareConfig) -> Result<i32> {
     validate_unique_sample_ids(&config.inputs)?;
@@ -20,6 +21,7 @@ pub fn run_compare(config: CompareConfig) -> Result<i32> {
 
     let summary = compare_summary(&samples);
     let worst = worst_status(samples.iter().map(|sample| sample.gate_status));
+    let cohort_findings = cohort_findings(&samples);
     let report = CompareReport {
         schema_version: SCHEMA_VERSION.to_string(),
         report_type: "compare".to_string(),
@@ -33,7 +35,7 @@ pub fn run_compare(config: CompareConfig) -> Result<i32> {
         },
         summary,
         samples,
-        cohort_findings: Vec::new(),
+        cohort_findings,
     };
 
     crate::report::write_compare_all(&report, &config.outputs)?;
@@ -113,6 +115,64 @@ fn compare_summary(samples: &[CompareSample]) -> CompareSummary {
         warn_count: count_status(samples, VerdictStatus::Warn),
         fail_count: count_status(samples, VerdictStatus::Fail),
     }
+}
+
+pub(crate) fn cohort_findings(samples: &[CompareSample]) -> Vec<CohortFinding> {
+    let mut findings = Vec::new();
+
+    let total_lengths = samples
+        .iter()
+        .map(|sample| sample.total_length)
+        .collect::<Vec<_>>();
+    let length_indices = iqr_outlier_indices(&total_lengths, 1.5);
+    if !length_indices.is_empty() {
+        findings.push(CohortFinding {
+            id: "cohort_total_length_outliers".to_string(),
+            severity: Severity::Minor,
+            affected_count: usize_to_u64(length_indices.len()),
+            evidence: serde_json::json!({
+                "records": length_indices
+                    .iter()
+                    .map(|index| {
+                        let sample = &samples[*index];
+                        serde_json::json!({
+                            "sample_id": sample.sample_id,
+                            "total_length": sample.total_length,
+                            "reason": "total length is unusual relative to the cohort",
+                        })
+                    })
+                    .collect::<Vec<_>>(),
+            }),
+        });
+    }
+
+    let gc_percentages = samples
+        .iter()
+        .map(|sample| sample.gc_percent)
+        .collect::<Vec<_>>();
+    let gc_indices = zscore_outlier_indices(&gc_percentages, 2.0);
+    if !gc_indices.is_empty() {
+        findings.push(CohortFinding {
+            id: "cohort_gc_outliers".to_string(),
+            severity: Severity::Minor,
+            affected_count: usize_to_u64(gc_indices.len()),
+            evidence: serde_json::json!({
+                "records": gc_indices
+                    .iter()
+                    .map(|index| {
+                        let sample = &samples[*index];
+                        serde_json::json!({
+                            "sample_id": sample.sample_id,
+                            "gc_percent": sample.gc_percent,
+                            "reason": "GC percent is unusual relative to the cohort",
+                        })
+                    })
+                    .collect::<Vec<_>>(),
+            }),
+        });
+    }
+
+    findings
 }
 
 fn count_status(samples: &[CompareSample], status: VerdictStatus) -> u64 {
@@ -198,5 +258,64 @@ mod tests {
     fn sample_id_uses_file_stem_without_compression_suffix() {
         assert_eq!(sample_id(Path::new("assemblies/ecoli.fa")), "ecoli");
         assert_eq!(sample_id(Path::new("assemblies/ecoli.fasta.gz")), "ecoli");
+    }
+
+    #[test]
+    fn cohort_total_length_outliers_rank_unusual_samples() {
+        let samples = vec![
+            sample_for_cohort("sample_a", 100_000, 50.0),
+            sample_for_cohort("sample_b", 101_000, 50.2),
+            sample_for_cohort("sample_c", 99_500, 49.8),
+            sample_for_cohort("sample_d", 102_000, 50.1),
+            sample_for_cohort("sample_e", 1_000_000, 50.0),
+        ];
+
+        let findings = cohort_findings(&samples);
+
+        let length_finding = findings
+            .iter()
+            .find(|finding| finding.id == "cohort_total_length_outliers")
+            .unwrap_or_else(|| panic!("missing cohort_total_length_outliers: {findings:#?}"));
+        assert_eq!(length_finding.affected_count, 1);
+        assert_eq!(
+            length_finding.evidence["records"][0]["sample_id"],
+            "sample_e"
+        );
+        assert_eq!(
+            length_finding.evidence["records"][0]["total_length"],
+            1_000_000
+        );
+        assert_eq!(
+            length_finding.evidence["records"][0]["reason"],
+            "total length is unusual relative to the cohort"
+        );
+    }
+
+    fn sample_for_cohort(sample_id: &str, total_length: u64, gc_percent: f64) -> CompareSample {
+        CompareSample {
+            sample_id: sample_id.to_string(),
+            input_path: format!("{sample_id}.fa"),
+            verdict: VerdictStatus::Pass,
+            gate_status: VerdictStatus::Pass,
+            readiness_status: crate::readiness::ReadinessStatus::Pass,
+            sequence_count: 1,
+            total_length,
+            n50: total_length,
+            n90: total_length,
+            gc_percent,
+            n_percent: 0.0,
+            duplicate_id_count: 0,
+            invalid_sequence_count: 0,
+            high_n_sequence_count: 0,
+            tiny_contig_count: 0,
+            max_gap_run: 0,
+            gc_outlier_count: 0,
+            length_outlier_count: 0,
+            finding_count: 0,
+            finding_ids: Vec::new(),
+            readiness_blockers: Vec::new(),
+            recommended_next_tools: Vec::new(),
+            input_sha256: "0".repeat(64),
+        }
     }
 }

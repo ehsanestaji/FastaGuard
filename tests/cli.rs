@@ -160,6 +160,16 @@ fn compare_writes_json_with_mixed_status_samples() {
             .iter()
             .any(|tool| tool == "seqkit")
     }));
+    let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
+    assert!(tsv.contains("sample_id\tinput_path\tverdict"), "{tsv}");
+    let html = std::fs::read_to_string(&outputs.html).unwrap();
+    assert!(html.contains("Readiness Matrix"), "{html}");
+    let multiqc_report = read_json(&multiqc);
+    assert_eq!(multiqc_report["plot_type"], json!("table"));
+    assert!(
+        multiqc_report["data"].get("valid_assembly").is_some(),
+        "{multiqc_report}"
+    );
     assert!(multiqc.exists(), "missing {}", multiqc.display());
 }
 
