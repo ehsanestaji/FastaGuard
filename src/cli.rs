@@ -205,6 +205,7 @@ struct ValidatedAnalysis {
 
 impl Cli {
     pub fn to_command_config(&self) -> Result<CommandConfig> {
+        self.contract.validate_exclusive()?;
         if self.contract.is_requested() {
             return Ok(CommandConfig::Contract);
         }
@@ -229,8 +230,23 @@ impl Cli {
 }
 
 impl ContractFlags {
+    fn validate_exclusive(&self) -> Result<()> {
+        if self.requested_count() > 1 {
+            return Err(anyhow!(
+                "contract discovery flags are mutually exclusive; use only one of --schema, --finding-catalog, or --explain-finding"
+            ));
+        }
+        Ok(())
+    }
+
     pub fn is_requested(&self) -> bool {
-        self.schema || self.finding_catalog || self.explain_finding.is_some()
+        self.requested_count() > 0
+    }
+
+    fn requested_count(&self) -> usize {
+        usize::from(self.schema)
+            + usize::from(self.finding_catalog)
+            + usize::from(self.explain_finding.is_some())
     }
 }
 
@@ -595,5 +611,15 @@ mod tests {
         assert!(error
             .to_string()
             .contains("compare requires at least two FASTA inputs"));
+    }
+
+    #[test]
+    fn contract_flags_remain_mutually_exclusive_after_compare() {
+        let cli = Cli::parse_from(["fastaguard", "compare", "--schema", "--finding-catalog"]);
+        let error = cli.to_command_config().unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("contract discovery flags are mutually exclusive"));
     }
 }
