@@ -17,3 +17,7 @@ rule fastaguard:
           --tsv {output.tsv} \
           --multiqc {output.multiqc}
         """
+
+# Compare mode starter pattern for v0.4 cohort triage:
+# fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
+# This is local starter guidance, not an official Snakemake submission yet.

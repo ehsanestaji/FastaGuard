@@ -28,3 +28,7 @@ process FASTAGUARD {
 workflow {
     FASTAGUARD(file(params.fasta))
 }
+
+// Compare mode starter pattern for v0.4 cohort triage:
+// fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
+// This is local starter guidance, not an upstream nf-core submission yet.

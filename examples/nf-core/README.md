@@ -38,6 +38,15 @@ fastaguard sample.fa --profile assembly --gate pipeline
 That gate contract blocks downstream workflow steps on duplicate IDs, invalid
 characters, invalid FASTA structure, and high-N content. Gate failures intentionally exit with code `2` after writing reports, so downstream workflow steps stop while the JSON/HTML evidence remains available.
 
+For v0.4 cohort triage, compare mode is a starter pattern:
+
+```bash
+fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
+```
+
+This is local starter guidance only. It is not yet an upstream nf-core module
+submission, and the Snakemake example is not yet an official wrapper submission.
+
 Example include:
 
 ```nextflow

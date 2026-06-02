@@ -109,6 +109,12 @@ Pipeline gate example:
 fastaguard sample.fa --profile assembly --gate pipeline
 ```
 
+Compare starter example for v0.4 cohort triage:
+
+```bash
+fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
+```
+
 The `pipeline` gate is the v0.3 assembly preset for workflow stop/go decisions.
 It fails on duplicate IDs, invalid characters, invalid FASTA structure, and
 high-N content. GC and length outliers remain advisory by default because they
@@ -211,6 +217,15 @@ v0.3 adds the assembly gate contract:
 - explicit advisory findings for evidence that should route follow-up QC rather
   than stop a pipeline by default
 
+v0.4 adds preflight readiness and compare mode:
+
+- readiness categories for file, structure, alphabet, index, assembly,
+  submission, and machine readiness
+- `fastaguard compare` for starter cohort triage across many FASTA files
+- cohort JSON, TSV, HTML, and MultiQC-compatible outputs for workflow routing
+- boundaries that keep FastaGuard upstream of QUAST, BUSCO, BlobToolKit,
+  CheckM, official validators, and annotation workflows
+
 ## Positioning
 
 FastaGuard should recommend deeper tools when they are appropriate:
@@ -233,6 +248,9 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [Product thesis](docs/product-thesis.md)
 - [Vision plan](docs/vision-plan.md)
 - [MVP spec](docs/mvp-spec.md)
+- [Preflight readiness](docs/preflight-readiness.md)
+- [Compare mode](docs/compare-mode.md)
+- [Value benchmark](docs/value-benchmark.md)
 - [Output contract](docs/output-contract.md)
 - [Tool landscape](docs/tool-landscape.md)
 - [Adoption plan](docs/adoption-plan.md)
@@ -241,6 +259,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.2 evidence pack](docs/evidence/fastaguard-v0.2-evidence.md)
 - [v0.3 evidence workflow](docs/evidence/fastaguard-v0.3-evidence.md)
 - [Packaging](docs/packaging.md)
+- [v0.4.0 release notes](docs/releases/v0.4.0.md)
 - [v0.3.0 release notes](docs/releases/v0.3.0.md)
 - [v0.2.0 release notes](docs/releases/v0.2.0.md)
 - [v0.1.1 release notes](docs/releases/v0.1.1.md)

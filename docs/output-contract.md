@@ -17,6 +17,15 @@ schema/fastaguard.schema.json
 schema/finding-catalog.json
 ```
 
+v0.4 compare mode adds cohort-level artifacts:
+
+```text
+cohort.json
+cohort.tsv
+cohort_report.html
+fastaguard_compare_mqc.json
+```
+
 ## JSON Contract
 
 Example v0.3 shape:
@@ -294,6 +303,43 @@ adds them with `--fail-on`.
 `provenance.input_sha256` identifies the exact input bytes used for the report.
 That checksum lets workflow engines, reviewers, and future audit tools connect a
 gate decision to one immutable FASTA input.
+
+## Readiness And Compare Contract
+
+The v0.4 contract adds preflight readiness categories without changing
+FastaGuard's boundary. Readiness tells workflow engines whether a FASTA is ready
+for file consumption, parsing, symbol validation, indexing, assembly triage,
+submission review, and machine-readable routing. It does not prove biological
+completeness, assembly correctness, or contamination.
+
+Readiness categories:
+
+- file
+- structure
+- alphabet
+- index
+- assembly
+- submission
+- machine
+
+Compare mode wraps single-file reports into a cohort triage layer:
+
+```bash
+fastaguard compare assemblies/*.fa \
+  --profile assembly \
+  --gate pipeline \
+  --out cohort_report.html \
+  --json cohort.json \
+  --tsv cohort.tsv \
+  --multiqc fastaguard_compare_mqc.json
+```
+
+Machines should treat `cohort.json` as the source of truth. The TSV is for
+filtering and spreadsheet review, the HTML report is for human triage, and
+`fastaguard_compare_mqc.json` is for MultiQC-compatible cohort summaries.
+Compare mode ranks and routes FASTA files before QUAST, BUSCO, BlobToolKit,
+CheckM, official validators, annotation, or other interpretive QC tools; it does
+not replace them.
 
 ## Machine-Actionable Contract
 

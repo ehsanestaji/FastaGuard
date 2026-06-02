@@ -23,6 +23,12 @@ v0.3 positioning:
 The assembly FASTA gate before expensive QC.
 ```
 
+v0.4 positioning:
+
+```text
+Preflight readiness and starter cohort triage before interpretive QC.
+```
+
 ## Where FastaGuard Fits
 
 | Tool | Primary role | When it runs | What FastaGuard adds before it |
@@ -49,6 +55,12 @@ Without FastaGuard, users typically combine several partial checks:
 That works, but it is fragmented. The missing layer is a default, explainable,
 machine-readable FASTA preflight contract.
 
+v0.4 extends that contract with readiness categories and `fastaguard compare`.
+Readiness separates file, structure, alphabet, index, assembly, submission, and
+machine concerns. Compare mode gives many FASTA files one starter cohort triage
+table before teams spend time in QUAST, BUSCO, BlobToolKit, CheckM, official
+validators, annotation, or other interpretive tools.
+
 ## Product Evidence We Have
 
 Current product evidence:
@@ -74,12 +86,15 @@ Current product evidence:
   `docs/evidence/fastaguard-v0.2-evidence.md`.
 - The v0.3 gate evidence workflow is documented in
   `docs/evidence/fastaguard-v0.3-evidence.md`.
+- v0.4 documentation defines preflight readiness, compare mode, and local value
+  benchmark framing for adoption discussions.
 
 Evidence still needed:
 
 - committed benchmark summaries from public assemblies
 - user feedback from real pipeline authors
 - broader public assembly evidence runs
+- real cohort compare-mode examples from public assemblies
 - official MultiQC module or packaged plugin
 - comparison examples showing what FastaGuard catches before QUAST/BUSCO/BlobToolKit
 

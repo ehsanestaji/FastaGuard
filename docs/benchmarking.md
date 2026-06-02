@@ -25,6 +25,13 @@ For the v0.3 assembly gate contract, add the pipeline gate preset:
 fastaguard sample.fa --profile assembly --gate pipeline
 ```
 
+For the v0.4 compare-mode starter pattern, benchmark the same local binaries
+across a directory of FASTA files before sending the cohort to interpretive QC:
+
+```bash
+fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
+```
+
 ## Larger Local Benchmark
 
 Build an optimized binary:
@@ -86,6 +93,20 @@ Use it to answer:
 - does the tool still behave well on large record counts?
 
 Do not use it to claim performance on contaminated assemblies, highly ambiguous assemblies, or compressed FASTA until separate fixtures cover those cases.
+
+## Local Value Evidence
+
+The v0.4 value benchmark is documented in
+[`docs/value-benchmark.md`](value-benchmark.md). The measured local frame is:
+
+- `fastaguard 0.3.0`, commit `1873216`, macOS ARM64
+- 10 Mbp synthetic FASTA, 10k records: PASS, 0.51 seconds, about 17 MB RSS
+- 100 Mbp synthetic FASTA, 100k records: WARN for GC outliers, 0.98 seconds,
+  about 50 MB RSS
+
+Frame timings as evidence, not formal universal benchmark claims. Use them to
+show that FastaGuard is cheap enough to run before QUAST, BUSCO, BlobToolKit,
+CheckM, official validators, annotation, or other heavier follow-up tools.
 
 ## Evidence Targets
 

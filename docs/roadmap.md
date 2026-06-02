@@ -69,21 +69,30 @@ Development scope:
 - clearer blocking vs follow-up recommendations; GC and length outliers remain
   advisory unless added with `--fail-on`
 
-## v0.4: Compare Mode
+## v0.4: Preflight Readiness + Compare Mode
 
 Goal:
 
 ```text
-Make many FASTA files easy to rank, filter, and route.
+Make many FASTA files easy to rank, filter, and route before interpretive QC.
 ```
 
-Potential additions:
+Development scope:
 
+- readiness categories for file, structure, alphabet, index, assembly,
+  submission, and machine readiness
+- index-readiness checks for duplicate first-token IDs and related identifier
+  hazards
+- submission-readiness advisories for FASTA-level issues worth fixing before
+  official validators
+- `fastaguard compare` as a starter cohort triage layer
 - cross-file metrics table
 - cohort-level outliers
 - sample-to-sample summary
-- batch pipeline reports
 - combined JSON, TSV, HTML, and MultiQC outputs
+- explicit boundaries: compare mode routes to QUAST, BUSCO, BlobToolKit,
+  CheckM, official validators, annotation, or other downstream tools; it does
+  not replace them
 
 ## v0.5: Transcriptome Profile
 
@@ -119,7 +128,7 @@ Potential additions:
 
 Potential additions:
 
-- publish and verify a v0.3 Bioconda update after the gate contract is released
+- publish and verify package updates for each released contract
 - upstream nf-core module submission
 - official Snakemake wrapper submission
 - Galaxy wrapper

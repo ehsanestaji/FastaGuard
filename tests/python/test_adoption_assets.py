@@ -84,6 +84,32 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("Gate failures intentionally exit with code `2`", nf_core_readme)
         self.assertIn("Gate failures intentionally exit with code `2`", snakemake_readme)
 
+    def test_v0_4_docs_explain_preflight_readiness_and_compare_mode(self):
+        readiness = ROOT / "docs" / "preflight-readiness.md"
+        compare = ROOT / "docs" / "compare-mode.md"
+        value = ROOT / "docs" / "value-benchmark.md"
+
+        for path in (readiness, compare, value):
+            self.assertTrue(path.exists(), path)
+
+        self.assertIn("before interpretive QC tools", readiness.read_text())
+        self.assertIn("Index readiness", readiness.read_text())
+        self.assertIn("fastaguard compare", compare.read_text())
+        self.assertIn("fastaguard_compare_mqc.json", compare.read_text())
+        self.assertIn("0.98 seconds", value.read_text())
+        self.assertIn("50 MB", value.read_text())
+
+    def test_v0_4_examples_mention_compare_as_starter_pattern(self):
+        text = "\n".join(
+            [
+                (ROOT / "examples" / "nf-core" / "README.md").read_text(),
+                (ROOT / "examples" / "snakemake" / "Snakefile").read_text(),
+                (ROOT / "examples" / "nextflow" / "main.nf").read_text(),
+            ]
+        )
+        self.assertIn("fastaguard compare", text)
+        self.assertIn("starter", text.lower())
+
     def test_multiqc_parser_reads_fastaguard_custom_content(self):
         fixture = ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard_mqc.json"
 
