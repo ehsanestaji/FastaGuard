@@ -52,18 +52,39 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
         )?;
     }
     write_metric(&mut writer, "input_sha256", &report.provenance.input_sha256)?;
+
     write_metric(&mut writer, "sequence_count", report.summary.sequence_count)?;
     write_metric(&mut writer, "total_length", report.summary.total_length)?;
+    write_metric(&mut writer, "min_length", report.summary.min_length)?;
+    write_metric(&mut writer, "max_length", report.summary.max_length)?;
+    write_metric(&mut writer, "mean_length", report.summary.mean_length)?;
+    write_metric(&mut writer, "median_length", report.summary.median_length)?;
     write_metric(&mut writer, "n50", report.summary.n50)?;
     write_metric(&mut writer, "n90", report.summary.n90)?;
     write_metric(&mut writer, "l50", report.summary.l50)?;
     write_metric(&mut writer, "l90", report.summary.l90)?;
     write_metric(&mut writer, "gc_percent", report.summary.gc_percent)?;
+    write_metric(&mut writer, "at_percent", report.summary.at_percent)?;
     write_metric(&mut writer, "n_percent", report.summary.n_percent)?;
+    write_metric(
+        &mut writer,
+        "ambiguity_percent",
+        report.summary.ambiguity_percent,
+    )?;
+    write_metric(
+        &mut writer,
+        "duplicate_id_count",
+        report.summary.duplicate_id_count,
+    )?;
     write_metric(
         &mut writer,
         "duplicate_first_token_id_count",
         report.summary.duplicate_first_token_id_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "duplicate_sequence_count",
+        report.summary.duplicate_sequence_count,
     )?;
     write_metric(
         &mut writer,
@@ -82,6 +103,21 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
     )?;
     write_metric(
         &mut writer,
+        "invalid_sequence_count",
+        report.summary.invalid_sequence_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "high_n_sequence_count",
+        report.summary.high_n_sequence_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "tiny_contig_count",
+        report.summary.tiny_contig_count,
+    )?;
+    write_metric(
+        &mut writer,
         "terminal_n_sequence_count",
         report.summary.terminal_n_sequence_count,
     )?;
@@ -90,11 +126,13 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
         "repeated_gap_pattern_sequence_count",
         report.summary.repeated_gap_pattern_sequence_count,
     )?;
+    write_metric(&mut writer, "max_gap_run", report.summary.max_gap_run)?;
     write_metric(
         &mut writer,
         "ungapped_total_length",
         report.summary.ungapped_total_length,
     )?;
+
     write_metric(
         &mut writer,
         "gc_outlier_count",
@@ -230,28 +268,41 @@ mod tests {
     #[test]
     fn writes_v0_4_summary_counter_rows() {
         let mut report = test_report(VerdictStatus::Warn);
+        report.summary.min_length = 11;
+        report.summary.duplicate_id_count = 7;
         report.summary.duplicate_first_token_id_count = 1;
+        report.summary.duplicate_sequence_count = 8;
         report.summary.unsafe_id_count = 2;
         report.summary.long_header_count = 3;
         report.summary.reserved_header_char_count = 4;
+        report.summary.invalid_sequence_count = 9;
+        report.summary.high_n_sequence_count = 10;
+        report.summary.tiny_contig_count = 11;
         report.summary.terminal_n_sequence_count = 5;
         report.summary.repeated_gap_pattern_sequence_count = 6;
+        report.summary.max_gap_run = 12;
         report.summary.ungapped_total_length = 94;
         let file = NamedTempFile::new().unwrap();
 
         write(&report, file.path()).unwrap();
 
         let output = fs::read_to_string(file.path()).unwrap();
+        assert!(output.contains("min_length\t11\n"), "{output}");
+        assert!(output.contains("duplicate_id_count\t7\n"), "{output}");
         assert!(
             output.contains("duplicate_first_token_id_count\t1\n"),
             "{output}"
         );
+        assert!(output.contains("duplicate_sequence_count\t8\n"), "{output}");
         assert!(output.contains("unsafe_id_count\t2\n"), "{output}");
         assert!(output.contains("long_header_count\t3\n"), "{output}");
         assert!(
             output.contains("reserved_header_char_count\t4\n"),
             "{output}"
         );
+        assert!(output.contains("invalid_sequence_count\t9\n"), "{output}");
+        assert!(output.contains("high_n_sequence_count\t10\n"), "{output}");
+        assert!(output.contains("tiny_contig_count\t11\n"), "{output}");
         assert!(
             output.contains("terminal_n_sequence_count\t5\n"),
             "{output}"
@@ -260,6 +311,7 @@ mod tests {
             output.contains("repeated_gap_pattern_sequence_count\t6\n"),
             "{output}"
         );
+        assert!(output.contains("max_gap_run\t12\n"), "{output}");
         assert!(output.contains("ungapped_total_length\t94\n"), "{output}");
     }
 
