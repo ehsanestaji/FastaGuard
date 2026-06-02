@@ -164,6 +164,96 @@ fn compare_writes_json_with_mixed_status_samples() {
 }
 
 #[test]
+fn compare_rejects_duplicate_sample_ids() {
+    let temp_dir = TempDir::new().unwrap();
+    let first_dir = temp_dir.path().join("a");
+    let second_dir = temp_dir.path().join("b");
+    std::fs::create_dir(&first_dir).unwrap();
+    std::fs::create_dir(&second_dir).unwrap();
+    let first = first_dir.join("sample.fa");
+    let second = second_dir.join("sample.fa");
+    std::fs::write(&first, ">one\nACGT\n").unwrap();
+    std::fs::write(&second, ">two\nACGT\n").unwrap();
+    let outputs = output_paths(&temp_dir, "duplicate_sample");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("compare")
+        .arg(&first)
+        .arg(&second)
+        .arg("--json")
+        .arg(&outputs.json)
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains(
+            "duplicate compare sample_id 'sample'",
+        ));
+
+    assert!(
+        !outputs.html.exists(),
+        "unexpected {}",
+        outputs.html.display()
+    );
+    assert!(
+        !outputs.json.exists(),
+        "unexpected {}",
+        outputs.json.display()
+    );
+    assert!(
+        !outputs.tsv.exists(),
+        "unexpected {}",
+        outputs.tsv.display()
+    );
+    assert!(
+        !outputs.multiqc.exists(),
+        "unexpected {}",
+        outputs.multiqc.display()
+    );
+}
+
+#[test]
+fn compare_includes_structurally_invalid_fasta_sample() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "invalid_cohort");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "compare",
+        "testdata/valid_assembly.fa",
+        "testdata/invalid_empty_record.fa",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let report = read_json(&outputs.json);
+    let samples = report["samples"].as_array().unwrap();
+    let invalid_sample = samples
+        .iter()
+        .find(|sample| sample["sample_id"] == "invalid_empty_record")
+        .unwrap_or_else(|| panic!("missing invalid sample: {report}"));
+    assert_eq!(invalid_sample["verdict"], json!("FAIL"));
+    assert_eq!(invalid_sample["gate_status"], json!("FAIL"));
+    assert!(array_contains_string(
+        &invalid_sample["finding_ids"],
+        "invalid_fasta_structure"
+    ));
+}
+
+#[test]
 fn valid_assembly_writes_all_outputs_and_warns_for_terminal_ns() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "valid");

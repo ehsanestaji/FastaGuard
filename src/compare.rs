@@ -1,4 +1,5 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+use std::collections::BTreeSet;
 use std::path::Path;
 use std::time::Instant;
 
@@ -9,6 +10,8 @@ use crate::models::{
 };
 
 pub fn run_compare(config: CompareConfig) -> Result<i32> {
+    validate_unique_sample_ids(&config.inputs)?;
+
     let mut samples = Vec::with_capacity(config.inputs.len());
     for input in &config.inputs {
         let report = run_one_sample(&config, input)?;
@@ -35,6 +38,17 @@ pub fn run_compare(config: CompareConfig) -> Result<i32> {
 
     crate::report::write_compare_all(&report, &config.outputs)?;
     Ok(exit_code(worst))
+}
+
+fn validate_unique_sample_ids(inputs: &[std::path::PathBuf]) -> Result<()> {
+    let mut seen = BTreeSet::new();
+    for input in inputs {
+        let id = sample_id(input);
+        if !seen.insert(id.clone()) {
+            return Err(anyhow!("duplicate compare sample_id '{id}'"));
+        }
+    }
+    Ok(())
 }
 
 fn run_one_sample(config: &CompareConfig, input: &Path) -> Result<FastaguardReport> {
