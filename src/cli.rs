@@ -1,8 +1,11 @@
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, SecondsFormat, Utc};
-use clap::{ArgGroup, Args, Parser, Subcommand};
+use clap::error::ErrorKind;
+use clap::parser::ValueSource;
+use clap::{ArgGroup, ArgMatches, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 use std::collections::BTreeSet;
 use std::env::VarError;
+use std::ffi::OsString;
 use std::path::PathBuf;
 
 use crate::gate::{self, GateMode};
@@ -204,6 +207,28 @@ struct ValidatedAnalysis {
 }
 
 impl Cli {
+    pub fn parse() -> Self {
+        Self::try_parse_from(std::env::args_os()).unwrap_or_else(|error| error.exit())
+    }
+
+    pub fn parse_from<I, T>(args: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        Self::try_parse_from(args).unwrap_or_else(|error| error.exit())
+    }
+
+    pub fn try_parse_from<I, T>(args: I) -> std::result::Result<Self, clap::Error>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        let matches = Self::command().try_get_matches_from(args)?;
+        validate_no_root_run_args_before_subcommand(&matches)?;
+        Self::from_arg_matches(&matches)
+    }
+
     pub fn to_command_config(&self) -> Result<CommandConfig> {
         self.contract.validate_exclusive()?;
         if self.contract.is_requested() {
@@ -211,7 +236,10 @@ impl Cli {
         }
 
         match &self.command {
-            Some(Commands::Compare(args)) => args.to_compare_config(),
+            Some(Commands::Compare(args)) => {
+                self.run.validate_unused_before_subcommand("compare")?;
+                args.to_compare_config()
+            }
             None => self.run.to_run_config(),
         }
     }
@@ -228,6 +256,41 @@ impl Cli {
         }
     }
 }
+
+fn validate_no_root_run_args_before_subcommand(
+    matches: &ArgMatches,
+) -> std::result::Result<(), clap::Error> {
+    if matches.subcommand_name().is_none() {
+        return Ok(());
+    }
+
+    for arg_id in ROOT_RUN_ARG_IDS {
+        if matches.value_source(arg_id) == Some(ValueSource::CommandLine) {
+            return Err(clap::Error::raw(
+                ErrorKind::ArgumentConflict,
+                "root run arguments cannot be used with subcommands; put compare inputs and options after the subcommand",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+const ROOT_RUN_ARG_IDS: &[&str] = &[
+    "input",
+    "profile",
+    "gate",
+    "fail_on",
+    "max_n_rate",
+    "min_contig_length",
+    "expected_size",
+    "expected_size_tolerance",
+    "threads",
+    "out",
+    "json",
+    "tsv",
+    "multiqc",
+];
 
 impl ContractFlags {
     fn validate_exclusive(&self) -> Result<()> {
@@ -251,6 +314,19 @@ impl ContractFlags {
 }
 
 impl RunArgs {
+    fn validate_unused_before_subcommand(&self, subcommand: &str) -> Result<()> {
+        if self.has_run_args() {
+            return Err(anyhow!(
+                "root run arguments cannot be used with {subcommand}; put {subcommand} inputs and options after the subcommand"
+            ));
+        }
+        Ok(())
+    }
+
+    fn has_run_args(&self) -> bool {
+        self.input.is_some() || self.analysis.has_overrides() || self.outputs.has_overrides()
+    }
+
     fn to_run_config(&self) -> Result<CommandConfig> {
         let input = self.input.clone().ok_or_else(|| {
             anyhow!("input FASTA is required unless a contract discovery flag is used")
@@ -302,6 +378,17 @@ impl CompareArgs {
 }
 
 impl AnalysisArgs {
+    fn has_overrides(&self) -> bool {
+        self.profile != "assembly"
+            || self.gate != GateMode::None
+            || !self.fail_on.is_empty()
+            || self.max_n_rate.is_some()
+            || self.min_contig_length.is_some()
+            || self.expected_size.is_some()
+            || self.expected_size_tolerance != 0.25
+            || self.threads != 1
+    }
+
     fn validate(&self) -> Result<ValidatedAnalysis> {
         if self.profile != "assembly" {
             return Err(anyhow!(
@@ -348,6 +435,13 @@ impl AnalysisArgs {
 }
 
 impl RunOutputArgs {
+    fn has_overrides(&self) -> bool {
+        self.out != PathBuf::from("fastaguard_report.html")
+            || self.json != PathBuf::from("fastaguard.json")
+            || self.tsv != PathBuf::from("fastaguard.tsv")
+            || self.multiqc != PathBuf::from("fastaguard_mqc.json")
+    }
+
     fn output_paths(&self) -> OutputPaths {
         OutputPaths {
             html: self.out.clone(),
@@ -436,7 +530,6 @@ fn current_utc_timestamp() -> String {
 mod tests {
     use super::*;
     use crate::gate::GateMode;
-    use clap::Parser;
 
     fn cli_with_max_n_rate(max_n_rate: Option<f64>) -> Cli {
         Cli {
@@ -611,6 +704,50 @@ mod tests {
         assert!(error
             .to_string()
             .contains("compare requires at least two FASTA inputs"));
+    }
+
+    #[test]
+    fn compare_rejects_root_input_before_subcommand() {
+        let error =
+            Cli::try_parse_from(["fastaguard", "input.fa", "compare", "b.fa", "c.fa"]).unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("root run arguments cannot be used with subcommands"));
+    }
+
+    #[test]
+    fn compare_rejects_root_analysis_options_before_subcommand() {
+        let error =
+            Cli::try_parse_from(["fastaguard", "--threads", "0", "compare", "a.fa", "b.fa"])
+                .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("root run arguments cannot be used with subcommands"));
+    }
+
+    #[test]
+    fn compare_rejects_explicit_default_root_options_before_subcommand() {
+        let error =
+            Cli::try_parse_from(["fastaguard", "--threads", "1", "compare", "a.fa", "b.fa"])
+                .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("root run arguments cannot be used with subcommands"));
+    }
+
+    #[test]
+    fn compare_accepts_analysis_options_after_subcommand() {
+        let cli = Cli::parse_from(["fastaguard", "compare", "a.fa", "b.fa", "--threads", "1"]);
+        let config = cli.to_command_config().unwrap();
+
+        let CommandConfig::Compare(config) = config else {
+            panic!("expected compare config");
+        };
+
+        assert_eq!(config.threads, 1);
     }
 
     #[test]
