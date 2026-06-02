@@ -690,6 +690,29 @@ mod tests {
     }
 
     #[test]
+    fn streams_exact_100_gap_runs_across_lines_and_resets_records() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("split_gap.fa");
+        std::fs::write(
+            &path,
+            format!(
+                ">split_gap\nAAA{}\n{}TTT\n>reset_gap\n{}AAA{}\n",
+                "N".repeat(60),
+                "N".repeat(40),
+                "N".repeat(50),
+                "N".repeat(50),
+            ),
+        )
+        .unwrap();
+
+        let metrics = AssemblyMetrics::from_path(&path, &profile()).unwrap();
+
+        assert_eq!(metrics.repeated_gap_pattern_sequence_count, 1);
+        assert_eq!(metrics.sequences[0].gap_run_100_count, 1);
+        assert_eq!(metrics.sequences[1].gap_run_100_count, 0);
+    }
+
+    #[test]
     fn median_handles_large_even_lengths_without_overflow() {
         assert_eq!(median(&[u64::MAX, u64::MAX]), u64::MAX as f64);
     }
