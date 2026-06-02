@@ -21,6 +21,12 @@ struct MultiqcReport {
 struct MultiqcPlotConfig {
     id: &'static str,
     title: &'static str,
+    headers: BTreeMap<&'static str, MultiqcHeader>,
+}
+
+#[derive(Serialize)]
+struct MultiqcHeader {
+    title: &'static str,
 }
 
 #[derive(Serialize)]
@@ -34,6 +40,13 @@ struct MultiqcSummaryRow {
     n90: u64,
     gc_percent: f64,
     n_percent: f64,
+    duplicate_id_count: u64,
+    invalid_sequence_count: u64,
+    high_n_sequence_count: u64,
+    tiny_contig_count: u64,
+    max_gap_run: u64,
+    gc_outlier_count: u64,
+    length_outlier_count: u64,
     finding_count: u64,
     readiness_blockers: String,
     recommended_next_tools: String,
@@ -53,6 +66,7 @@ pub fn write(report: &CompareReport, path: &Path) -> Result<()> {
         pconfig: MultiqcPlotConfig {
             id: "fastaguard_compare_summary",
             title: "FastaGuard Compare",
+            headers: summary_headers(),
         },
         data,
     };
@@ -75,10 +89,44 @@ fn summary_row(sample: &CompareSample) -> MultiqcSummaryRow {
         n90: sample.n90,
         gc_percent: sample.gc_percent,
         n_percent: sample.n_percent,
+        duplicate_id_count: sample.duplicate_id_count,
+        invalid_sequence_count: sample.invalid_sequence_count,
+        high_n_sequence_count: sample.high_n_sequence_count,
+        tiny_contig_count: sample.tiny_contig_count,
+        max_gap_run: sample.max_gap_run,
+        gc_outlier_count: sample.gc_outlier_count,
+        length_outlier_count: sample.length_outlier_count,
         finding_count: sample.finding_count,
         readiness_blockers: sample.readiness_blockers.join(","),
         recommended_next_tools: sample.recommended_next_tools.join(","),
     }
+}
+
+fn summary_headers() -> BTreeMap<&'static str, MultiqcHeader> {
+    [
+        ("verdict", "Verdict"),
+        ("gate_status", "Gate"),
+        ("readiness_status", "Readiness"),
+        ("sequence_count", "Sequences"),
+        ("total_length", "Total Length"),
+        ("n50", "N50"),
+        ("n90", "N90"),
+        ("gc_percent", "GC%"),
+        ("n_percent", "N%"),
+        ("duplicate_id_count", "Duplicate IDs"),
+        ("invalid_sequence_count", "Invalid Sequences"),
+        ("high_n_sequence_count", "High-N Sequences"),
+        ("tiny_contig_count", "Tiny Contigs"),
+        ("max_gap_run", "Max Gap Run"),
+        ("gc_outlier_count", "GC Outliers"),
+        ("length_outlier_count", "Length Outliers"),
+        ("finding_count", "Findings"),
+        ("readiness_blockers", "Readiness Blockers"),
+        ("recommended_next_tools", "Recommended Next Tools"),
+    ]
+    .into_iter()
+    .map(|(id, title)| (id, MultiqcHeader { title }))
+    .collect()
 }
 
 fn verdict_status(status: VerdictStatus) -> &'static str {
@@ -124,7 +172,18 @@ mod tests {
         assert_eq!(output["plot_type"], "table");
         assert_eq!(output["pconfig"]["id"], "fastaguard_compare_summary");
         assert_eq!(output["pconfig"]["title"], "FastaGuard Compare");
+        assert_eq!(
+            output["pconfig"]["headers"]["readiness_status"]["title"],
+            "Readiness"
+        );
+        assert_eq!(
+            output["pconfig"]["headers"]["duplicate_id_count"]["title"],
+            "Duplicate IDs"
+        );
         assert_eq!(output["data"]["sample_a"]["verdict"], "PASS");
+        assert_eq!(output["data"]["sample_a"]["duplicate_id_count"], 3);
+        assert_eq!(output["data"]["sample_a"]["invalid_sequence_count"], 4);
+        assert_eq!(output["data"]["sample_a"]["gc_outlier_count"], 8);
         assert_eq!(
             output["data"]["sample_a"]["recommended_next_tools"],
             "seqkit,QUAST"
@@ -161,13 +220,13 @@ mod tests {
                 n90: 40,
                 gc_percent: 50.0,
                 n_percent: 0.0,
-                duplicate_id_count: 0,
-                invalid_sequence_count: 0,
-                high_n_sequence_count: 0,
-                tiny_contig_count: 0,
-                max_gap_run: 0,
-                gc_outlier_count: 0,
-                length_outlier_count: 0,
+                duplicate_id_count: 3,
+                invalid_sequence_count: 4,
+                high_n_sequence_count: 5,
+                tiny_contig_count: 6,
+                max_gap_run: 7,
+                gc_outlier_count: 8,
+                length_outlier_count: 9,
                 finding_count: 1,
                 finding_ids: vec!["duplicate_ids".to_string()],
                 readiness_blockers: vec!["duplicate_ids".to_string()],

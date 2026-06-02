@@ -28,8 +28,8 @@ fn write_sample(writer: &mut impl Write, sample: &CompareSample) -> std::io::Res
     writeln!(
         writer,
         "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-        sample.sample_id,
-        sample.input_path,
+        sanitize_tsv_value(&sample.sample_id),
+        sanitize_tsv_value(&sample.input_path),
         verdict_status(sample.verdict),
         verdict_status(sample.gate_status),
         readiness_status(sample.readiness_status),
@@ -47,10 +47,20 @@ fn write_sample(writer: &mut impl Write, sample: &CompareSample) -> std::io::Res
         sample.gc_outlier_count,
         sample.length_outlier_count,
         sample.finding_count,
-        sample.readiness_blockers.join(","),
-        sample.recommended_next_tools.join(","),
-        sample.input_sha256,
+        sanitize_tsv_value(&sample.readiness_blockers.join(",")),
+        sanitize_tsv_value(&sample.recommended_next_tools.join(",")),
+        sanitize_tsv_value(&sample.input_sha256),
     )
+}
+
+fn sanitize_tsv_value(value: &str) -> String {
+    value
+        .chars()
+        .map(|character| match character {
+            '\t' | '\r' | '\n' => ' ',
+            _ => character,
+        })
+        .collect()
 }
 
 fn verdict_status(status: VerdictStatus) -> &'static str {
@@ -95,6 +105,33 @@ mod tests {
             "{output}"
         );
         assert!(!output.lines().any(|line| line.ends_with(' ')), "{output}");
+    }
+
+    #[test]
+    fn sanitizes_string_fields_without_changing_column_count() {
+        let mut report = test_report();
+        let sample = &mut report.samples[0];
+        sample.sample_id = "sample\tone".to_string();
+        sample.input_path = "inputs/sample\none\r.fa".to_string();
+        sample.readiness_blockers =
+            vec!["duplicate\tids".to_string(), "invalid\nchars".to_string()];
+        sample.recommended_next_tools = vec!["seqkit\rstats".to_string(), "QUAST".to_string()];
+        sample.input_sha256 = "sha\twith\ncontrols".to_string();
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        let lines = output.lines().collect::<Vec<_>>();
+        assert_eq!(lines.len(), 2, "{output}");
+        let header_columns = lines[0].split('\t').count();
+        let row_columns = lines[1].split('\t').count();
+        assert_eq!(row_columns, header_columns, "{output}");
+        assert!(lines[1].contains("sample one"), "{output}");
+        assert!(lines[1].contains("inputs/sample one .fa"), "{output}");
+        assert!(lines[1].contains("duplicate ids,invalid chars"), "{output}");
+        assert!(lines[1].contains("seqkit stats,QUAST"), "{output}");
+        assert!(lines[1].contains("sha with controls"), "{output}");
     }
 
     fn test_report() -> CompareReport {
