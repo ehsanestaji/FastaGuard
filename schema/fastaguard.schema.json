@@ -561,7 +561,7 @@
         },
         "sample_count": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 2
         }
       },
       "additionalProperties": false
@@ -577,7 +577,7 @@
       "properties": {
         "sample_count": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 2
         },
         "pass_count": {
           "type": "integer",
@@ -757,8 +757,62 @@
           "type": "integer",
           "minimum": 0
         },
-        "evidence": true
+        "evidence": {
+          "$ref": "#/$defs/cohort_finding_evidence"
+        }
       },
+      "additionalProperties": false
+    },
+    "cohort_finding_evidence": {
+      "type": "object",
+      "required": [
+        "records"
+      ],
+      "properties": {
+        "records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cohort_finding_evidence_record"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "cohort_finding_evidence_record": {
+      "type": "object",
+      "required": [
+        "sample_id",
+        "reason"
+      ],
+      "properties": {
+        "sample_id": {
+          "type": "string"
+        },
+        "total_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "gc_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "total_length"
+          ]
+        },
+        {
+          "required": [
+            "gc_percent"
+          ]
+        }
+      ],
       "additionalProperties": false
     },
     "readiness_report": {

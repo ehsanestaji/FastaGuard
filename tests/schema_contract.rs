@@ -95,6 +95,62 @@ fn schema_supports_compare_reports() {
 }
 
 #[test]
+fn schema_constrains_compare_counts_and_cohort_evidence() {
+    let schema: serde_json::Value =
+        serde_json::from_str(fastaguard::contract::schema_json()).unwrap();
+
+    assert_eq!(
+        schema["$defs"]["compare_input_info"]["properties"]["sample_count"]["minimum"],
+        2
+    );
+    assert_eq!(
+        schema["$defs"]["compare_summary"]["properties"]["sample_count"]["minimum"],
+        2
+    );
+    assert_eq!(schema["$defs"]["cohort_finding_evidence"]["type"], "object");
+    assert!(schema["$defs"]["cohort_finding_evidence"]["required"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|value| value == "records"));
+}
+
+#[test]
+fn schema_validates_compare_report_with_cohort_finding() {
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let validator =
+        jsonschema::validator_for(&schema).expect("schema/fastaguard.schema.json should compile");
+    let mut report = read_json(Path::new("tests/golden/compare_all_pass.json"));
+    report["cohort_findings"] = serde_json::json!([
+        {
+            "id": "cohort_total_length_outliers",
+            "severity": "minor",
+            "affected_count": 1,
+            "evidence": {
+                "records": [
+                    {
+                        "sample_id": "clean_beta",
+                        "total_length": 240,
+                        "reason": "total length is unusual relative to the cohort"
+                    }
+                ]
+            }
+        }
+    ]);
+
+    let errors = validator
+        .iter_errors(&report)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+
+    assert!(
+        errors.is_empty(),
+        "compare report with cohort finding did not validate:\n{}",
+        errors.join("\n")
+    );
+}
+
+#[test]
 fn freshly_generated_outlier_report_validates_against_json_schema() {
     let temp_dir = TempDir::new().unwrap();
     let input = temp_dir.path().join("outliers.fa");
