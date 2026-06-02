@@ -896,6 +896,8 @@ mod tests {
         ProfileConfig::assembly(ThresholdOverrides {
             max_n_rate: None,
             min_contig_length: Some(1),
+            expected_size_bases: None,
+            expected_size_tolerance: None,
         })
     }
 
@@ -916,6 +918,8 @@ mod tests {
             thresholds: ThresholdOverrides {
                 max_n_rate: None,
                 min_contig_length: Some(1),
+                expected_size_bases: None,
+                expected_size_tolerance: None,
             },
             threads: 1,
             command: "fastaguard input.fa".to_string(),

@@ -69,6 +69,14 @@ pub struct Cli {
     #[arg(long)]
     pub min_contig_length: Option<u64>,
 
+    /// Expected assembly size using decimal bases, kb, mb, or gb units.
+    #[arg(long, value_name = "SIZE")]
+    pub expected_size: Option<String>,
+
+    /// Fractional tolerance around --expected-size.
+    #[arg(long, default_value_t = 0.25)]
+    pub expected_size_tolerance: f64,
+
     /// Worker thread count reserved for later parallel post-processing.
     #[arg(long, default_value_t = 1)]
     pub threads: usize,
@@ -122,6 +130,16 @@ impl Cli {
                 ));
             }
         }
+        if !self.expected_size_tolerance.is_finite() || self.expected_size_tolerance < 0.0 {
+            return Err(anyhow!(
+                "--expected-size-tolerance must be finite and non-negative"
+            ));
+        }
+        let expected_size_bases = self
+            .expected_size
+            .as_deref()
+            .map(parse_expected_size)
+            .transpose()?;
 
         let provenance_timestamp_override = provenance_timestamp_override()?;
 
@@ -141,6 +159,8 @@ impl Cli {
             thresholds: ThresholdOverrides {
                 max_n_rate: self.max_n_rate,
                 min_contig_length: self.min_contig_length,
+                expected_size_bases,
+                expected_size_tolerance: expected_size_bases.map(|_| self.expected_size_tolerance),
             },
             threads: self.threads,
             command: provenance_command(),
@@ -150,6 +170,35 @@ impl Cli {
             provenance_timestamp_override,
         })
     }
+}
+
+fn parse_expected_size(value: &str) -> Result<u64> {
+    let normalized = value.trim().to_ascii_lowercase();
+    let (number, multiplier) = if let Some(number) = normalized.strip_suffix("kb") {
+        (number, 1_000_u64)
+    } else if let Some(number) = normalized.strip_suffix('k') {
+        (number, 1_000_u64)
+    } else if let Some(number) = normalized.strip_suffix("mb") {
+        (number, 1_000_000_u64)
+    } else if let Some(number) = normalized.strip_suffix('m') {
+        (number, 1_000_000_u64)
+    } else if let Some(number) = normalized.strip_suffix("gb") {
+        (number, 1_000_000_000_u64)
+    } else if let Some(number) = normalized.strip_suffix('g') {
+        (number, 1_000_000_000_u64)
+    } else if normalized.chars().all(|ch| ch.is_ascii_digit()) {
+        (normalized.as_str(), 1_u64)
+    } else {
+        return Err(anyhow!(
+            "--expected-size accepts bases, kb, mb, or gb decimal units"
+        ));
+    };
+    let parsed = number
+        .parse::<u64>()
+        .map_err(|_| anyhow!("--expected-size accepts bases, kb, mb, or gb decimal units"))?;
+    parsed
+        .checked_mul(multiplier)
+        .ok_or_else(|| anyhow!("--expected-size is too large"))
 }
 
 fn provenance_command() -> String {
@@ -207,6 +256,8 @@ mod tests {
             fail_on: Vec::new(),
             max_n_rate,
             min_contig_length: None,
+            expected_size: None,
+            expected_size_tolerance: 0.25,
             threads: 1,
         }
     }
@@ -241,6 +292,32 @@ mod tests {
         let config = cli.to_run_config().unwrap();
 
         assert_eq!(config.outputs.multiqc, PathBuf::from("fastaguard_mqc.json"));
+    }
+
+    #[test]
+    fn expected_size_parses_decimal_units() {
+        let cli = Cli::parse_from([
+            "fastaguard",
+            "input.fa",
+            "--expected-size",
+            "5mb",
+            "--expected-size-tolerance",
+            "0.25",
+        ]);
+        let config = cli.to_run_config().unwrap();
+
+        assert_eq!(config.thresholds.expected_size_bases, Some(5_000_000));
+        assert_eq!(config.thresholds.expected_size_tolerance, Some(0.25));
+    }
+
+    #[test]
+    fn expected_size_rejects_unknown_units() {
+        let cli = Cli::parse_from(["fastaguard", "input.fa", "--expected-size", "5mib"]);
+        let error = cli.to_run_config().unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("--expected-size accepts bases, kb, mb, or gb"));
     }
 
     #[test]

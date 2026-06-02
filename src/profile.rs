@@ -2,6 +2,8 @@
 pub struct ThresholdOverrides {
     pub max_n_rate: Option<f64>,
     pub min_contig_length: Option<u64>,
+    pub expected_size_bases: Option<u64>,
+    pub expected_size_tolerance: Option<f64>,
 }
 
 #[derive(Debug, Clone)]

@@ -650,11 +650,18 @@ mod tests {
             n_percent: 0.0,
             ambiguity_percent: 0.0,
             duplicate_id_count: 0,
+            duplicate_first_token_id_count: 0,
             duplicate_sequence_count: 0,
+            unsafe_id_count: 0,
+            long_header_count: 0,
+            reserved_header_char_count: 0,
             invalid_sequence_count: 0,
             high_n_sequence_count: 0,
             tiny_contig_count: 0,
+            terminal_n_sequence_count: 0,
+            repeated_gap_pattern_sequence_count: 0,
             max_gap_run: 0,
+            ungapped_total_length: 1_000,
             sequences: Vec::new(),
         }
     }
@@ -663,6 +670,8 @@ mod tests {
         ProfileConfig::assembly(ThresholdOverrides {
             max_n_rate: None,
             min_contig_length: None,
+            expected_size_bases: None,
+            expected_size_tolerance: None,
         })
     }
 
@@ -670,6 +679,8 @@ mod tests {
         ProfileConfig::assembly(ThresholdOverrides {
             max_n_rate: Some(max_n_rate),
             min_contig_length: None,
+            expected_size_bases: None,
+            expected_size_tolerance: None,
         })
     }
 
@@ -682,8 +693,14 @@ mod tests {
     fn sequence_summary(length: u64, n_count: u64) -> SequenceSummary {
         SequenceSummary {
             id: "seq1".to_string(),
+            header: "seq1".to_string(),
+            first_token_id: "seq1".to_string(),
             duplicate_id: false,
+            duplicate_first_token_id: false,
             duplicate_sequence: false,
+            unsafe_id: false,
+            long_header: false,
+            reserved_header_chars: false,
             length,
             gc_count: 0,
             at_count: length.saturating_sub(n_count),
@@ -691,6 +708,9 @@ mod tests {
             ambiguity_count: 0,
             invalid_count: 0,
             max_gap_run: 0,
+            terminal_n_prefix: 0,
+            terminal_n_suffix: 0,
+            gap_run_100_count: 0,
             n_fraction: if length == 0 {
                 0.0
             } else {
