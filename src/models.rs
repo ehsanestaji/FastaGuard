@@ -52,15 +52,15 @@ pub struct CompareReport {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompareInputInfo {
     pub profile: String,
-    pub sample_count: usize,
+    pub sample_count: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompareSummary {
-    pub sample_count: usize,
-    pub pass_count: usize,
-    pub warn_count: usize,
-    pub fail_count: usize,
+    pub sample_count: u64,
+    pub pass_count: u64,
+    pub warn_count: u64,
+    pub fail_count: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -83,10 +83,10 @@ pub struct CompareSample {
     pub max_gap_run: u64,
     pub gc_outlier_count: u64,
     pub length_outlier_count: u64,
-    pub finding_count: usize,
+    pub finding_count: u64,
     pub finding_ids: Vec<String>,
     pub readiness_blockers: Vec<String>,
-    pub recommended_next_tools: Vec<RecommendedTool>,
+    pub recommended_next_tools: Vec<String>,
     pub input_sha256: String,
 }
 
@@ -94,7 +94,7 @@ pub struct CompareSample {
 pub struct CohortFinding {
     pub id: String,
     pub severity: Severity,
-    pub affected_count: usize,
+    pub affected_count: u64,
     pub evidence: Value,
 }
 

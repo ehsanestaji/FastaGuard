@@ -124,6 +124,7 @@ fn compare_requires_at_least_two_inputs() {
 fn compare_writes_json_with_mixed_status_samples() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "cohort");
+    let multiqc = temp_dir.path().join("cohort_mqc.json");
 
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     cmd.args([
@@ -140,7 +141,7 @@ fn compare_writes_json_with_mixed_status_samples() {
     .arg("--tsv")
     .arg(&outputs.tsv)
     .arg("--multiqc")
-    .arg(&outputs.multiqc)
+    .arg(&multiqc)
     .assert()
     .code(2)
     .stderr(predicate::str::contains("fastaguard error:").not());
@@ -150,7 +151,16 @@ fn compare_writes_json_with_mixed_status_samples() {
     assert_eq!(report["schema_version"], json!("0.4.0"));
     assert_eq!(report["summary"]["sample_count"], json!(2));
     assert_eq!(report["summary"]["fail_count"], json!(1));
-    assert_eq!(report["samples"].as_array().unwrap().len(), 2);
+    let samples = report["samples"].as_array().unwrap();
+    assert_eq!(samples.len(), 2);
+    assert!(samples.iter().any(|sample| {
+        sample["recommended_next_tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|tool| tool == "seqkit")
+    }));
+    assert!(multiqc.exists(), "missing {}", multiqc.display());
 }
 
 #[test]

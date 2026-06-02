@@ -26,7 +26,7 @@ pub fn run_compare(config: CompareConfig) -> Result<i32> {
         },
         input: CompareInputInfo {
             profile: config.profile.clone(),
-            sample_count: samples.len(),
+            sample_count: usize_to_u64(samples.len()),
         },
         summary,
         samples,
@@ -75,34 +75,39 @@ fn compare_sample(input: &Path, report: &FastaguardReport) -> CompareSample {
         max_gap_run: report.summary.max_gap_run,
         gc_outlier_count: affected_record_count(report, "gc_outliers"),
         length_outlier_count: affected_record_count(report, "length_outliers"),
-        finding_count: report.findings.len(),
+        finding_count: usize_to_u64(report.findings.len()),
         finding_ids: report
             .findings
             .iter()
             .map(|finding| finding.id.clone())
             .collect(),
         readiness_blockers: report.readiness.overall.blockers.clone(),
-        recommended_next_tools: report.machine_summary.recommended_next_tools.clone(),
+        recommended_next_tools: report
+            .machine_summary
+            .recommended_next_tools
+            .iter()
+            .map(|tool| tool.tool.clone())
+            .collect(),
         input_sha256: report.provenance.input_sha256.clone(),
     }
 }
 
 fn compare_summary(samples: &[CompareSample]) -> CompareSummary {
     CompareSummary {
-        sample_count: samples.len(),
-        pass_count: samples
-            .iter()
-            .filter(|sample| sample.gate_status == VerdictStatus::Pass)
-            .count(),
-        warn_count: samples
-            .iter()
-            .filter(|sample| sample.gate_status == VerdictStatus::Warn)
-            .count(),
-        fail_count: samples
-            .iter()
-            .filter(|sample| sample.gate_status == VerdictStatus::Fail)
-            .count(),
+        sample_count: usize_to_u64(samples.len()),
+        pass_count: count_status(samples, VerdictStatus::Pass),
+        warn_count: count_status(samples, VerdictStatus::Warn),
+        fail_count: count_status(samples, VerdictStatus::Fail),
     }
+}
+
+fn count_status(samples: &[CompareSample], status: VerdictStatus) -> u64 {
+    usize_to_u64(
+        samples
+            .iter()
+            .filter(|sample| sample.gate_status == status)
+            .count(),
+    )
 }
 
 fn affected_record_count(report: &FastaguardReport, finding_id: &str) -> u64 {
@@ -146,6 +151,10 @@ fn exit_code(status: VerdictStatus) -> i32 {
         VerdictStatus::Warn => 1,
         VerdictStatus::Fail => 2,
     }
+}
+
+fn usize_to_u64(value: usize) -> u64 {
+    value.try_into().unwrap_or(u64::MAX)
 }
 
 #[cfg(test)]
