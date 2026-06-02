@@ -129,12 +129,13 @@ fn valid_assembly_writes_all_outputs_and_passes() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .success()
+    .code(1)
     .stderr(predicate::str::is_empty());
 
     assert_all_outputs_exist(&outputs);
     let json = std::fs::read_to_string(&outputs.json).unwrap();
-    assert!(json.contains(r#""status": "PASS""#), "{json}");
+    assert!(json.contains(r#""status": "WARN""#), "{json}");
+    assert!(json.contains(r#""terminal_ns""#), "{json}");
 }
 
 #[test]
@@ -157,23 +158,22 @@ fn valid_report_includes_machine_summary_scope_and_provenance() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .success()
+    .code(1)
     .stderr(predicate::str::is_empty());
 
     let report = read_json(&outputs.json);
-    assert_eq!(report["machine_summary"]["verdict"], json!("PASS"));
+    assert_eq!(report["machine_summary"]["verdict"], json!("WARN"));
     assert_eq!(
         report["machine_summary"]["safe_for_downstream"],
-        json!(true)
+        json!(false)
     );
-    assert_eq!(report["machine_summary"]["top_findings"], json!([]));
+    assert_eq!(
+        report["machine_summary"]["top_findings"],
+        json!(["terminal_ns"])
+    );
     assert!(array_contains_tool(
         &report["machine_summary"]["recommended_next_tools"],
-        "QUAST"
-    ));
-    assert!(array_contains_tool(
-        &report["machine_summary"]["recommended_next_tools"],
-        "BUSCO"
+        "seqkit"
     ));
     assert_eq!(report["scope"]["level"], json!("fasta_preflight"));
     assert!(array_contains_string(
@@ -216,14 +216,14 @@ fn report_includes_v0_3_provenance_and_routing_hints() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .success();
+    .code(1);
 
     let report = read_json(&outputs.json);
-    assert_eq!(report["schema_version"], json!("0.3.0"));
+    assert_eq!(report["schema_version"], json!("0.4.0"));
     assert_eq!(report["gate"]["mode"], json!("none"));
-    assert_eq!(report["gate"]["status"], json!("PASS"));
+    assert_eq!(report["gate"]["status"], json!("WARN"));
     assert_eq!(report["gate"]["blocking_findings"], json!([]));
-    assert_eq!(report["gate"]["advisory_findings"], json!([]));
+    assert_eq!(report["gate"]["advisory_findings"], json!(["terminal_ns"]));
     assert!(report["provenance"]["command"]
         .as_str()
         .unwrap()
@@ -242,10 +242,10 @@ fn report_includes_v0_3_provenance_and_routing_hints() {
         report["provenance"]["input_sha256"],
         json!(sha256_file(Path::new("testdata/valid_assembly.fa")))
     );
-    assert!(report["machine_summary"]["routing_hints"]
-        .as_array()
-        .unwrap()
-        .is_empty());
+    assert_eq!(
+        report["machine_summary"]["routing_hints"][0]["condition"],
+        json!("submission_readiness_warning")
+    );
 }
 
 #[test]
@@ -268,7 +268,7 @@ fn valid_report_includes_plot_contract() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .success()
+    .code(1)
     .stderr(predicate::str::is_empty());
 
     let report = read_json(&outputs.json);
@@ -473,7 +473,7 @@ fn valid_assembly_json_matches_golden_contract() {
     .arg("--multiqc")
     .arg(&paths.multiqc)
     .assert()
-    .success()
+    .code(1)
     .stderr(predicate::str::is_empty());
 
     assert_json_matches_golden(&paths.json, "tests/golden/valid_assembly.json");
@@ -524,7 +524,7 @@ fn pipeline_gate_report_lists_blocking_and_advisory_findings() {
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
-    assert_eq!(report["schema_version"], json!("0.3.0"));
+    assert_eq!(report["schema_version"], json!("0.4.0"));
     assert_eq!(report["gate"]["mode"], json!("pipeline"));
     assert_eq!(report["gate"]["status"], json!("FAIL"));
     assert!(array_contains_string(
@@ -551,6 +551,46 @@ fn pipeline_gate_report_lists_blocking_and_advisory_findings() {
         report["provenance"]["input_sha256"],
         json!(sha256_file(Path::new("testdata/problem_assembly.fa")))
     );
+}
+
+#[test]
+fn report_includes_readiness_matrix() {
+    let temp = tempfile::tempdir().unwrap();
+    let json = temp.path().join("report.json");
+    let html = temp.path().join("report.html");
+    let tsv = temp.path().join("report.tsv");
+    let multiqc = temp.path().join("report_mqc.json");
+
+    Command::cargo_bin("fastaguard")
+        .unwrap()
+        .args([
+            "testdata/problem_assembly.fa",
+            "--gate",
+            "pipeline",
+            "--json",
+            json.to_str().unwrap(),
+            "--out",
+            html.to_str().unwrap(),
+            "--tsv",
+            tsv.to_str().unwrap(),
+            "--multiqc",
+            multiqc.to_str().unwrap(),
+        ])
+        .assert()
+        .code(2);
+
+    let report: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(json).unwrap()).unwrap();
+    assert_eq!(report["readiness"]["overall"]["status"], "FAIL");
+    assert!(report["readiness"]["categories"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|category| { category["id"] == "index" && category["status"] == "FAIL" }));
+    assert!(std::fs::read_to_string(html).unwrap().contains("Readiness"));
+    assert!(std::fs::read_to_string(tsv)
+        .unwrap()
+        .contains("readiness_status\tFAIL"));
 }
 
 #[test]

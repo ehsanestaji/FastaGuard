@@ -14,7 +14,7 @@ use crate::profile::ProfileConfig;
 use crate::readiness::{self, ReadinessReport, ReadinessScope};
 use crate::stats::composition::percent;
 
-pub const SCHEMA_VERSION: &str = "0.3.0";
+pub const SCHEMA_VERSION: &str = "0.4.0";
 pub const TOOL_NAME: &str = "FastaGuard";
 pub const TOOL_VERSION: &str = env!("CARGO_PKG_VERSION");
 const LENGTH_HISTOGRAM_BIN_COUNT: u64 = 10;
@@ -27,7 +27,6 @@ pub struct FastaguardReport {
     pub input: InputInfo,
     pub verdict: Verdict,
     pub gate: GateDecision,
-    #[serde(skip)]
     pub readiness: ReadinessReport,
     pub machine_summary: MachineSummary,
     pub scope: Scope,
@@ -223,11 +222,18 @@ pub struct Summary {
     pub n_percent: f64,
     pub ambiguity_percent: f64,
     pub duplicate_id_count: u64,
+    pub duplicate_first_token_id_count: u64,
     pub duplicate_sequence_count: u64,
+    pub unsafe_id_count: u64,
+    pub long_header_count: u64,
+    pub reserved_header_char_count: u64,
     pub invalid_sequence_count: u64,
     pub high_n_sequence_count: u64,
     pub tiny_contig_count: u64,
+    pub terminal_n_sequence_count: u64,
+    pub repeated_gap_pattern_sequence_count: u64,
     pub max_gap_run: u64,
+    pub ungapped_total_length: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -322,11 +328,18 @@ impl FastaguardReport {
                 n_percent: metrics.n_percent,
                 ambiguity_percent: metrics.ambiguity_percent,
                 duplicate_id_count: metrics.duplicate_id_count,
+                duplicate_first_token_id_count: metrics.duplicate_first_token_id_count,
                 duplicate_sequence_count: metrics.duplicate_sequence_count,
+                unsafe_id_count: metrics.unsafe_id_count,
+                long_header_count: metrics.long_header_count,
+                reserved_header_char_count: metrics.reserved_header_char_count,
                 invalid_sequence_count: metrics.invalid_sequence_count,
                 high_n_sequence_count: metrics.high_n_sequence_count,
                 tiny_contig_count: metrics.tiny_contig_count,
+                terminal_n_sequence_count: metrics.terminal_n_sequence_count,
+                repeated_gap_pattern_sequence_count: metrics.repeated_gap_pattern_sequence_count,
                 max_gap_run: metrics.max_gap_run,
+                ungapped_total_length: metrics.ungapped_total_length,
             },
             plots,
             findings,
@@ -412,11 +425,18 @@ impl FastaguardReport {
                 n_percent: 0.0,
                 ambiguity_percent: 0.0,
                 duplicate_id_count: 0,
+                duplicate_first_token_id_count: 0,
                 duplicate_sequence_count: 0,
+                unsafe_id_count: 0,
+                long_header_count: 0,
+                reserved_header_char_count: 0,
                 invalid_sequence_count: 0,
                 high_n_sequence_count: 0,
                 tiny_contig_count: 0,
+                terminal_n_sequence_count: 0,
+                repeated_gap_pattern_sequence_count: 0,
                 max_gap_run: 0,
+                ungapped_total_length: 0,
             },
             plots: empty_plots(),
             findings,

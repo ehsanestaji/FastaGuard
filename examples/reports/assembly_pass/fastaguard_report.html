@@ -34,20 +34,23 @@ th { background: #ecece6; }
 .point.gc-outlier { fill: #b23a48; opacity: 0.9; }
 .axis { stroke: #5f6368; stroke-width: 1; }
 .axis-label { fill: #4f565c; font-size: 12px; }
+.readiness-table td.status-pass { color: #1f7a3f; font-weight: 700; }
+.readiness-table td.status-warn { color: #9a6a00; font-weight: 700; }
+.readiness-table td.status-fail { color: #a32020; font-weight: 700; }
 pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </style>
 </head>
 <body>
 <main>
 <h1>FastaGuard Report</h1>
-<div class="verdict">Verdict: PASS</div>
+<div class="verdict">Verdict: WARN</div>
 <p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
 <h2>Gate Decision</h2>
 <div class="grid">
 <section class="panel">
 <h3>Gate</h3>
 <p><span class="label">Mode:</span> none</p>
-<p><span class="label">Status:</span> PASS</p>
+<p><span class="label">Status:</span> WARN</p>
 </section>
 <section class="panel">
 <h3>Blocking</h3>
@@ -55,24 +58,27 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </section>
 <section class="panel">
 <h3>Advisory</h3>
-<p>None</p>
+<ul><li>terminal_ns</li></ul>
 </section>
 </div>
+<section>
+<h2>Readiness</h2>
+<p><span class="label">Overall:</span> WARN</p>
+<table class="readiness-table"><thead><tr><th>Category</th><th>Status</th><th>Findings</th></tr></thead><tbody><tr><td>File readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr><tr><td>Structure readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr><tr><td>Alphabet readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr><tr><td>Index readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr><tr><td>Assembly readiness</td><td class="status-warn">WARN</td><td><ul><li>terminal_ns</li></ul></td></tr><tr><td>Submission readiness</td><td class="status-warn">WARN</td><td><ul><li>terminal_ns</li></ul></td></tr><tr><td>Machine readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr></tbody></table>
+</section>
 <h2>Machine Summary</h2>
 <div class="grid">
 <section class="panel">
 <h3>Verdict</h3>
-<p><span class="label">Machine verdict:</span> PASS</p>
-<p><span class="label">Safe for downstream:</span> Yes</p>
-<p><span class="label">Top findings:</span> None</p>
+<p><span class="label">Machine verdict:</span> WARN</p>
+<p><span class="label">Safe for downstream:</span> No</p>
+<p><span class="label">Top findings:</span> terminal_ns</p>
 </section>
 <section class="panel">
 <h3>Recommended Next Tools</h3>
 <table>
 <thead><tr><th>Tool</th><th>Reason</th></tr></thead>
-<tbody><tr><td>QUAST</td><td>assembly-level evaluation after FASTA preflight passes</td></tr>
-<tr><td>BUSCO</td><td>biological completeness after structural FASTA checks pass</td></tr>
-<tr><td>BlobToolKit</td><td>contamination and cobiont exploration after FASTA preflight passes</td></tr></tbody>
+<tbody><tr><td>seqkit</td><td>Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.</td></tr></tbody>
 </table>
 </section>
 </div>
@@ -133,10 +139,45 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </section>
 </div>
 <h2>Findings</h2>
-<p>No findings.</p>
+<section class="finding">
+<h3>terminal_ns</h3>
+<p><span class="label">Severity:</span> major</p>
+<p><span class="label">Message:</span> 1 records have leading or trailing N bases.</p>
+<p><span class="label">Why it matters:</span> Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.</p>
+<p><span class="label">Suggested next step:</span> Review terminal N runs and trim or justify them before submission-oriented workflows.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 1 of 1 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>contig_3</td>
+<td class="nowrap">15</td>
+<td>record has leading or trailing N bases</td>
+<td class="nowrap">-</td>
+<td class="nowrap">6.67</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>review_terminal_ns</td>
+<td>records with leading or trailing N bases</td>
+<td>Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.</td>
+<td>seqkit</td>
+<td>no</td>
+</tr></tbody>
+</table>
+</div>
+</section>
 <h2>JSON</h2>
 <pre>{
-  &quot;schema_version&quot;: &quot;0.3.0&quot;,
+  &quot;schema_version&quot;: &quot;0.4.0&quot;,
   &quot;tool&quot;: {
     &quot;name&quot;: &quot;FastaGuard&quot;,
     &quot;version&quot;: &quot;0.3.0&quot;
@@ -147,35 +188,93 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     &quot;compressed&quot;: false
   },
   &quot;verdict&quot;: {
-    &quot;status&quot;: &quot;PASS&quot;,
-    &quot;reasons&quot;: []
+    &quot;status&quot;: &quot;WARN&quot;,
+    &quot;reasons&quot;: [
+      &quot;terminal_ns&quot;
+    ]
   },
   &quot;gate&quot;: {
     &quot;mode&quot;: &quot;none&quot;,
-    &quot;status&quot;: &quot;PASS&quot;,
+    &quot;status&quot;: &quot;WARN&quot;,
     &quot;blocking_findings&quot;: [],
-    &quot;advisory_findings&quot;: [],
+    &quot;advisory_findings&quot;: [
+      &quot;terminal_ns&quot;
+    ],
     &quot;fail_on&quot;: []
   },
+  &quot;readiness&quot;: {
+    &quot;overall&quot;: {
+      &quot;status&quot;: &quot;WARN&quot;,
+      &quot;blockers&quot;: []
+    },
+    &quot;categories&quot;: [
+      {
+        &quot;id&quot;: &quot;file&quot;,
+        &quot;label&quot;: &quot;File readiness&quot;,
+        &quot;status&quot;: &quot;PASS&quot;,
+        &quot;findings&quot;: []
+      },
+      {
+        &quot;id&quot;: &quot;structure&quot;,
+        &quot;label&quot;: &quot;Structure readiness&quot;,
+        &quot;status&quot;: &quot;PASS&quot;,
+        &quot;findings&quot;: []
+      },
+      {
+        &quot;id&quot;: &quot;alphabet&quot;,
+        &quot;label&quot;: &quot;Alphabet readiness&quot;,
+        &quot;status&quot;: &quot;PASS&quot;,
+        &quot;findings&quot;: []
+      },
+      {
+        &quot;id&quot;: &quot;index&quot;,
+        &quot;label&quot;: &quot;Index readiness&quot;,
+        &quot;status&quot;: &quot;PASS&quot;,
+        &quot;findings&quot;: []
+      },
+      {
+        &quot;id&quot;: &quot;assembly&quot;,
+        &quot;label&quot;: &quot;Assembly readiness&quot;,
+        &quot;status&quot;: &quot;WARN&quot;,
+        &quot;findings&quot;: [
+          &quot;terminal_ns&quot;
+        ]
+      },
+      {
+        &quot;id&quot;: &quot;submission&quot;,
+        &quot;label&quot;: &quot;Submission readiness&quot;,
+        &quot;status&quot;: &quot;WARN&quot;,
+        &quot;findings&quot;: [
+          &quot;terminal_ns&quot;
+        ]
+      },
+      {
+        &quot;id&quot;: &quot;machine&quot;,
+        &quot;label&quot;: &quot;Machine readiness&quot;,
+        &quot;status&quot;: &quot;PASS&quot;,
+        &quot;findings&quot;: []
+      }
+    ]
+  },
   &quot;machine_summary&quot;: {
-    &quot;verdict&quot;: &quot;PASS&quot;,
-    &quot;safe_for_downstream&quot;: true,
-    &quot;top_findings&quot;: [],
+    &quot;verdict&quot;: &quot;WARN&quot;,
+    &quot;safe_for_downstream&quot;: false,
+    &quot;top_findings&quot;: [
+      &quot;terminal_ns&quot;
+    ],
     &quot;recommended_next_tools&quot;: [
       {
-        &quot;tool&quot;: &quot;QUAST&quot;,
-        &quot;reason&quot;: &quot;assembly-level evaluation after FASTA preflight passes&quot;
-      },
-      {
-        &quot;tool&quot;: &quot;BUSCO&quot;,
-        &quot;reason&quot;: &quot;biological completeness after structural FASTA checks pass&quot;
-      },
-      {
-        &quot;tool&quot;: &quot;BlobToolKit&quot;,
-        &quot;reason&quot;: &quot;contamination and cobiont exploration after FASTA preflight passes&quot;
+        &quot;tool&quot;: &quot;seqkit&quot;,
+        &quot;reason&quot;: &quot;Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.&quot;
       }
     ],
-    &quot;routing_hints&quot;: []
+    &quot;routing_hints&quot;: [
+      {
+        &quot;condition&quot;: &quot;submission_readiness_warning&quot;,
+        &quot;suggested_route&quot;: &quot;review_gap_and_terminal_n_patterns&quot;,
+        &quot;requires_external_database&quot;: false
+      }
+    ]
   },
   &quot;scope&quot;: {
     &quot;level&quot;: &quot;fasta_preflight&quot;,
@@ -227,11 +326,18 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     &quot;n_percent&quot;: 2.13,
     &quot;ambiguity_percent&quot;: 23.4,
     &quot;duplicate_id_count&quot;: 0,
+    &quot;duplicate_first_token_id_count&quot;: 0,
     &quot;duplicate_sequence_count&quot;: 0,
+    &quot;unsafe_id_count&quot;: 0,
+    &quot;long_header_count&quot;: 0,
+    &quot;reserved_header_char_count&quot;: 0,
     &quot;invalid_sequence_count&quot;: 0,
     &quot;high_n_sequence_count&quot;: 0,
     &quot;tiny_contig_count&quot;: 0,
-    &quot;max_gap_run&quot;: 1
+    &quot;terminal_n_sequence_count&quot;: 1,
+    &quot;repeated_gap_pattern_sequence_count&quot;: 0,
+    &quot;max_gap_run&quot;: 1,
+    &quot;ungapped_total_length&quot;: 46
   },
   &quot;plots&quot;: {
     &quot;length_histogram&quot;: [
@@ -275,7 +381,47 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       }
     ]
   },
-  &quot;findings&quot;: [],
+  &quot;findings&quot;: [
+    {
+      &quot;id&quot;: &quot;terminal_ns&quot;,
+      &quot;category&quot;: &quot;structure&quot;,
+      &quot;severity&quot;: &quot;major&quot;,
+      &quot;confidence&quot;: &quot;moderate&quot;,
+      &quot;requires_followup_tool&quot;: false,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 1,
+      &quot;affected_fraction&quot;: 0.3333333333333333,
+      &quot;message&quot;: &quot;1 records have leading or trailing N bases.&quot;,
+      &quot;why_it_matters&quot;: &quot;Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Review terminal N runs and trim or justify them before submission-oriented workflows.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 1,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;contig_3&quot;,
+            &quot;length&quot;: 15,
+            &quot;reason&quot;: &quot;record has leading or trailing N bases&quot;,
+            &quot;n_fraction&quot;: 0.07,
+            &quot;n_percent&quot;: 6.67,
+            &quot;signals&quot;: [
+              &quot;terminal_n_prefix=0&quot;,
+              &quot;terminal_n_suffix=1&quot;
+            ]
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;review_terminal_ns&quot;,
+          &quot;target&quot;: &quot;records with leading or trailing N bases&quot;,
+          &quot;reason&quot;: &quot;Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.&quot;,
+          &quot;recommended_tool&quot;: &quot;seqkit&quot;,
+          &quot;requires_external_database&quot;: false
+        }
+      ]
+    }
+  ],
   &quot;artifacts&quot;: {
     &quot;html&quot;: &quot;examples/reports/assembly_pass/fastaguard_report.html&quot;,
     &quot;tsv&quot;: &quot;examples/reports/assembly_pass/fastaguard.tsv&quot;,

@@ -43,7 +43,7 @@ fn schema_requires_gate_and_input_sha256() {
         .as_array()
         .unwrap();
 
-    assert_eq!(schema["properties"]["schema_version"]["const"], "0.3.0");
+    assert_eq!(schema["properties"]["schema_version"]["const"], "0.4.0");
     assert!(report_required.contains(&serde_json::json!("gate")));
     assert!(gate_required.contains(&serde_json::json!("mode")));
     assert!(gate_required.contains(&serde_json::json!("status")));
@@ -55,6 +55,19 @@ fn schema_requires_gate_and_input_sha256() {
         schema["properties"]["provenance"]["properties"]["input_sha256"]["pattern"],
         "^[a-f0-9]{64}$"
     );
+}
+
+#[test]
+fn schema_requires_readiness_for_single_reports() {
+    let schema: serde_json::Value =
+        serde_json::from_str(fastaguard::contract::schema_json()).unwrap();
+
+    assert!(schema["required"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|value| value == "readiness"));
+    assert_eq!(schema["properties"]["schema_version"]["const"], "0.4.0");
 }
 
 #[test]

@@ -34,6 +34,9 @@ th { background: #ecece6; }
 .point.gc-outlier { fill: #b23a48; opacity: 0.9; }
 .axis { stroke: #5f6368; stroke-width: 1; }
 .axis-label { fill: #4f565c; font-size: 12px; }
+.readiness-table td.status-pass { color: #1f7a3f; font-weight: 700; }
+.readiness-table td.status-warn { color: #9a6a00; font-weight: 700; }
+.readiness-table td.status-fail { color: #a32020; font-weight: 700; }
 pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </style>
 </head>
@@ -52,6 +55,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <section class="panel">
 <h3>Blocking</h3>
 <ul><li>duplicate_ids</li>
+<li>duplicate_first_token_ids</li>
 <li>invalid_chars</li></ul>
 </section>
 <section class="panel">
@@ -59,17 +63,29 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <ul><li>high_n_rate</li>
 <li>tiny_contigs</li>
 <li>gap_runs</li>
+<li>terminal_ns</li>
 <li>length_outliers</li>
 <li>composite_anomalies</li></ul>
 </section>
 </div>
+<section>
+<h2>Readiness</h2>
+<p><span class="label">Overall:</span> FAIL</p>
+<table class="readiness-table"><thead><tr><th>Category</th><th>Status</th><th>Findings</th></tr></thead><tbody><tr><td>File readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr><tr><td>Structure readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr><tr><td>Alphabet readiness</td><td class="status-fail">FAIL</td><td><ul><li>invalid_chars</li></ul></td></tr><tr><td>Index readiness</td><td class="status-fail">FAIL</td><td><ul><li>duplicate_ids</li>
+<li>duplicate_first_token_ids</li></ul></td></tr><tr><td>Assembly readiness</td><td class="status-warn">WARN</td><td><ul><li>high_n_rate</li>
+<li>tiny_contigs</li>
+<li>gap_runs</li>
+<li>terminal_ns</li>
+<li>length_outliers</li>
+<li>composite_anomalies</li></ul></td></tr><tr><td>Submission readiness</td><td class="status-warn">WARN</td><td><ul><li>terminal_ns</li></ul></td></tr><tr><td>Machine readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr></tbody></table>
+</section>
 <h2>Machine Summary</h2>
 <div class="grid">
 <section class="panel">
 <h3>Verdict</h3>
 <p><span class="label">Machine verdict:</span> FAIL</p>
 <p><span class="label">Safe for downstream:</span> No</p>
-<p><span class="label">Top findings:</span> duplicate_ids, invalid_chars, high_n_rate, tiny_contigs, gap_runs, length_outliers, composite_anomalies</p>
+<p><span class="label">Top findings:</span> duplicate_ids, duplicate_first_token_ids, invalid_chars, high_n_rate, tiny_contigs, gap_runs, terminal_ns, length_outliers, composite_anomalies</p>
 </section>
 <section class="panel">
 <h3>Recommended Next Tools</h3>
@@ -178,6 +194,42 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <td>rename_records</td>
 <td>duplicate FASTA identifiers</td>
 <td>Downstream tools often assume FASTA identifiers are unique.</td>
+<td>seqkit</td>
+<td>no</td>
+</tr></tbody>
+</table>
+</div>
+</section>
+<section class="finding">
+<h3>duplicate_first_token_ids</h3>
+<p><span class="label">Severity:</span> critical</p>
+<p><span class="label">Message:</span> 1 duplicate first-token FASTA IDs were found.</p>
+<p><span class="label">Why it matters:</span> Many indexing, mapping, BLAST, and annotation tools treat the first header token as the record name.</p>
+<p><span class="label">Suggested next step:</span> Rename records so every first-token FASTA identifier is unique before running downstream tools.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 1 of 1 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>dup</td>
+<td class="nowrap">16</td>
+<td>duplicate first whitespace-delimited FASTA identifier</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>rename_records</td>
+<td>first-token FASTA identifiers</td>
+<td>Tools that index by first token can retrieve or annotate the wrong record when first-token IDs collide.</td>
 <td>seqkit</td>
 <td>no</td>
 </tr></tbody>
@@ -381,6 +433,42 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </div>
 </section>
 <section class="finding">
+<h3>terminal_ns</h3>
+<p><span class="label">Severity:</span> major</p>
+<p><span class="label">Message:</span> 1 records have leading or trailing N bases.</p>
+<p><span class="label">Why it matters:</span> Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.</p>
+<p><span class="label">Suggested next step:</span> Review terminal N runs and trim or justify them before submission-oriented workflows.</p>
+<h4>Finding Evidence</h4>
+<p class="muted">Showing 1 of 1 affected records. Truncated: no.</p>
+<div class="table-scroll">
+<table>
+<thead><tr><th>ID</th><th>Length</th><th>Reason</th><th>Invalid</th><th>N%</th><th>Max gap</th><th>GC%</th></tr></thead>
+<tbody><tr>
+<td>dup</td>
+<td class="nowrap">16</td>
+<td>record has leading or trailing N bases</td>
+<td class="nowrap">-</td>
+<td class="nowrap">100.00</td>
+<td class="nowrap">-</td>
+<td class="nowrap">-</td>
+</tr></tbody>
+</table>
+</div>
+<h4>Suggested Actions</h4>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Action</th><th>Target</th><th>Reason</th><th>Tool</th><th>External DB</th></tr></thead>
+<tbody><tr>
+<td>review_terminal_ns</td>
+<td>records with leading or trailing N bases</td>
+<td>Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.</td>
+<td>seqkit</td>
+<td>no</td>
+</tr></tbody>
+</table>
+</div>
+</section>
+<section class="finding">
 <h3>length_outliers</h3>
 <p><span class="label">Severity:</span> minor</p>
 <p><span class="label">Message:</span> 1 records have lengths outside the assembly length distribution.</p>
@@ -454,7 +542,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </section>
 <h2>JSON</h2>
 <pre>{
-  &quot;schema_version&quot;: &quot;0.3.0&quot;,
+  &quot;schema_version&quot;: &quot;0.4.0&quot;,
   &quot;tool&quot;: {
     &quot;name&quot;: &quot;FastaGuard&quot;,
     &quot;version&quot;: &quot;0.3.0&quot;
@@ -468,6 +556,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     &quot;status&quot;: &quot;FAIL&quot;,
     &quot;reasons&quot;: [
       &quot;duplicate_ids&quot;,
+      &quot;duplicate_first_token_ids&quot;,
       &quot;invalid_chars&quot;
     ]
   },
@@ -476,26 +565,98 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     &quot;status&quot;: &quot;FAIL&quot;,
     &quot;blocking_findings&quot;: [
       &quot;duplicate_ids&quot;,
+      &quot;duplicate_first_token_ids&quot;,
       &quot;invalid_chars&quot;
     ],
     &quot;advisory_findings&quot;: [
       &quot;high_n_rate&quot;,
       &quot;tiny_contigs&quot;,
       &quot;gap_runs&quot;,
+      &quot;terminal_ns&quot;,
       &quot;length_outliers&quot;,
       &quot;composite_anomalies&quot;
     ],
     &quot;fail_on&quot;: []
+  },
+  &quot;readiness&quot;: {
+    &quot;overall&quot;: {
+      &quot;status&quot;: &quot;FAIL&quot;,
+      &quot;blockers&quot;: [
+        &quot;index.duplicate_ids&quot;,
+        &quot;index.duplicate_first_token_ids&quot;,
+        &quot;alphabet.invalid_chars&quot;
+      ]
+    },
+    &quot;categories&quot;: [
+      {
+        &quot;id&quot;: &quot;file&quot;,
+        &quot;label&quot;: &quot;File readiness&quot;,
+        &quot;status&quot;: &quot;PASS&quot;,
+        &quot;findings&quot;: []
+      },
+      {
+        &quot;id&quot;: &quot;structure&quot;,
+        &quot;label&quot;: &quot;Structure readiness&quot;,
+        &quot;status&quot;: &quot;PASS&quot;,
+        &quot;findings&quot;: []
+      },
+      {
+        &quot;id&quot;: &quot;alphabet&quot;,
+        &quot;label&quot;: &quot;Alphabet readiness&quot;,
+        &quot;status&quot;: &quot;FAIL&quot;,
+        &quot;findings&quot;: [
+          &quot;invalid_chars&quot;
+        ]
+      },
+      {
+        &quot;id&quot;: &quot;index&quot;,
+        &quot;label&quot;: &quot;Index readiness&quot;,
+        &quot;status&quot;: &quot;FAIL&quot;,
+        &quot;findings&quot;: [
+          &quot;duplicate_ids&quot;,
+          &quot;duplicate_first_token_ids&quot;
+        ]
+      },
+      {
+        &quot;id&quot;: &quot;assembly&quot;,
+        &quot;label&quot;: &quot;Assembly readiness&quot;,
+        &quot;status&quot;: &quot;WARN&quot;,
+        &quot;findings&quot;: [
+          &quot;high_n_rate&quot;,
+          &quot;tiny_contigs&quot;,
+          &quot;gap_runs&quot;,
+          &quot;terminal_ns&quot;,
+          &quot;length_outliers&quot;,
+          &quot;composite_anomalies&quot;
+        ]
+      },
+      {
+        &quot;id&quot;: &quot;submission&quot;,
+        &quot;label&quot;: &quot;Submission readiness&quot;,
+        &quot;status&quot;: &quot;WARN&quot;,
+        &quot;findings&quot;: [
+          &quot;terminal_ns&quot;
+        ]
+      },
+      {
+        &quot;id&quot;: &quot;machine&quot;,
+        &quot;label&quot;: &quot;Machine readiness&quot;,
+        &quot;status&quot;: &quot;PASS&quot;,
+        &quot;findings&quot;: []
+      }
+    ]
   },
   &quot;machine_summary&quot;: {
     &quot;verdict&quot;: &quot;FAIL&quot;,
     &quot;safe_for_downstream&quot;: false,
     &quot;top_findings&quot;: [
       &quot;duplicate_ids&quot;,
+      &quot;duplicate_first_token_ids&quot;,
       &quot;invalid_chars&quot;,
       &quot;high_n_rate&quot;,
       &quot;tiny_contigs&quot;,
       &quot;gap_runs&quot;,
+      &quot;terminal_ns&quot;,
       &quot;length_outliers&quot;,
       &quot;composite_anomalies&quot;
     ],
@@ -520,6 +681,11 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
         &quot;requires_external_database&quot;: false
       },
       {
+        &quot;condition&quot;: &quot;index_readiness_failure&quot;,
+        &quot;suggested_route&quot;: &quot;rename_records_before_indexing&quot;,
+        &quot;requires_external_database&quot;: false
+      },
+      {
         &quot;condition&quot;: &quot;validity_failure&quot;,
         &quot;suggested_route&quot;: &quot;repair_fasta_before_downstream_qc&quot;,
         &quot;requires_external_database&quot;: false
@@ -532,6 +698,11 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;condition&quot;: &quot;small_record_review&quot;,
         &quot;suggested_route&quot;: &quot;review_or_filter_short_records&quot;,
+        &quot;requires_external_database&quot;: false
+      },
+      {
+        &quot;condition&quot;: &quot;submission_readiness_warning&quot;,
+        &quot;suggested_route&quot;: &quot;review_gap_and_terminal_n_patterns&quot;,
         &quot;requires_external_database&quot;: false
       },
       {
@@ -596,11 +767,18 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
     &quot;n_percent&quot;: 80.69,
     &quot;ambiguity_percent&quot;: 81.38,
     &quot;duplicate_id_count&quot;: 1,
+    &quot;duplicate_first_token_id_count&quot;: 1,
     &quot;duplicate_sequence_count&quot;: 0,
+    &quot;unsafe_id_count&quot;: 0,
+    &quot;long_header_count&quot;: 0,
+    &quot;reserved_header_char_count&quot;: 0,
     &quot;invalid_sequence_count&quot;: 1,
     &quot;high_n_sequence_count&quot;: 2,
     &quot;tiny_contig_count&quot;: 5,
-    &quot;max_gap_run&quot;: 101
+    &quot;terminal_n_sequence_count&quot;: 1,
+    &quot;repeated_gap_pattern_sequence_count&quot;: 0,
+    &quot;max_gap_run&quot;: 101,
+    &quot;ungapped_total_length&quot;: 28
   },
   &quot;plots&quot;: {
     &quot;length_histogram&quot;: [
@@ -751,6 +929,39 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
           &quot;action_type&quot;: &quot;rename_records&quot;,
           &quot;target&quot;: &quot;duplicate FASTA identifiers&quot;,
           &quot;reason&quot;: &quot;Downstream tools often assume FASTA identifiers are unique.&quot;,
+          &quot;recommended_tool&quot;: &quot;seqkit&quot;,
+          &quot;requires_external_database&quot;: false
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;duplicate_first_token_ids&quot;,
+      &quot;category&quot;: &quot;duplication&quot;,
+      &quot;severity&quot;: &quot;critical&quot;,
+      &quot;confidence&quot;: &quot;high&quot;,
+      &quot;requires_followup_tool&quot;: false,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 1,
+      &quot;affected_fraction&quot;: 0.2,
+      &quot;message&quot;: &quot;1 duplicate first-token FASTA IDs were found.&quot;,
+      &quot;why_it_matters&quot;: &quot;Many indexing, mapping, BLAST, and annotation tools treat the first header token as the record name.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Rename records so every first-token FASTA identifier is unique before running downstream tools.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 1,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;dup&quot;,
+            &quot;length&quot;: 16,
+            &quot;reason&quot;: &quot;duplicate first whitespace-delimited FASTA identifier&quot;
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;rename_records&quot;,
+          &quot;target&quot;: &quot;first-token FASTA identifiers&quot;,
+          &quot;reason&quot;: &quot;Tools that index by first token can retrieve or annotate the wrong record when first-token IDs collide.&quot;,
           &quot;recommended_tool&quot;: &quot;seqkit&quot;,
           &quot;requires_external_database&quot;: false
         }
@@ -927,6 +1138,45 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
           &quot;target&quot;: &quot;scaffolds with long N runs&quot;,
           &quot;reason&quot;: &quot;Long gaps may require gap closing, masking review, or scaffold-level inspection.&quot;,
           &quot;recommended_tool&quot;: &quot;QUAST&quot;,
+          &quot;requires_external_database&quot;: false
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;terminal_ns&quot;,
+      &quot;category&quot;: &quot;structure&quot;,
+      &quot;severity&quot;: &quot;major&quot;,
+      &quot;confidence&quot;: &quot;moderate&quot;,
+      &quot;requires_followup_tool&quot;: false,
+      &quot;profile&quot;: &quot;assembly&quot;,
+      &quot;affected_count&quot;: 1,
+      &quot;affected_fraction&quot;: 0.2,
+      &quot;message&quot;: &quot;1 records have leading or trailing N bases.&quot;,
+      &quot;why_it_matters&quot;: &quot;Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.&quot;,
+      &quot;suggested_next_step&quot;: &quot;Review terminal N runs and trim or justify them before submission-oriented workflows.&quot;,
+      &quot;evidence&quot;: {
+        &quot;total_records&quot;: 1,
+        &quot;truncated&quot;: false,
+        &quot;records&quot;: [
+          {
+            &quot;id&quot;: &quot;dup&quot;,
+            &quot;length&quot;: 16,
+            &quot;reason&quot;: &quot;record has leading or trailing N bases&quot;,
+            &quot;n_fraction&quot;: 1.0,
+            &quot;n_percent&quot;: 100.0,
+            &quot;signals&quot;: [
+              &quot;terminal_n_prefix=16&quot;,
+              &quot;terminal_n_suffix=16&quot;
+            ]
+          }
+        ]
+      },
+      &quot;actions&quot;: [
+        {
+          &quot;action_type&quot;: &quot;review_terminal_ns&quot;,
+          &quot;target&quot;: &quot;records with leading or trailing N bases&quot;,
+          &quot;reason&quot;: &quot;Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.&quot;,
+          &quot;recommended_tool&quot;: &quot;seqkit&quot;,
           &quot;requires_external_database&quot;: false
         }
       ]

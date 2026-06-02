@@ -34,6 +34,23 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
         "gate_advisory_findings",
         report.gate.advisory_findings.join(","),
     )?;
+    write_metric(
+        &mut writer,
+        "readiness_status",
+        readiness_status(report.readiness.overall.status),
+    )?;
+    write_metric(
+        &mut writer,
+        "readiness_blockers",
+        report.readiness.overall.blockers.join(","),
+    )?;
+    for category in &report.readiness.categories {
+        write_metric(
+            &mut writer,
+            &format!("readiness_{}_status", category.id),
+            readiness_status(category.status),
+        )?;
+    }
     write_metric(&mut writer, "input_sha256", &report.provenance.input_sha256)?;
     write_metric(&mut writer, "sequence_count", report.summary.sequence_count)?;
     write_metric(&mut writer, "total_length", report.summary.total_length)?;
@@ -87,6 +104,14 @@ fn verdict_status(status: VerdictStatus) -> &'static str {
         VerdictStatus::Pass => "PASS",
         VerdictStatus::Warn => "WARN",
         VerdictStatus::Fail => "FAIL",
+    }
+}
+
+fn readiness_status(status: crate::readiness::ReadinessStatus) -> &'static str {
+    match status {
+        crate::readiness::ReadinessStatus::Pass => "PASS",
+        crate::readiness::ReadinessStatus::Warn => "WARN",
+        crate::readiness::ReadinessStatus::Fail => "FAIL",
     }
 }
 
@@ -237,11 +262,18 @@ mod tests {
                 n_percent: 1.5,
                 ambiguity_percent: 1.5,
                 duplicate_id_count: 0,
+                duplicate_first_token_id_count: 0,
                 duplicate_sequence_count: 0,
+                unsafe_id_count: 0,
+                long_header_count: 0,
+                reserved_header_char_count: 0,
                 invalid_sequence_count: 0,
                 high_n_sequence_count: 0,
                 tiny_contig_count: 0,
+                terminal_n_sequence_count: 0,
+                repeated_gap_pattern_sequence_count: 0,
                 max_gap_run: 1,
+                ungapped_total_length: 100,
             },
             plots: empty_plots(),
             findings: Vec::new(),

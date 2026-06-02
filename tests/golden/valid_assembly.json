@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.3.0",
+  "schema_version": "0.4.0",
   "tool": {
     "name": "FastaGuard",
     "version": "0.3.0"
@@ -10,35 +10,93 @@
     "compressed": false
   },
   "verdict": {
-    "status": "PASS",
-    "reasons": []
+    "status": "WARN",
+    "reasons": [
+      "terminal_ns"
+    ]
   },
   "gate": {
     "mode": "none",
-    "status": "PASS",
+    "status": "WARN",
     "blocking_findings": [],
-    "advisory_findings": [],
+    "advisory_findings": [
+      "terminal_ns"
+    ],
     "fail_on": []
   },
+  "readiness": {
+    "overall": {
+      "status": "WARN",
+      "blockers": []
+    },
+    "categories": [
+      {
+        "id": "file",
+        "label": "File readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "structure",
+        "label": "Structure readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "alphabet",
+        "label": "Alphabet readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "index",
+        "label": "Index readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "assembly",
+        "label": "Assembly readiness",
+        "status": "WARN",
+        "findings": [
+          "terminal_ns"
+        ]
+      },
+      {
+        "id": "submission",
+        "label": "Submission readiness",
+        "status": "WARN",
+        "findings": [
+          "terminal_ns"
+        ]
+      },
+      {
+        "id": "machine",
+        "label": "Machine readiness",
+        "status": "PASS",
+        "findings": []
+      }
+    ]
+  },
   "machine_summary": {
-    "verdict": "PASS",
-    "safe_for_downstream": true,
-    "top_findings": [],
+    "verdict": "WARN",
+    "safe_for_downstream": false,
+    "top_findings": [
+      "terminal_ns"
+    ],
     "recommended_next_tools": [
       {
-        "tool": "QUAST",
-        "reason": "assembly-level evaluation after FASTA preflight passes"
-      },
-      {
-        "tool": "BUSCO",
-        "reason": "biological completeness after structural FASTA checks pass"
-      },
-      {
-        "tool": "BlobToolKit",
-        "reason": "contamination and cobiont exploration after FASTA preflight passes"
+        "tool": "seqkit",
+        "reason": "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review."
       }
     ],
-    "routing_hints": []
+    "routing_hints": [
+      {
+        "condition": "submission_readiness_warning",
+        "suggested_route": "review_gap_and_terminal_n_patterns",
+        "requires_external_database": false
+      }
+    ]
   },
   "scope": {
     "level": "fasta_preflight",
@@ -90,11 +148,18 @@
     "n_percent": 2.13,
     "ambiguity_percent": 23.4,
     "duplicate_id_count": 0,
+    "duplicate_first_token_id_count": 0,
     "duplicate_sequence_count": 0,
+    "unsafe_id_count": 0,
+    "long_header_count": 0,
+    "reserved_header_char_count": 0,
     "invalid_sequence_count": 0,
     "high_n_sequence_count": 0,
     "tiny_contig_count": 0,
-    "max_gap_run": 1
+    "terminal_n_sequence_count": 1,
+    "repeated_gap_pattern_sequence_count": 0,
+    "max_gap_run": 1,
+    "ungapped_total_length": 46
   },
   "plots": {
     "length_histogram": [
@@ -138,7 +203,47 @@
       }
     ]
   },
-  "findings": [],
+  "findings": [
+    {
+      "id": "terminal_ns",
+      "category": "structure",
+      "severity": "major",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "affected_count": 1,
+      "affected_fraction": 0.3333333333333333,
+      "message": "1 records have leading or trailing N bases.",
+      "why_it_matters": "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.",
+      "suggested_next_step": "Review terminal N runs and trim or justify them before submission-oriented workflows.",
+      "evidence": {
+        "total_records": 1,
+        "truncated": false,
+        "records": [
+          {
+            "id": "contig_3",
+            "length": 15,
+            "reason": "record has leading or trailing N bases",
+            "n_fraction": 0.07,
+            "n_percent": 6.67,
+            "signals": [
+              "terminal_n_prefix=0",
+              "terminal_n_suffix=1"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action_type": "review_terminal_ns",
+          "target": "records with leading or trailing N bases",
+          "reason": "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ]
+    }
+  ],
   "artifacts": {
     "html": "target/fastaguard-golden-runtime/valid_assembly.html",
     "tsv": "target/fastaguard-golden-runtime/valid_assembly.tsv",

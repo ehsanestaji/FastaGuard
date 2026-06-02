@@ -20,6 +20,12 @@ struct MultiqcReport {
 struct MultiqcPlotConfig {
     id: &'static str,
     title: &'static str,
+    headers: BTreeMap<&'static str, MultiqcHeader>,
+}
+
+#[derive(Serialize)]
+struct MultiqcHeader {
+    title: &'static str,
 }
 
 #[derive(Serialize)]
@@ -28,6 +34,8 @@ struct MultiqcSummaryRow {
     gate_mode: String,
     gate_status: &'static str,
     gate_blocking_findings: String,
+    readiness_status: String,
+    readiness_blockers: String,
     sequence_count: u64,
     total_length: u64,
     n50: u64,
@@ -58,6 +66,7 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
         pconfig: MultiqcPlotConfig {
             id: "fastaguard_summary",
             title: "FastaGuard FASTA preflight summary",
+            headers: summary_headers(),
         },
         data,
     };
@@ -86,6 +95,8 @@ fn summary_row(report: &FastaguardReport) -> MultiqcSummaryRow {
         gate_mode: report.gate.mode.clone(),
         gate_status: verdict_status(report.gate.status),
         gate_blocking_findings: report.gate.blocking_findings.join(","),
+        readiness_status: readiness_status(report.readiness.overall.status).to_string(),
+        readiness_blockers: report.readiness.overall.blockers.join(","),
         sequence_count: report.summary.sequence_count,
         total_length: report.summary.total_length,
         n50: report.summary.n50,
@@ -104,6 +115,16 @@ fn summary_row(report: &FastaguardReport) -> MultiqcSummaryRow {
     }
 }
 
+fn summary_headers() -> BTreeMap<&'static str, MultiqcHeader> {
+    [
+        ("readiness_status", "Readiness"),
+        ("readiness_blockers", "Readiness blockers"),
+    ]
+    .into_iter()
+    .map(|(id, title)| (id, MultiqcHeader { title }))
+    .collect()
+}
+
 fn affected_record_count(report: &FastaguardReport, finding_id: &str) -> u64 {
     report
         .findings
@@ -118,6 +139,14 @@ fn verdict_status(status: VerdictStatus) -> &'static str {
         VerdictStatus::Pass => "PASS",
         VerdictStatus::Warn => "WARN",
         VerdictStatus::Fail => "FAIL",
+    }
+}
+
+fn readiness_status(status: crate::readiness::ReadinessStatus) -> &'static str {
+    match status {
+        crate::readiness::ReadinessStatus::Pass => "PASS",
+        crate::readiness::ReadinessStatus::Warn => "WARN",
+        crate::readiness::ReadinessStatus::Fail => "FAIL",
     }
 }
 
@@ -243,11 +272,18 @@ mod tests {
                 n_percent: 1.5,
                 ambiguity_percent: 1.5,
                 duplicate_id_count: 0,
+                duplicate_first_token_id_count: 0,
                 duplicate_sequence_count: 0,
+                unsafe_id_count: 0,
+                long_header_count: 0,
+                reserved_header_char_count: 0,
                 invalid_sequence_count: 0,
                 high_n_sequence_count: 0,
                 tiny_contig_count: 0,
+                terminal_n_sequence_count: 0,
+                repeated_gap_pattern_sequence_count: 0,
                 max_gap_run: 1,
+                ungapped_total_length: 100,
             },
             plots: empty_plots(),
             findings: Vec::new(),

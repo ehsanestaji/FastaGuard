@@ -10,6 +10,7 @@
     "input",
     "verdict",
     "gate",
+    "readiness",
     "machine_summary",
     "scope",
     "provenance",
@@ -20,7 +21,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.3.0",
+      "const": "0.4.0",
       "description": "Version of the FastaGuard report schema."
     },
     "tool": {
@@ -107,6 +108,9 @@
           "uniqueItems": true
         }
       }
+    },
+    "readiness": {
+      "$ref": "#/$defs/readiness_report"
     },
     "machine_summary": {
       "type": "object",
@@ -272,11 +276,18 @@
         "n_percent",
         "ambiguity_percent",
         "duplicate_id_count",
+        "duplicate_first_token_id_count",
         "duplicate_sequence_count",
+        "unsafe_id_count",
+        "long_header_count",
+        "reserved_header_char_count",
         "invalid_sequence_count",
         "high_n_sequence_count",
         "tiny_contig_count",
-        "max_gap_run"
+        "terminal_n_sequence_count",
+        "repeated_gap_pattern_sequence_count",
+        "max_gap_run",
+        "ungapped_total_length"
       ],
       "properties": {
         "sequence_count": {
@@ -343,7 +354,23 @@
           "type": "integer",
           "minimum": 0
         },
+        "duplicate_first_token_id_count": {
+          "type": "integer",
+          "minimum": 0
+        },
         "duplicate_sequence_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unsafe_id_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "long_header_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reserved_header_char_count": {
           "type": "integer",
           "minimum": 0
         },
@@ -359,7 +386,19 @@
           "type": "integer",
           "minimum": 0
         },
+        "terminal_n_sequence_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repeated_gap_pattern_sequence_count": {
+          "type": "integer",
+          "minimum": 0
+        },
         "max_gap_run": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ungapped_total_length": {
           "type": "integer",
           "minimum": 0
         }
@@ -407,6 +446,66 @@
     }
   },
   "$defs": {
+    "readiness_report": {
+      "type": "object",
+      "required": ["overall", "categories"],
+      "properties": {
+        "overall": {
+          "$ref": "#/$defs/readiness_overall"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readiness_category"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "readiness_overall": {
+      "type": "object",
+      "required": ["status", "blockers"],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/readiness_status"
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "readiness_category": {
+      "type": "object",
+      "required": ["id", "label", "status", "findings"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/readiness_status"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "readiness_status": {
+      "type": "string",
+      "enum": ["PASS", "WARN", "FAIL"]
+    },
     "length_histogram_bin": {
       "type": "object",
       "required": ["min_length", "max_length", "sequence_count", "total_length"],
@@ -601,14 +700,29 @@
         "signals": {
           "type": "array",
           "items": {
-            "type": "string",
-            "enum": [
-              "gc_outlier",
-              "high_n",
-              "length_outlier",
-              "duplicate_sequence",
-              "invalid_chars",
-              "gap_run"
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "gc_outlier",
+                  "high_n",
+                  "length_outlier",
+                  "duplicate_sequence",
+                  "invalid_chars",
+                  "gap_run",
+                  "unsafe_id",
+                  "long_header",
+                  "reserved_header_chars"
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "^terminal_n_(prefix|suffix)=[0-9]+$"
+              },
+              {
+                "type": "string",
+                "pattern": "^gap_run_100_count=[0-9]+$"
+              }
             ]
           },
           "uniqueItems": true

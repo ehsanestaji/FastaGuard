@@ -1,11 +1,20 @@
 metric	value
-schema_version	0.3.0
+schema_version	0.4.0
 profile	assembly
-verdict	PASS
+verdict	WARN
 gate_mode	none
-gate_status	PASS
-gate_blocking_findings
-gate_advisory_findings
+gate_status	WARN
+gate_blocking_findings	
+gate_advisory_findings	terminal_ns
+readiness_status	WARN
+readiness_blockers	
+readiness_file_status	PASS
+readiness_structure_status	PASS
+readiness_alphabet_status	PASS
+readiness_index_status	PASS
+readiness_assembly_status	WARN
+readiness_submission_status	WARN
+readiness_machine_status	PASS
 input_sha256	373699c0422b364607fc6879c46c053c105413c81df9403998d3d26a7122d2e8
 sequence_count	3
 total_length	47
@@ -18,4 +27,4 @@ n_percent	2.13
 gc_outlier_count	0
 length_outlier_count	0
 composite_anomaly_count	0
-finding_count	0
+finding_count	1

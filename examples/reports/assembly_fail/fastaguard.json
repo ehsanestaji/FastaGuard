@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.3.0",
+  "schema_version": "0.4.0",
   "tool": {
     "name": "FastaGuard",
     "version": "0.3.0"
@@ -13,6 +13,7 @@
     "status": "FAIL",
     "reasons": [
       "duplicate_ids",
+      "duplicate_first_token_ids",
       "invalid_chars"
     ]
   },
@@ -21,26 +22,98 @@
     "status": "FAIL",
     "blocking_findings": [
       "duplicate_ids",
+      "duplicate_first_token_ids",
       "invalid_chars"
     ],
     "advisory_findings": [
       "high_n_rate",
       "tiny_contigs",
       "gap_runs",
+      "terminal_ns",
       "length_outliers",
       "composite_anomalies"
     ],
     "fail_on": []
+  },
+  "readiness": {
+    "overall": {
+      "status": "FAIL",
+      "blockers": [
+        "index.duplicate_ids",
+        "index.duplicate_first_token_ids",
+        "alphabet.invalid_chars"
+      ]
+    },
+    "categories": [
+      {
+        "id": "file",
+        "label": "File readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "structure",
+        "label": "Structure readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "alphabet",
+        "label": "Alphabet readiness",
+        "status": "FAIL",
+        "findings": [
+          "invalid_chars"
+        ]
+      },
+      {
+        "id": "index",
+        "label": "Index readiness",
+        "status": "FAIL",
+        "findings": [
+          "duplicate_ids",
+          "duplicate_first_token_ids"
+        ]
+      },
+      {
+        "id": "assembly",
+        "label": "Assembly readiness",
+        "status": "WARN",
+        "findings": [
+          "high_n_rate",
+          "tiny_contigs",
+          "gap_runs",
+          "terminal_ns",
+          "length_outliers",
+          "composite_anomalies"
+        ]
+      },
+      {
+        "id": "submission",
+        "label": "Submission readiness",
+        "status": "WARN",
+        "findings": [
+          "terminal_ns"
+        ]
+      },
+      {
+        "id": "machine",
+        "label": "Machine readiness",
+        "status": "PASS",
+        "findings": []
+      }
+    ]
   },
   "machine_summary": {
     "verdict": "FAIL",
     "safe_for_downstream": false,
     "top_findings": [
       "duplicate_ids",
+      "duplicate_first_token_ids",
       "invalid_chars",
       "high_n_rate",
       "tiny_contigs",
       "gap_runs",
+      "terminal_ns",
       "length_outliers",
       "composite_anomalies"
     ],
@@ -65,6 +138,11 @@
         "requires_external_database": false
       },
       {
+        "condition": "index_readiness_failure",
+        "suggested_route": "rename_records_before_indexing",
+        "requires_external_database": false
+      },
+      {
         "condition": "validity_failure",
         "suggested_route": "repair_fasta_before_downstream_qc",
         "requires_external_database": false
@@ -77,6 +155,11 @@
       {
         "condition": "small_record_review",
         "suggested_route": "review_or_filter_short_records",
+        "requires_external_database": false
+      },
+      {
+        "condition": "submission_readiness_warning",
+        "suggested_route": "review_gap_and_terminal_n_patterns",
         "requires_external_database": false
       },
       {
@@ -141,11 +224,18 @@
     "n_percent": 80.69,
     "ambiguity_percent": 81.38,
     "duplicate_id_count": 1,
+    "duplicate_first_token_id_count": 1,
     "duplicate_sequence_count": 0,
+    "unsafe_id_count": 0,
+    "long_header_count": 0,
+    "reserved_header_char_count": 0,
     "invalid_sequence_count": 1,
     "high_n_sequence_count": 2,
     "tiny_contig_count": 5,
-    "max_gap_run": 101
+    "terminal_n_sequence_count": 1,
+    "repeated_gap_pattern_sequence_count": 0,
+    "max_gap_run": 101,
+    "ungapped_total_length": 28
   },
   "plots": {
     "length_histogram": [
@@ -296,6 +386,39 @@
           "action_type": "rename_records",
           "target": "duplicate FASTA identifiers",
           "reason": "Downstream tools often assume FASTA identifiers are unique.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ]
+    },
+    {
+      "id": "duplicate_first_token_ids",
+      "category": "duplication",
+      "severity": "critical",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "affected_count": 1,
+      "affected_fraction": 0.2,
+      "message": "1 duplicate first-token FASTA IDs were found.",
+      "why_it_matters": "Many indexing, mapping, BLAST, and annotation tools treat the first header token as the record name.",
+      "suggested_next_step": "Rename records so every first-token FASTA identifier is unique before running downstream tools.",
+      "evidence": {
+        "total_records": 1,
+        "truncated": false,
+        "records": [
+          {
+            "id": "dup",
+            "length": 16,
+            "reason": "duplicate first whitespace-delimited FASTA identifier"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action_type": "rename_records",
+          "target": "first-token FASTA identifiers",
+          "reason": "Tools that index by first token can retrieve or annotate the wrong record when first-token IDs collide.",
           "recommended_tool": "seqkit",
           "requires_external_database": false
         }
@@ -472,6 +595,45 @@
           "target": "scaffolds with long N runs",
           "reason": "Long gaps may require gap closing, masking review, or scaffold-level inspection.",
           "recommended_tool": "QUAST",
+          "requires_external_database": false
+        }
+      ]
+    },
+    {
+      "id": "terminal_ns",
+      "category": "structure",
+      "severity": "major",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "affected_count": 1,
+      "affected_fraction": 0.2,
+      "message": "1 records have leading or trailing N bases.",
+      "why_it_matters": "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.",
+      "suggested_next_step": "Review terminal N runs and trim or justify them before submission-oriented workflows.",
+      "evidence": {
+        "total_records": 1,
+        "truncated": false,
+        "records": [
+          {
+            "id": "dup",
+            "length": 16,
+            "reason": "record has leading or trailing N bases",
+            "n_fraction": 1.0,
+            "n_percent": 100.0,
+            "signals": [
+              "terminal_n_prefix=16",
+              "terminal_n_suffix=16"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action_type": "review_terminal_ns",
+          "target": "records with leading or trailing N bases",
+          "reason": "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.",
+          "recommended_tool": "seqkit",
           "requires_external_database": false
         }
       ]

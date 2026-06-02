@@ -5,14 +5,24 @@
   "plot_type": "table",
   "pconfig": {
     "id": "fastaguard_summary",
-    "title": "FastaGuard FASTA preflight summary"
+    "title": "FastaGuard FASTA preflight summary",
+    "headers": {
+      "readiness_blockers": {
+        "title": "Readiness blockers"
+      },
+      "readiness_status": {
+        "title": "Readiness"
+      }
+    }
   },
   "data": {
     "problem_assembly": {
       "verdict": "FAIL",
       "gate_mode": "none",
       "gate_status": "FAIL",
-      "gate_blocking_findings": "duplicate_ids,invalid_chars",
+      "gate_blocking_findings": "duplicate_ids,duplicate_first_token_ids,invalid_chars",
+      "readiness_status": "FAIL",
+      "readiness_blockers": "index.duplicate_ids,index.duplicate_first_token_ids,alphabet.invalid_chars",
       "sequence_count": 5,
       "total_length": 145,
       "n50": 110,
@@ -27,7 +37,7 @@
       "gc_outlier_count": 0,
       "length_outlier_count": 1,
       "composite_anomaly_count": 1,
-      "finding_count": 7
+      "finding_count": 9
     }
   }
 }

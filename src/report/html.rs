@@ -12,6 +12,7 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
 fn render(report: &FastaguardReport) -> Result<String> {
     let summary = &report.summary;
     let gate = render_gate(report);
+    let readiness = render_readiness(report);
     let machine_summary = render_machine_summary(report);
     let scope = render_scope(report);
     let plots = render_plots(report);
@@ -55,6 +56,9 @@ th {{ background: #ecece6; }}
 .point.gc-outlier {{ fill: #b23a48; opacity: 0.9; }}
 .axis {{ stroke: #5f6368; stroke-width: 1; }}
 .axis-label {{ fill: #4f565c; font-size: 12px; }}
+.readiness-table td.status-pass {{ color: #1f7a3f; font-weight: 700; }}
+.readiness-table td.status-warn {{ color: #9a6a00; font-weight: 700; }}
+.readiness-table td.status-fail {{ color: #a32020; font-weight: 700; }}
 pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
 </style>
 </head>
@@ -65,6 +69,10 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
 <p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
 <h2>Gate Decision</h2>
 {gate}
+<section>
+<h2>Readiness</h2>
+{readiness}
+</section>
 <h2>Machine Summary</h2>
 {machine_summary}
 <h2>Summary</h2>
@@ -100,6 +108,7 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
         gc_percent = summary.gc_percent,
         n_percent = summary.n_percent,
         gate = gate,
+        readiness = readiness,
         scope = scope,
         plots = plots,
         findings = findings,
@@ -128,6 +137,31 @@ fn render_gate(report: &FastaguardReport) -> String {
         status = escape_html(verdict_status(report.gate.status)),
         blocking = render_string_list_or_none(&report.gate.blocking_findings),
         advisory = render_string_list_or_none(&report.gate.advisory_findings),
+    )
+}
+
+fn render_readiness(report: &FastaguardReport) -> String {
+    let rows = report
+        .readiness
+        .categories
+        .iter()
+        .map(|category| {
+            let status = readiness_status(category.status);
+            format!(
+                r#"<tr><td>{label}</td><td class="status-{class}">{status}</td><td>{findings}</td></tr>"#,
+                label = escape_html(&category.label),
+                class = status.to_ascii_lowercase(),
+                status = status,
+                findings = render_string_list_or_none(&category.findings),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("");
+    format!(
+        r#"<p><span class="label">Overall:</span> {overall}</p>
+<table class="readiness-table"><thead><tr><th>Category</th><th>Status</th><th>Findings</th></tr></thead><tbody>{rows}</tbody></table>"#,
+        overall = readiness_status(report.readiness.overall.status),
+        rows = rows,
     )
 }
 
@@ -520,6 +554,14 @@ fn verdict_status(status: VerdictStatus) -> &'static str {
     }
 }
 
+fn readiness_status(status: crate::readiness::ReadinessStatus) -> &'static str {
+    match status {
+        crate::readiness::ReadinessStatus::Pass => "PASS",
+        crate::readiness::ReadinessStatus::Warn => "WARN",
+        crate::readiness::ReadinessStatus::Fail => "FAIL",
+    }
+}
+
 fn severity(severity: Severity) -> &'static str {
     match severity {
         Severity::Info => "info",
@@ -733,11 +775,18 @@ mod tests {
                 n_percent: 1.5,
                 ambiguity_percent: 1.5,
                 duplicate_id_count: 0,
+                duplicate_first_token_id_count: 0,
                 duplicate_sequence_count: 0,
+                unsafe_id_count: 0,
+                long_header_count: 0,
+                reserved_header_char_count: 0,
                 invalid_sequence_count: 0,
                 high_n_sequence_count: 0,
                 tiny_contig_count: 0,
+                terminal_n_sequence_count: 0,
+                repeated_gap_pattern_sequence_count: 0,
                 max_gap_run: 1,
+                ungapped_total_length: 100,
             },
             plots: empty_plots(),
             findings: Vec::new(),

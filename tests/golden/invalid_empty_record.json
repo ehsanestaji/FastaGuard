@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.3.0",
+  "schema_version": "0.4.0",
   "tool": {
     "name": "FastaGuard",
     "version": "0.3.0"
@@ -23,6 +23,63 @@
     ],
     "advisory_findings": [],
     "fail_on": []
+  },
+  "readiness": {
+    "overall": {
+      "status": "FAIL",
+      "blockers": [
+        "file.invalid_fasta_structure",
+        "structure.invalid_fasta_structure"
+      ]
+    },
+    "categories": [
+      {
+        "id": "file",
+        "label": "File readiness",
+        "status": "FAIL",
+        "findings": [
+          "invalid_fasta_structure"
+        ]
+      },
+      {
+        "id": "structure",
+        "label": "Structure readiness",
+        "status": "FAIL",
+        "findings": [
+          "invalid_fasta_structure"
+        ]
+      },
+      {
+        "id": "alphabet",
+        "label": "Alphabet readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "index",
+        "label": "Index readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "assembly",
+        "label": "Assembly readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "submission",
+        "label": "Submission readiness",
+        "status": "PASS",
+        "findings": []
+      },
+      {
+        "id": "machine",
+        "label": "Machine readiness",
+        "status": "PASS",
+        "findings": []
+      }
+    ]
   },
   "machine_summary": {
     "verdict": "FAIL",
@@ -94,11 +151,18 @@
     "n_percent": 0.0,
     "ambiguity_percent": 0.0,
     "duplicate_id_count": 0,
+    "duplicate_first_token_id_count": 0,
     "duplicate_sequence_count": 0,
+    "unsafe_id_count": 0,
+    "long_header_count": 0,
+    "reserved_header_char_count": 0,
     "invalid_sequence_count": 0,
     "high_n_sequence_count": 0,
     "tiny_contig_count": 0,
-    "max_gap_run": 0
+    "terminal_n_sequence_count": 0,
+    "repeated_gap_pattern_sequence_count": 0,
+    "max_gap_run": 0,
+    "ungapped_total_length": 0
   },
   "plots": {
     "length_histogram": [],

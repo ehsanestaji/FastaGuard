@@ -5,14 +5,24 @@
   "plot_type": "table",
   "pconfig": {
     "id": "fastaguard_summary",
-    "title": "FastaGuard FASTA preflight summary"
+    "title": "FastaGuard FASTA preflight summary",
+    "headers": {
+      "readiness_blockers": {
+        "title": "Readiness blockers"
+      },
+      "readiness_status": {
+        "title": "Readiness"
+      }
+    }
   },
   "data": {
     "valid_assembly": {
-      "verdict": "PASS",
+      "verdict": "WARN",
       "gate_mode": "none",
-      "gate_status": "PASS",
+      "gate_status": "WARN",
       "gate_blocking_findings": "",
+      "readiness_status": "WARN",
+      "readiness_blockers": "",
       "sequence_count": 3,
       "total_length": 47,
       "n50": 16,
@@ -27,7 +37,7 @@
       "gc_outlier_count": 0,
       "length_outlier_count": 0,
       "composite_anomaly_count": 0,
-      "finding_count": 0
+      "finding_count": 1
     }
   }
 }
