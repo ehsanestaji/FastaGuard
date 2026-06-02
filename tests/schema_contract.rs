@@ -37,13 +37,19 @@ fn schema_requires_emitted_finding_taxonomy_fields() {
 #[test]
 fn schema_requires_gate_and_input_sha256() {
     let schema = read_json(Path::new("schema/fastaguard.schema.json"));
-    let report_required = schema["required"].as_array().unwrap();
-    let gate_required = schema["properties"]["gate"]["required"].as_array().unwrap();
-    let provenance_required = schema["properties"]["provenance"]["required"]
+    let single_report = &schema["$defs"]["single_report"];
+    let report_required = single_report["required"].as_array().unwrap();
+    let gate_required = single_report["properties"]["gate"]["required"]
+        .as_array()
+        .unwrap();
+    let provenance_required = single_report["properties"]["provenance"]["required"]
         .as_array()
         .unwrap();
 
-    assert_eq!(schema["properties"]["schema_version"]["const"], "0.4.0");
+    assert_eq!(
+        single_report["properties"]["schema_version"]["const"],
+        "0.4.0"
+    );
     assert!(report_required.contains(&serde_json::json!("gate")));
     assert!(gate_required.contains(&serde_json::json!("mode")));
     assert!(gate_required.contains(&serde_json::json!("status")));
@@ -52,7 +58,7 @@ fn schema_requires_gate_and_input_sha256() {
     assert!(gate_required.contains(&serde_json::json!("fail_on")));
     assert!(provenance_required.contains(&serde_json::json!("input_sha256")));
     assert_eq!(
-        schema["properties"]["provenance"]["properties"]["input_sha256"]["pattern"],
+        single_report["properties"]["provenance"]["properties"]["input_sha256"]["pattern"],
         "^[a-f0-9]{64}$"
     );
 }
@@ -61,13 +67,31 @@ fn schema_requires_gate_and_input_sha256() {
 fn schema_requires_readiness_for_single_reports() {
     let schema: serde_json::Value =
         serde_json::from_str(fastaguard::contract::schema_json()).unwrap();
+    let single_report = &schema["$defs"]["single_report"];
 
-    assert!(schema["required"]
+    assert!(single_report["required"]
         .as_array()
         .unwrap()
         .iter()
         .any(|value| value == "readiness"));
-    assert_eq!(schema["properties"]["schema_version"]["const"], "0.4.0");
+    assert_eq!(
+        single_report["properties"]["schema_version"]["const"],
+        "0.4.0"
+    );
+}
+
+#[test]
+fn schema_supports_compare_reports() {
+    let schema: serde_json::Value =
+        serde_json::from_str(fastaguard::contract::schema_json()).unwrap();
+    let compare_report = &schema["$defs"]["compare_report"];
+
+    assert!(compare_report.is_object(), "{schema}");
+    assert!(compare_report["required"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|value| value == "samples"));
 }
 
 #[test]
@@ -130,6 +154,8 @@ fn golden_report_paths() -> Vec<&'static Path> {
         Path::new("tests/golden/valid_assembly.json"),
         Path::new("tests/golden/problem_assembly.json"),
         Path::new("tests/golden/invalid_empty_record.json"),
+        Path::new("tests/golden/compare_mixed_status.json"),
+        Path::new("tests/golden/compare_all_pass.json"),
         Path::new("examples/reports/assembly_pass/fastaguard.json"),
         Path::new("examples/reports/assembly_fail/fastaguard.json"),
     ]

@@ -3,223 +3,433 @@
   "$id": "https://fastaguard.dev/schema/fastaguard.schema.json",
   "title": "FastaguardReport",
   "description": "Machine-readable FastaGuard FASTA preflight QC report.",
-  "type": "object",
-  "required": [
-    "schema_version",
-    "tool",
-    "input",
-    "verdict",
-    "gate",
-    "readiness",
-    "machine_summary",
-    "scope",
-    "provenance",
-    "summary",
-    "plots",
-    "findings",
-    "artifacts"
+  "oneOf": [
+    {
+      "$ref": "#/$defs/single_report"
+    },
+    {
+      "$ref": "#/$defs/compare_report"
+    }
   ],
-  "properties": {
-    "schema_version": {
-      "const": "0.4.0",
-      "description": "Version of the FastaGuard report schema."
-    },
-    "tool": {
-      "type": "object",
-      "required": ["name", "version"],
-      "properties": {
-        "name": {
-          "const": "FastaGuard"
-        },
-        "version": {
-          "type": "string"
-        }
-      }
-    },
-    "input": {
-      "type": "object",
-      "required": ["path", "profile", "compressed"],
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "profile": {
-          "type": "string"
-        },
-        "compressed": {
-          "type": "boolean"
-        }
-      }
-    },
-    "verdict": {
-      "type": "object",
-      "required": ["status", "reasons"],
-      "properties": {
-        "status": {
-          "type": "string",
-          "enum": ["PASS", "WARN", "FAIL"]
-        },
-        "reasons": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "uniqueItems": true
-        }
-      }
-    },
-    "gate": {
+  "$defs": {
+    "single_report": {
       "type": "object",
       "required": [
-        "mode",
-        "status",
-        "blocking_findings",
-        "advisory_findings",
-        "fail_on"
-      ],
-      "properties": {
-        "mode": {
-          "type": "string",
-          "enum": ["none", "pipeline"]
-        },
-        "status": {
-          "type": "string",
-          "enum": ["PASS", "WARN", "FAIL"]
-        },
-        "blocking_findings": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "uniqueItems": true
-        },
-        "advisory_findings": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "uniqueItems": true
-        },
-        "fail_on": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "uniqueItems": true
-        }
-      }
-    },
-    "readiness": {
-      "$ref": "#/$defs/readiness_report"
-    },
-    "machine_summary": {
-      "type": "object",
-      "required": [
+        "schema_version",
+        "tool",
+        "input",
         "verdict",
-        "safe_for_downstream",
-        "top_findings",
-        "recommended_next_tools",
-        "routing_hints"
+        "gate",
+        "readiness",
+        "machine_summary",
+        "scope",
+        "provenance",
+        "summary",
+        "plots",
+        "findings",
+        "artifacts"
       ],
       "properties": {
-        "verdict": {
-          "type": "string",
-          "enum": ["PASS", "WARN", "FAIL"]
+        "schema_version": {
+          "const": "0.4.0",
+          "description": "Version of the FastaGuard report schema."
         },
-        "safe_for_downstream": {
-          "type": "boolean"
-        },
-        "top_findings": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "recommended_next_tools": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/recommended_tool"
-          }
-        },
-        "routing_hints": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/routing_hint"
-          }
-        }
-      }
-    },
-    "scope": {
-      "type": "object",
-      "required": ["level", "can_conclude", "cannot_conclude"],
-      "properties": {
-        "level": {
-          "const": "fasta_preflight"
-        },
-        "can_conclude": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "cannot_conclude": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "provenance": {
-      "type": "object",
-      "required": [
-        "profile",
-        "threads",
-        "fail_on",
-        "thresholds",
-        "command",
-        "started_at",
-        "completed_at",
-        "duration_ms",
-        "input_size_bytes",
-        "input_sha256"
-      ],
-      "properties": {
-        "profile": {
-          "type": "string"
-        },
-        "threads": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "fail_on": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "uniqueItems": true
-        },
-        "thresholds": {
+        "tool": {
           "type": "object",
           "required": [
-            "high_n_sequence_fraction",
-            "high_global_n_fraction",
-            "min_contig_length",
-            "max_gap_run",
-            "gc_outlier_zscore"
+            "name",
+            "version"
           ],
           "properties": {
-            "high_n_sequence_fraction": {
+            "name": {
+              "const": "FastaGuard"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "input": {
+          "type": "object",
+          "required": [
+            "path",
+            "profile",
+            "compressed"
+          ],
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "profile": {
+              "type": "string"
+            },
+            "compressed": {
+              "type": "boolean"
+            }
+          }
+        },
+        "verdict": {
+          "type": "object",
+          "required": [
+            "status",
+            "reasons"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "PASS",
+                "WARN",
+                "FAIL"
+              ]
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "gate": {
+          "type": "object",
+          "required": [
+            "mode",
+            "status",
+            "blocking_findings",
+            "advisory_findings",
+            "fail_on"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "none",
+                "pipeline"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "PASS",
+                "WARN",
+                "FAIL"
+              ]
+            },
+            "blocking_findings": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "advisory_findings": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "fail_on": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "readiness": {
+          "$ref": "#/$defs/readiness_report"
+        },
+        "machine_summary": {
+          "type": "object",
+          "required": [
+            "verdict",
+            "safe_for_downstream",
+            "top_findings",
+            "recommended_next_tools",
+            "routing_hints"
+          ],
+          "properties": {
+            "verdict": {
+              "type": "string",
+              "enum": [
+                "PASS",
+                "WARN",
+                "FAIL"
+              ]
+            },
+            "safe_for_downstream": {
+              "type": "boolean"
+            },
+            "top_findings": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "recommended_next_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/recommended_tool"
+              }
+            },
+            "routing_hints": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/routing_hint"
+              }
+            }
+          }
+        },
+        "scope": {
+          "type": "object",
+          "required": [
+            "level",
+            "can_conclude",
+            "cannot_conclude"
+          ],
+          "properties": {
+            "level": {
+              "const": "fasta_preflight"
+            },
+            "can_conclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cannot_conclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "profile",
+            "threads",
+            "fail_on",
+            "thresholds",
+            "command",
+            "started_at",
+            "completed_at",
+            "duration_ms",
+            "input_size_bytes",
+            "input_sha256"
+          ],
+          "properties": {
+            "profile": {
+              "type": "string"
+            },
+            "threads": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "fail_on": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "thresholds": {
+              "type": "object",
+              "required": [
+                "high_n_sequence_fraction",
+                "high_global_n_fraction",
+                "min_contig_length",
+                "max_gap_run",
+                "gc_outlier_zscore"
+              ],
+              "properties": {
+                "high_n_sequence_fraction": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "high_global_n_fraction": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "min_contig_length": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "max_gap_run": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "gc_outlier_zscore": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            },
+            "command": {
+              "type": "string"
+            },
+            "started_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "input_size_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "input_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "required": [
+            "sequence_count",
+            "total_length",
+            "min_length",
+            "max_length",
+            "mean_length",
+            "median_length",
+            "n50",
+            "n90",
+            "l50",
+            "l90",
+            "gc_percent",
+            "at_percent",
+            "n_percent",
+            "ambiguity_percent",
+            "duplicate_id_count",
+            "duplicate_first_token_id_count",
+            "duplicate_sequence_count",
+            "unsafe_id_count",
+            "long_header_count",
+            "reserved_header_char_count",
+            "invalid_sequence_count",
+            "high_n_sequence_count",
+            "tiny_contig_count",
+            "terminal_n_sequence_count",
+            "repeated_gap_pattern_sequence_count",
+            "max_gap_run",
+            "ungapped_total_length"
+          ],
+          "properties": {
+            "sequence_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "total_length": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "min_length": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_length": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "mean_length": {
+              "type": "number",
+              "minimum": 0
+            },
+            "median_length": {
+              "type": "number",
+              "minimum": 0
+            },
+            "n50": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "n90": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "l50": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "l90": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "gc_percent": {
               "type": "number",
               "minimum": 0,
-              "maximum": 1
+              "maximum": 100
             },
-            "high_global_n_fraction": {
+            "at_percent": {
               "type": "number",
               "minimum": 0,
-              "maximum": 1
+              "maximum": 100
             },
-            "min_contig_length": {
+            "n_percent": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "ambiguity_percent": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "duplicate_id_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "duplicate_first_token_id_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "duplicate_sequence_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unsafe_id_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "long_header_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reserved_header_char_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "invalid_sequence_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "high_n_sequence_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tiny_contig_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "terminal_n_sequence_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "repeated_gap_pattern_sequence_count": {
               "type": "integer",
               "minimum": 0
             },
@@ -227,91 +437,222 @@
               "type": "integer",
               "minimum": 0
             },
-            "gc_outlier_zscore": {
-              "type": "number",
+            "ungapped_total_length": {
+              "type": "integer",
               "minimum": 0
             }
           }
         },
-        "command": {
-          "type": "string"
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          }
         },
-        "started_at": {
-          "type": "string",
-          "format": "date-time"
+        "plots": {
+          "type": "object",
+          "required": [
+            "length_histogram",
+            "gc_length_plot"
+          ],
+          "properties": {
+            "length_histogram": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/length_histogram_bin"
+              }
+            },
+            "gc_length_plot": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/gc_length_point"
+              },
+              "maxItems": 5000
+            }
+          }
         },
-        "completed_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "duration_ms": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "input_size_bytes": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "input_sha256": {
-          "type": "string",
-          "pattern": "^[a-f0-9]{64}$"
+        "artifacts": {
+          "type": "object",
+          "required": [
+            "html",
+            "tsv",
+            "multiqc"
+          ],
+          "properties": {
+            "html": {
+              "type": "string"
+            },
+            "tsv": {
+              "type": "string"
+            },
+            "multiqc": {
+              "type": "string"
+            }
+          }
         }
-      }
+      },
+      "additionalProperties": false
     },
-    "summary": {
+    "compare_report": {
       "type": "object",
       "required": [
+        "schema_version",
+        "report_type",
+        "tool",
+        "input",
+        "summary",
+        "samples",
+        "cohort_findings"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "0.4.0",
+          "description": "Version of the FastaGuard report schema."
+        },
+        "report_type": {
+          "const": "compare"
+        },
+        "tool": {
+          "type": "object",
+          "required": [
+            "name",
+            "version"
+          ],
+          "properties": {
+            "name": {
+              "const": "FastaGuard"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "input": {
+          "$ref": "#/$defs/compare_input_info"
+        },
+        "summary": {
+          "$ref": "#/$defs/compare_summary"
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/compare_sample"
+          },
+          "minItems": 2
+        },
+        "cohort_findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cohort_finding"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "compare_input_info": {
+      "type": "object",
+      "required": [
+        "profile",
+        "sample_count"
+      ],
+      "properties": {
+        "profile": {
+          "type": "string"
+        },
+        "sample_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "compare_summary": {
+      "type": "object",
+      "required": [
+        "sample_count",
+        "pass_count",
+        "warn_count",
+        "fail_count"
+      ],
+      "properties": {
+        "sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pass_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warn_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fail_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "compare_sample": {
+      "type": "object",
+      "required": [
+        "sample_id",
+        "input_path",
+        "verdict",
+        "gate_status",
+        "readiness_status",
         "sequence_count",
         "total_length",
-        "min_length",
-        "max_length",
-        "mean_length",
-        "median_length",
         "n50",
         "n90",
-        "l50",
-        "l90",
         "gc_percent",
-        "at_percent",
         "n_percent",
-        "ambiguity_percent",
         "duplicate_id_count",
-        "duplicate_first_token_id_count",
-        "duplicate_sequence_count",
-        "unsafe_id_count",
-        "long_header_count",
-        "reserved_header_char_count",
         "invalid_sequence_count",
         "high_n_sequence_count",
         "tiny_contig_count",
-        "terminal_n_sequence_count",
-        "repeated_gap_pattern_sequence_count",
         "max_gap_run",
-        "ungapped_total_length"
+        "gc_outlier_count",
+        "length_outlier_count",
+        "finding_count",
+        "finding_ids",
+        "readiness_blockers",
+        "recommended_next_tools",
+        "input_sha256"
       ],
       "properties": {
+        "sample_id": {
+          "type": "string"
+        },
+        "input_path": {
+          "type": "string"
+        },
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "WARN",
+            "FAIL"
+          ]
+        },
+        "gate_status": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "WARN",
+            "FAIL"
+          ]
+        },
+        "readiness_status": {
+          "$ref": "#/$defs/readiness_status"
+        },
         "sequence_count": {
           "type": "integer",
           "minimum": 0
         },
         "total_length": {
           "type": "integer",
-          "minimum": 0
-        },
-        "min_length": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "max_length": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "mean_length": {
-          "type": "number",
-          "minimum": 0
-        },
-        "median_length": {
-          "type": "number",
           "minimum": 0
         },
         "n50": {
@@ -322,20 +663,7 @@
           "type": "integer",
           "minimum": 0
         },
-        "l50": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "l90": {
-          "type": "integer",
-          "minimum": 0
-        },
         "gc_percent": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100
-        },
-        "at_percent": {
           "type": "number",
           "minimum": 0,
           "maximum": 100
@@ -345,32 +673,7 @@
           "minimum": 0,
           "maximum": 100
         },
-        "ambiguity_percent": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100
-        },
         "duplicate_id_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "duplicate_first_token_id_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "duplicate_sequence_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "unsafe_id_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "long_header_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "reserved_header_char_count": {
           "type": "integer",
           "minimum": 0
         },
@@ -386,69 +689,84 @@
           "type": "integer",
           "minimum": 0
         },
-        "terminal_n_sequence_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "repeated_gap_pattern_sequence_count": {
-          "type": "integer",
-          "minimum": 0
-        },
         "max_gap_run": {
           "type": "integer",
           "minimum": 0
         },
-        "ungapped_total_length": {
+        "gc_outlier_count": {
           "type": "integer",
           "minimum": 0
-        }
-      }
-    },
-    "findings": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/finding"
-      }
-    },
-    "plots": {
-      "type": "object",
-      "required": ["length_histogram", "gc_length_plot"],
-      "properties": {
-        "length_histogram": {
+        },
+        "length_outlier_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "finding_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "finding_ids": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/length_histogram_bin"
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "readiness_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "recommended_next_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         },
-        "gc_length_plot": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/gc_length_point"
-          },
-          "maxItems": 5000
+        "input_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
         }
-      }
+      },
+      "additionalProperties": false
     },
-    "artifacts": {
+    "cohort_finding": {
       "type": "object",
-      "required": ["html", "tsv", "multiqc"],
+      "required": [
+        "id",
+        "severity",
+        "affected_count",
+        "evidence"
+      ],
       "properties": {
-        "html": {
+        "id": {
           "type": "string"
         },
-        "tsv": {
-          "type": "string"
+        "severity": {
+          "type": "string",
+          "enum": [
+            "info",
+            "minor",
+            "major",
+            "critical"
+          ]
         },
-        "multiqc": {
-          "type": "string"
-        }
-      }
-    }
-  },
-  "$defs": {
+        "affected_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidence": true
+      },
+      "additionalProperties": false
+    },
     "readiness_report": {
       "type": "object",
-      "required": ["overall", "categories"],
+      "required": [
+        "overall",
+        "categories"
+      ],
       "properties": {
         "overall": {
           "$ref": "#/$defs/readiness_overall"
@@ -464,7 +782,10 @@
     },
     "readiness_overall": {
       "type": "object",
-      "required": ["status", "blockers"],
+      "required": [
+        "status",
+        "blockers"
+      ],
       "properties": {
         "status": {
           "$ref": "#/$defs/readiness_status"
@@ -481,7 +802,12 @@
     },
     "readiness_category": {
       "type": "object",
-      "required": ["id", "label", "status", "findings"],
+      "required": [
+        "id",
+        "label",
+        "status",
+        "findings"
+      ],
       "properties": {
         "id": {
           "type": "string"
@@ -504,11 +830,20 @@
     },
     "readiness_status": {
       "type": "string",
-      "enum": ["PASS", "WARN", "FAIL"]
+      "enum": [
+        "PASS",
+        "WARN",
+        "FAIL"
+      ]
     },
     "length_histogram_bin": {
       "type": "object",
-      "required": ["min_length", "max_length", "sequence_count", "total_length"],
+      "required": [
+        "min_length",
+        "max_length",
+        "sequence_count",
+        "total_length"
+      ],
       "properties": {
         "min_length": {
           "type": "integer",
@@ -530,7 +865,13 @@
     },
     "gc_length_point": {
       "type": "object",
-      "required": ["id", "length", "gc_percent", "n_percent", "flags"],
+      "required": [
+        "id",
+        "length",
+        "gc_percent",
+        "n_percent",
+        "flags"
+      ],
       "properties": {
         "id": {
           "type": "string"
@@ -592,15 +933,29 @@
         },
         "category": {
           "type": "string",
-          "enum": ["validity", "structure", "composition", "duplication"]
+          "enum": [
+            "validity",
+            "structure",
+            "composition",
+            "duplication"
+          ]
         },
         "severity": {
           "type": "string",
-          "enum": ["info", "minor", "major", "critical"]
+          "enum": [
+            "info",
+            "minor",
+            "major",
+            "critical"
+          ]
         },
         "confidence": {
           "type": "string",
-          "enum": ["high", "moderate", "low"]
+          "enum": [
+            "high",
+            "moderate",
+            "low"
+          ]
         },
         "requires_followup_tool": {
           "type": "boolean"
@@ -639,7 +994,11 @@
     },
     "finding_evidence": {
       "type": "object",
-      "required": ["total_records", "truncated", "records"],
+      "required": [
+        "total_records",
+        "truncated",
+        "records"
+      ],
       "properties": {
         "total_records": {
           "type": "integer",
@@ -658,7 +1017,11 @@
     },
     "evidence_record": {
       "type": "object",
-      "required": ["id", "length", "reason"],
+      "required": [
+        "id",
+        "length",
+        "reason"
+      ],
       "properties": {
         "id": {
           "type": "string"
@@ -758,7 +1121,10 @@
     },
     "recommended_tool": {
       "type": "object",
-      "required": ["tool", "reason"],
+      "required": [
+        "tool",
+        "reason"
+      ],
       "properties": {
         "tool": {
           "type": "string"
@@ -770,7 +1136,11 @@
     },
     "routing_hint": {
       "type": "object",
-      "required": ["condition", "suggested_route", "requires_external_database"],
+      "required": [
+        "condition",
+        "suggested_route",
+        "requires_external_database"
+      ],
       "properties": {
         "condition": {
           "type": "string"

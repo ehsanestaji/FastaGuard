@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.4.0",
+  "report_type": "compare",
+  "tool": {
+    "name": "FastaGuard",
+    "version": "0.3.0"
+  },
+  "input": {
+    "profile": "assembly",
+    "sample_count": 2
+  },
+  "summary": {
+    "sample_count": 2,
+    "pass_count": 2,
+    "warn_count": 0,
+    "fail_count": 0
+  },
+  "samples": [
+    {
+      "sample_id": "clean_alpha",
+      "input_path": "target/fastaguard-golden-runtime/clean_alpha.fa",
+      "verdict": "PASS",
+      "gate_status": "PASS",
+      "readiness_status": "PASS",
+      "sequence_count": 1,
+      "total_length": 240,
+      "n50": 240,
+      "n90": 240,
+      "gc_percent": 50.0,
+      "n_percent": 0.0,
+      "duplicate_id_count": 0,
+      "invalid_sequence_count": 0,
+      "high_n_sequence_count": 0,
+      "tiny_contig_count": 0,
+      "max_gap_run": 0,
+      "gc_outlier_count": 0,
+      "length_outlier_count": 0,
+      "finding_count": 0,
+      "finding_ids": [],
+      "readiness_blockers": [],
+      "recommended_next_tools": [
+        "QUAST",
+        "BUSCO",
+        "BlobToolKit"
+      ],
+      "input_sha256": "7ef472988dc71c871475d4c1710bef68902c635d183bcae6c5d7049908a972fb"
+    },
+    {
+      "sample_id": "clean_beta",
+      "input_path": "target/fastaguard-golden-runtime/clean_beta.fa",
+      "verdict": "PASS",
+      "gate_status": "PASS",
+      "readiness_status": "PASS",
+      "sequence_count": 1,
+      "total_length": 240,
+      "n50": 240,
+      "n90": 240,
+      "gc_percent": 50.0,
+      "n_percent": 0.0,
+      "duplicate_id_count": 0,
+      "invalid_sequence_count": 0,
+      "high_n_sequence_count": 0,
+      "tiny_contig_count": 0,
+      "max_gap_run": 0,
+      "gc_outlier_count": 0,
+      "length_outlier_count": 0,
+      "finding_count": 0,
+      "finding_ids": [],
+      "readiness_blockers": [],
+      "recommended_next_tools": [
+        "QUAST",
+        "BUSCO",
+        "BlobToolKit"
+      ],
+      "input_sha256": "03cac2826a3f6067971512b73c89ff0c2549f74ee6043e761fceaa2c11dad6ec"
+    }
+  ],
+  "cohort_findings": []
+}

@@ -1,0 +1,95 @@
+{
+  "schema_version": "0.4.0",
+  "report_type": "compare",
+  "tool": {
+    "name": "FastaGuard",
+    "version": "0.3.0"
+  },
+  "input": {
+    "profile": "assembly",
+    "sample_count": 2
+  },
+  "summary": {
+    "sample_count": 2,
+    "pass_count": 0,
+    "warn_count": 1,
+    "fail_count": 1
+  },
+  "samples": [
+    {
+      "sample_id": "valid_assembly",
+      "input_path": "testdata/valid_assembly.fa",
+      "verdict": "WARN",
+      "gate_status": "WARN",
+      "readiness_status": "WARN",
+      "sequence_count": 3,
+      "total_length": 47,
+      "n50": 16,
+      "n90": 15,
+      "gc_percent": 34.04,
+      "n_percent": 2.13,
+      "duplicate_id_count": 0,
+      "invalid_sequence_count": 0,
+      "high_n_sequence_count": 0,
+      "tiny_contig_count": 3,
+      "max_gap_run": 1,
+      "gc_outlier_count": 0,
+      "length_outlier_count": 0,
+      "finding_count": 2,
+      "finding_ids": [
+        "tiny_contigs",
+        "terminal_ns"
+      ],
+      "readiness_blockers": [],
+      "recommended_next_tools": [
+        "seqkit"
+      ],
+      "input_sha256": "373699c0422b364607fc6879c46c053c105413c81df9403998d3d26a7122d2e8"
+    },
+    {
+      "sample_id": "problem_assembly",
+      "input_path": "testdata/problem_assembly.fa",
+      "verdict": "FAIL",
+      "gate_status": "FAIL",
+      "readiness_status": "FAIL",
+      "sequence_count": 5,
+      "total_length": 145,
+      "n50": 110,
+      "n90": 8,
+      "gc_percent": 8.28,
+      "n_percent": 80.69,
+      "duplicate_id_count": 1,
+      "invalid_sequence_count": 1,
+      "high_n_sequence_count": 2,
+      "tiny_contig_count": 5,
+      "max_gap_run": 101,
+      "gc_outlier_count": 0,
+      "length_outlier_count": 1,
+      "finding_count": 9,
+      "finding_ids": [
+        "duplicate_ids",
+        "duplicate_first_token_ids",
+        "invalid_chars",
+        "high_n_rate",
+        "tiny_contigs",
+        "gap_runs",
+        "terminal_ns",
+        "length_outliers",
+        "composite_anomalies"
+      ],
+      "readiness_blockers": [
+        "index.duplicate_ids",
+        "index.duplicate_first_token_ids",
+        "alphabet.invalid_chars",
+        "assembly.high_n_rate"
+      ],
+      "recommended_next_tools": [
+        "seqkit",
+        "QUAST",
+        "BlobToolKit"
+      ],
+      "input_sha256": "4b8551daeda739b62c8e7aaa1ebf300e4118167ca582c51eeccfa1549c96f0a5"
+    }
+  ],
+  "cohort_findings": []
+}

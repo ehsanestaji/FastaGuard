@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
 const GOLDEN_PROVENANCE_TIMESTAMP: &str = "2026-05-23T00:00:00Z";
+const COMPARE_GOLDEN_PROVENANCE_TIMESTAMP: &str = "2026-06-02T00:00:00Z";
 
 #[test]
 fn help_mentions_preflight_positioning() {
@@ -171,6 +172,61 @@ fn compare_writes_json_with_mixed_status_samples() {
         "{multiqc_report}"
     );
     assert!(multiqc.exists(), "missing {}", multiqc.display());
+}
+
+#[test]
+fn compare_golden_mixed_status_matches() {
+    let paths = golden_output_paths("compare_mixed_status");
+    let provenance_command = compare_golden_provenance_command("compare_mixed_status");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    with_compare_golden_provenance(&mut cmd, provenance_command);
+    cmd.args([
+        "compare",
+        "testdata/valid_assembly.fa",
+        "testdata/problem_assembly.fa",
+        "--gate",
+        "pipeline",
+        "--json",
+    ])
+    .arg(&paths.json)
+    .arg("--out")
+    .arg(&paths.html)
+    .arg("--tsv")
+    .arg(&paths.tsv)
+    .arg("--multiqc")
+    .arg(&paths.multiqc)
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("fastaguard error:").not());
+
+    assert_json_matches_golden(&paths.json, "tests/golden/compare_mixed_status.json");
+}
+
+#[test]
+fn compare_golden_all_pass_matches() {
+    let (first, second) = write_compare_all_pass_inputs();
+    let paths = golden_output_paths("compare_all_pass");
+    let provenance_command = compare_golden_provenance_command("compare_all_pass");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    with_compare_golden_provenance(&mut cmd, provenance_command);
+    cmd.arg("compare")
+        .arg(&first)
+        .arg(&second)
+        .arg("--json")
+        .arg(&paths.json)
+        .arg("--out")
+        .arg(&paths.html)
+        .arg("--tsv")
+        .arg(&paths.tsv)
+        .arg("--multiqc")
+        .arg(&paths.multiqc)
+        .assert()
+        .success()
+        .stderr(predicate::str::is_empty());
+
+    assert_json_matches_golden(&paths.json, "tests/golden/compare_all_pass.json");
 }
 
 #[test]
@@ -1155,6 +1211,13 @@ fn with_golden_provenance(cmd: &mut Command, command: &str) {
     );
 }
 
+fn with_compare_golden_provenance(cmd: &mut Command, command: &str) {
+    cmd.env("FASTAGUARD_PROVENANCE_COMMAND", command).env(
+        "FASTAGUARD_PROVENANCE_TIMESTAMP",
+        COMPARE_GOLDEN_PROVENANCE_TIMESTAMP,
+    );
+}
+
 fn golden_provenance_command(stem: &str) -> &'static str {
     match stem {
         "valid_assembly" => {
@@ -1168,6 +1231,32 @@ fn golden_provenance_command(stem: &str) -> &'static str {
         }
         _ => "fastaguard",
     }
+}
+
+fn compare_golden_provenance_command(stem: &str) -> &'static str {
+    match stem {
+        "compare_mixed_status" => {
+            "fastaguard compare testdata/valid_assembly.fa testdata/problem_assembly.fa --gate pipeline --json target/fastaguard-golden-runtime/compare_mixed_status.json --out target/fastaguard-golden-runtime/compare_mixed_status.html --tsv target/fastaguard-golden-runtime/compare_mixed_status.tsv --multiqc target/fastaguard-golden-runtime/compare_mixed_status_multiqc.json"
+        }
+        "compare_all_pass" => {
+            "fastaguard compare target/fastaguard-golden-runtime/clean_alpha.fa target/fastaguard-golden-runtime/clean_beta.fa --json target/fastaguard-golden-runtime/compare_all_pass.json --out target/fastaguard-golden-runtime/compare_all_pass.html --tsv target/fastaguard-golden-runtime/compare_all_pass.tsv --multiqc target/fastaguard-golden-runtime/compare_all_pass_multiqc.json"
+        }
+        _ => "fastaguard compare",
+    }
+}
+
+fn write_compare_all_pass_inputs() -> (PathBuf, PathBuf) {
+    let dir = Path::new("target").join("fastaguard-golden-runtime");
+    std::fs::create_dir_all(&dir).unwrap();
+    let first = dir.join("clean_alpha.fa");
+    let second = dir.join("clean_beta.fa");
+    std::fs::write(&first, format!(">alpha_contig\n{}\n", "ACGT".repeat(60))).unwrap();
+    std::fs::write(
+        &second,
+        format!(">beta_contig\n{}\n", "AACCGGTT".repeat(30)),
+    )
+    .unwrap();
+    (first, second)
 }
 
 fn read_json(path: &Path) -> Value {
