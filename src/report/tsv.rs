@@ -185,6 +185,12 @@ mod tests {
                 advisory_findings: Vec::new(),
                 fail_on: Vec::new(),
             },
+            readiness: crate::readiness::build_readiness(
+                VerdictStatus::Pass,
+                &[],
+                &[],
+                crate::readiness::ReadinessScope::Single,
+            ),
             machine_summary: MachineSummary {
                 verdict: status,
                 safe_for_downstream: status == VerdictStatus::Pass,

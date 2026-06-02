@@ -11,6 +11,7 @@ use crate::findings::Analysis;
 use crate::gate;
 use crate::metrics::AssemblyMetrics;
 use crate::profile::ProfileConfig;
+use crate::readiness::{self, ReadinessReport, ReadinessScope};
 use crate::stats::composition::percent;
 
 pub const SCHEMA_VERSION: &str = "0.3.0";
@@ -26,6 +27,7 @@ pub struct FastaguardReport {
     pub input: InputInfo,
     pub verdict: Verdict,
     pub gate: GateDecision,
+    pub readiness: ReadinessReport,
     pub machine_summary: MachineSummary,
     pub scope: Scope,
     pub provenance: Provenance,
@@ -270,6 +272,18 @@ impl FastaguardReport {
         let findings = analysis.findings;
         let plots = build_plots(&metrics, profile);
         let provenance = build_provenance(&config, profile, duration_ms)?;
+        let gate = gate::decision(
+            config.gate_mode,
+            analysis.status,
+            &findings,
+            &config.rules.fail_on,
+        );
+        let readiness = readiness::build_readiness(
+            analysis.status,
+            &gate.blocking_findings,
+            &findings,
+            ReadinessScope::Single,
+        );
 
         Ok(Self {
             schema_version: SCHEMA_VERSION.to_string(),
@@ -286,12 +300,8 @@ impl FastaguardReport {
                 status: analysis.status,
                 reasons: analysis.reasons,
             },
-            gate: gate::decision(
-                config.gate_mode,
-                analysis.status,
-                &findings,
-                &config.rules.fail_on,
-            ),
+            gate,
+            readiness,
             machine_summary: build_machine_summary(analysis.status, &findings),
             scope: fasta_preflight_scope(),
             provenance,
@@ -352,6 +362,18 @@ impl FastaguardReport {
             actions: finding_actions("invalid_fasta_structure"),
         }];
         let provenance = build_provenance(&config, profile, duration_ms)?;
+        let gate = gate::decision(
+            config.gate_mode,
+            VerdictStatus::Fail,
+            &findings,
+            &config.rules.fail_on,
+        );
+        let readiness = readiness::build_readiness(
+            VerdictStatus::Fail,
+            &gate.blocking_findings,
+            &findings,
+            ReadinessScope::Single,
+        );
 
         Ok(Self {
             schema_version: SCHEMA_VERSION.to_string(),
@@ -368,12 +390,8 @@ impl FastaguardReport {
                 status: VerdictStatus::Fail,
                 reasons: vec!["invalid_fasta_structure".to_string()],
             },
-            gate: gate::decision(
-                config.gate_mode,
-                VerdictStatus::Fail,
-                &findings,
-                &config.rules.fail_on,
-            ),
+            gate,
+            readiness,
             machine_summary: build_machine_summary(VerdictStatus::Fail, &findings),
             scope: fasta_preflight_scope(),
             provenance,
