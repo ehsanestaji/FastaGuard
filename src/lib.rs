@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod compare;
 pub mod contract;
 pub mod findings;
 pub mod gate;
@@ -11,24 +12,32 @@ pub mod report;
 pub mod stats;
 
 use anyhow::Result;
-use cli::Cli;
+use cli::{Cli, CommandConfig};
 use std::time::Instant;
 
 pub fn run(cli: Cli) -> Result<i32> {
-    if cli.schema {
-        println!("{}", contract::schema_json().trim_end());
-        return Ok(0);
+    match cli.to_command_config()? {
+        CommandConfig::Run(config) => run_single(config),
+        CommandConfig::Compare(config) => compare::run_compare(config),
+        CommandConfig::Contract => {
+            print_contract(&cli)?;
+            Ok(0)
+        }
     }
-    if cli.finding_catalog {
-        println!("{}", contract::finding_catalog_json().trim_end());
-        return Ok(0);
-    }
-    if let Some(finding_id) = &cli.explain_finding {
-        println!("{}", contract::explain_finding_json(finding_id)?);
-        return Ok(0);
-    }
+}
 
-    let config = cli.to_run_config()?;
+fn print_contract(cli: &Cli) -> Result<()> {
+    if cli.contract.schema {
+        println!("{}", contract::schema_json().trim_end());
+    } else if cli.contract.finding_catalog {
+        println!("{}", contract::finding_catalog_json().trim_end());
+    } else if let Some(finding_id) = &cli.contract.explain_finding {
+        println!("{}", contract::explain_finding_json(finding_id)?);
+    }
+    Ok(())
+}
+
+fn run_single(config: cli::RunConfig) -> Result<i32> {
     let run_started = Instant::now();
     let profile = profile::ProfileConfig::assembly(config.thresholds);
     let metrics = match metrics::AssemblyMetrics::from_path(&config.input, &profile) {

@@ -110,6 +110,17 @@ fn contract_unknown_finding_is_tool_error() {
 }
 
 #[test]
+fn compare_requires_at_least_two_inputs() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["compare", "testdata/valid_assembly.fa"])
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains(
+            "compare requires at least two FASTA inputs",
+        ));
+}
+
+#[test]
 fn valid_assembly_writes_all_outputs_and_warns_for_terminal_ns() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "valid");
