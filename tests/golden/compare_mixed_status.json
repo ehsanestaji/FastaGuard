@@ -22,6 +22,55 @@
       "verdict": "WARN",
       "gate_status": "WARN",
       "readiness_status": "WARN",
+      "readiness_categories": [
+        {
+          "id": "file",
+          "label": "File readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "structure",
+          "label": "Structure readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "alphabet",
+          "label": "Alphabet readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "index",
+          "label": "Index readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "assembly",
+          "label": "Assembly readiness",
+          "status": "WARN",
+          "findings": [
+            "tiny_contigs",
+            "terminal_ns"
+          ]
+        },
+        {
+          "id": "submission",
+          "label": "Submission readiness",
+          "status": "WARN",
+          "findings": [
+            "terminal_ns"
+          ]
+        },
+        {
+          "id": "machine",
+          "label": "Machine readiness",
+          "status": "PASS",
+          "findings": []
+        }
+      ],
       "sequence_count": 3,
       "total_length": 47,
       "n50": 16,
@@ -52,6 +101,64 @@
       "verdict": "FAIL",
       "gate_status": "FAIL",
       "readiness_status": "FAIL",
+      "readiness_categories": [
+        {
+          "id": "file",
+          "label": "File readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "structure",
+          "label": "Structure readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "alphabet",
+          "label": "Alphabet readiness",
+          "status": "FAIL",
+          "findings": [
+            "invalid_chars"
+          ]
+        },
+        {
+          "id": "index",
+          "label": "Index readiness",
+          "status": "FAIL",
+          "findings": [
+            "duplicate_ids",
+            "duplicate_first_token_ids"
+          ]
+        },
+        {
+          "id": "assembly",
+          "label": "Assembly readiness",
+          "status": "FAIL",
+          "findings": [
+            "high_n_rate",
+            "tiny_contigs",
+            "gap_runs",
+            "terminal_ns",
+            "length_outliers",
+            "composite_anomalies"
+          ]
+        },
+        {
+          "id": "submission",
+          "label": "Submission readiness",
+          "status": "WARN",
+          "findings": [
+            "terminal_ns"
+          ]
+        },
+        {
+          "id": "machine",
+          "label": "Machine readiness",
+          "status": "PASS",
+          "findings": []
+        }
+      ],
       "sequence_count": 5,
       "total_length": 145,
       "n50": 110,

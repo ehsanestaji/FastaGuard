@@ -78,6 +78,7 @@ fn compare_sample(input: &Path, report: &FastaguardReport) -> CompareSample {
         verdict: report.verdict.status,
         gate_status: report.gate.status,
         readiness_status: report.readiness.overall.status,
+        readiness_categories: report.readiness.categories.clone(),
         sequence_count: report.summary.sequence_count,
         total_length: report.summary.total_length,
         n50: report.summary.n50,
@@ -305,6 +306,13 @@ mod tests {
             verdict: VerdictStatus::Pass,
             gate_status: VerdictStatus::Pass,
             readiness_status: crate::readiness::ReadinessStatus::Pass,
+            readiness_categories: crate::readiness::build_readiness(
+                VerdictStatus::Pass,
+                &[],
+                &[],
+                crate::readiness::ReadinessScope::Single,
+            )
+            .categories,
             sequence_count,
             total_length,
             n50,

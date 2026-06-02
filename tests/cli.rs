@@ -48,12 +48,17 @@ fn contract_finding_catalog_can_be_printed_without_input() {
     cmd.arg("--finding-catalog")
         .assert()
         .success()
-        .stdout(predicate::str::contains(r#""schema_version": "0.3.0""#))
+        .stdout(predicate::str::contains(r#""schema_version": "0.4.0""#))
+        .stdout(predicate::str::contains(r#""catalog_version": "0.4.0""#))
         .stdout(predicate::str::contains(r#""duplicate_ids""#))
         .stdout(predicate::str::contains(r#""invalid_fasta_structure""#))
         .stdout(predicate::str::contains(r#""gc_outliers""#))
         .stdout(predicate::str::contains(r#""length_outliers""#))
         .stdout(predicate::str::contains(r#""composite_anomalies""#))
+        .stdout(predicate::str::contains(
+            r#""id": "cohort_total_length_outliers""#,
+        ))
+        .stdout(predicate::str::contains(r#""id": "cohort_gc_outliers""#))
         .stderr(predicate::str::is_empty());
 }
 
@@ -71,7 +76,13 @@ fn contract_explain_finding_prints_single_catalog_entry() {
 
 #[test]
 fn contract_explain_finding_prints_outlier_catalog_entries() {
-    for id in ["gc_outliers", "length_outliers", "composite_anomalies"] {
+    for id in [
+        "gc_outliers",
+        "length_outliers",
+        "composite_anomalies",
+        "cohort_total_length_outliers",
+        "cohort_gc_outliers",
+    ] {
         let mut cmd = Command::cargo_bin("fastaguard").unwrap();
         cmd.args(["--explain-finding", id])
             .assert()
@@ -154,6 +165,15 @@ fn compare_writes_json_with_mixed_status_samples() {
     assert_eq!(report["summary"]["fail_count"], json!(1));
     let samples = report["samples"].as_array().unwrap();
     assert_eq!(samples.len(), 2);
+    for sample in samples {
+        let readiness_categories = sample["readiness_categories"].as_array().unwrap();
+        assert!(readiness_categories.iter().any(|category| {
+            category["id"] == "index" && category["label"] == "Index readiness"
+        }));
+        assert!(readiness_categories.iter().any(|category| {
+            category["id"] == "machine" && category["label"] == "Machine readiness"
+        }));
+    }
     assert!(samples.iter().any(|sample| {
         sample["recommended_next_tools"]
             .as_array()
@@ -165,6 +185,8 @@ fn compare_writes_json_with_mixed_status_samples() {
     assert!(tsv.contains("sample_id\tinput_path\tverdict"), "{tsv}");
     let html = std::fs::read_to_string(&outputs.html).unwrap();
     assert!(html.contains("Readiness Matrix"), "{html}");
+    assert!(html.contains("<th>Index readiness</th>"), "{html}");
+    assert!(html.contains("<th>Machine readiness</th>"), "{html}");
     let multiqc_report = read_json(&multiqc);
     assert_eq!(multiqc_report["plot_type"], json!("table"));
     assert!(

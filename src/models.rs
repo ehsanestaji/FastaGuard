@@ -70,6 +70,7 @@ pub struct CompareSample {
     pub verdict: VerdictStatus,
     pub gate_status: VerdictStatus,
     pub readiness_status: crate::readiness::ReadinessStatus,
+    pub readiness_categories: Vec<crate::readiness::ReadinessCategory>,
     pub sequence_count: u64,
     pub total_length: u64,
     pub n50: u64,
@@ -635,6 +636,20 @@ pub fn finding_actions(id: &str) -> Vec<FindingAction> {
             "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.",
             "BlobToolKit",
             true,
+        )],
+        "cohort_total_length_outliers" => vec![action(
+            "review_cohort_length_distribution",
+            "samples with unusual total length",
+            "Samples with total length far from the cohort should be reviewed before batch downstream QC.",
+            "FastaGuard compare",
+            false,
+        )],
+        "cohort_gc_outliers" => vec![action(
+            "review_cohort_gc_distribution",
+            "samples with unusual GC percent",
+            "Samples with GC composition far from the cohort should be reviewed before interpreting batch results.",
+            "FastaGuard compare",
+            false,
         )],
         "invalid_fasta_structure" => vec![action(
             "repair_fasta_structure",

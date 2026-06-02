@@ -22,6 +22,50 @@
       "verdict": "PASS",
       "gate_status": "PASS",
       "readiness_status": "PASS",
+      "readiness_categories": [
+        {
+          "id": "file",
+          "label": "File readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "structure",
+          "label": "Structure readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "alphabet",
+          "label": "Alphabet readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "index",
+          "label": "Index readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "assembly",
+          "label": "Assembly readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "submission",
+          "label": "Submission readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "machine",
+          "label": "Machine readiness",
+          "status": "PASS",
+          "findings": []
+        }
+      ],
       "sequence_count": 1,
       "total_length": 240,
       "n50": 240,
@@ -51,6 +95,50 @@
       "verdict": "PASS",
       "gate_status": "PASS",
       "readiness_status": "PASS",
+      "readiness_categories": [
+        {
+          "id": "file",
+          "label": "File readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "structure",
+          "label": "Structure readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "alphabet",
+          "label": "Alphabet readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "index",
+          "label": "Index readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "assembly",
+          "label": "Assembly readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "submission",
+          "label": "Submission readiness",
+          "status": "PASS",
+          "findings": []
+        },
+        {
+          "id": "machine",
+          "label": "Machine readiness",
+          "status": "PASS",
+          "findings": []
+        }
+      ],
       "sequence_count": 1,
       "total_length": 240,
       "n50": 240,

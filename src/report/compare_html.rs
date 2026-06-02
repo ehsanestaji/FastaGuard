@@ -4,6 +4,16 @@ use std::path::Path;
 
 use crate::models::{CohortFinding, CompareReport, CompareSample, Severity, VerdictStatus};
 
+const READINESS_MATRIX_CATEGORIES: [(&str, &str); 7] = [
+    ("file", "File readiness"),
+    ("structure", "Structure readiness"),
+    ("alphabet", "Alphabet readiness"),
+    ("index", "Index readiness"),
+    ("assembly", "Assembly readiness"),
+    ("submission", "Submission readiness"),
+    ("machine", "Machine readiness"),
+];
+
 pub fn write(report: &CompareReport, path: &Path) -> Result<()> {
     let html = render(report)?;
     fs::write(path, html).with_context(|| format!("failed to write HTML report {}", path.display()))
@@ -98,6 +108,7 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
             let verdict = verdict_status(sample.verdict);
             let gate_status = verdict_status(sample.gate_status);
             let readiness_status = readiness_status(sample.readiness_status);
+            let category_cells = render_readiness_category_cells(sample);
             format!(
                 r#"<tr>
 <td>{sample_id}</td>
@@ -105,6 +116,7 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
 <td class="status-{verdict_class}">{verdict}</td>
 <td class="status-{gate_class}">{gate_status}</td>
 <td class="status-{readiness_class}">{readiness_status}</td>
+{category_cells}
 <td>{sequence_count}</td>
 <td>{total_length}</td>
 <td>{n50}</td>
@@ -122,6 +134,7 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
                 gate_class = gate_status.to_ascii_lowercase(),
                 readiness_status = readiness_status,
                 readiness_class = readiness_status.to_ascii_lowercase(),
+                category_cells = category_cells,
                 sequence_count = sample.sequence_count,
                 total_length = sample.total_length,
                 n50 = sample.n50,
@@ -134,15 +147,42 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n");
+    let category_headers = READINESS_MATRIX_CATEGORIES
+        .iter()
+        .map(|(_, label)| format!("<th>{}</th>", escape_html(label)))
+        .collect::<Vec<_>>()
+        .join("");
 
     format!(
         r#"<div class="table-scroll">
 <table>
-<thead><tr><th>Sample</th><th>Input</th><th>Verdict</th><th>Gate</th><th>Readiness</th><th>Sequences</th><th>Total length</th><th>N50</th><th>N90</th><th>GC%</th><th>N%</th><th>Findings</th><th>Blockers</th></tr></thead>
+<thead><tr><th>Sample</th><th>Input</th><th>Verdict</th><th>Gate</th><th>Readiness</th>{category_headers}<th>Sequences</th><th>Total length</th><th>N50</th><th>N90</th><th>GC%</th><th>N%</th><th>Findings</th><th>Blockers</th></tr></thead>
 <tbody>{rows}</tbody>
 </table>
 </div>"#
     )
+}
+
+fn render_readiness_category_cells(sample: &CompareSample) -> String {
+    READINESS_MATRIX_CATEGORIES
+        .iter()
+        .map(|(id, _)| {
+            if let Some(category) = sample
+                .readiness_categories
+                .iter()
+                .find(|category| category.id == *id)
+            {
+                let status = readiness_status(category.status);
+                format!(
+                    r#"<td class="status-{status_class}">{status}</td>"#,
+                    status_class = status.to_ascii_lowercase(),
+                )
+            } else {
+                r#"<td class="muted">.</td>"#.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn render_charts(samples: &[CompareSample]) -> String {
@@ -351,6 +391,9 @@ mod tests {
         let output = fs::read_to_string(file.path()).unwrap();
         assert!(output.contains("FastaGuard Compare Report"), "{output}");
         assert!(output.contains("Readiness Matrix"), "{output}");
+        assert!(output.contains("<th>File readiness</th>"), "{output}");
+        assert!(output.contains("<th>Index readiness</th>"), "{output}");
+        assert!(output.contains("<th>Machine readiness</th>"), "{output}");
         assert!(output.contains("Cohort Findings"), "{output}");
         assert!(output.contains("Suggested Next Tools"), "{output}");
         assert!(output.matches("<svg").count() >= 5, "{output}");
@@ -395,6 +438,13 @@ mod tests {
                 verdict: VerdictStatus::Pass,
                 gate_status: VerdictStatus::Pass,
                 readiness_status: crate::readiness::ReadinessStatus::Pass,
+                readiness_categories: crate::readiness::build_readiness(
+                    VerdictStatus::Pass,
+                    &[],
+                    &[],
+                    crate::readiness::ReadinessScope::Single,
+                )
+                .categories,
                 sequence_count: 2,
                 total_length: 100,
                 n50: 60,

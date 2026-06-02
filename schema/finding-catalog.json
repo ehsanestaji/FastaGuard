@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.3.0",
-  "catalog_version": "0.3.0",
+  "schema_version": "0.4.0",
+  "catalog_version": "0.4.0",
   "tool": {
     "name": "FastaGuard"
   },
@@ -530,6 +530,92 @@
         }
       ],
       "cannot_conclude": ["taxonomic contamination", "misassembly status without external evidence"]
+    },
+    {
+      "id": "cohort_total_length_outliers",
+      "category": "structure",
+      "severity": "minor",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "scope": "cohort",
+      "default_severity": "minor",
+      "default_verdict_effect": "warn",
+      "meaning": "One or more samples have total assembly length that is unusual relative to the compare cohort.",
+      "why_it_matters": "A sample-level length outlier can indicate an input mix-up, incomplete assembly, extra sequence, or a cohort that should be split before downstream QC.",
+      "evidence_fields": [
+        "cohort_findings[].affected_count",
+        "cohort_findings[].evidence.records[].sample_id",
+        "cohort_findings[].evidence.records[].total_length",
+        "cohort_findings[].evidence.records[].reason"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "review_cohort_length_distribution",
+          "target": "samples with unusual total length",
+          "reason": "Samples with total length far from the cohort should be reviewed before batch downstream QC.",
+          "recommended_tool": "FastaGuard compare",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "inspect sequence counts and total lengths for affected samples"
+        },
+        {
+          "tool": "QUAST",
+          "role": "run assembly-level QC after FASTA preflight issues are understood"
+        }
+      ],
+      "cannot_conclude": [
+        "biological completeness",
+        "contamination",
+        "whether the cohort should share the same expected assembly size"
+      ]
+    },
+    {
+      "id": "cohort_gc_outliers",
+      "category": "composition",
+      "severity": "minor",
+      "confidence": "moderate",
+      "requires_followup_tool": true,
+      "profile": "assembly",
+      "scope": "cohort",
+      "default_severity": "minor",
+      "default_verdict_effect": "warn",
+      "meaning": "One or more samples have GC composition that is unusual relative to the compare cohort.",
+      "why_it_matters": "A sample-level GC outlier can indicate a cohort mismatch, sample swap, contamination signal, or real biological variation that needs context before interpretation.",
+      "evidence_fields": [
+        "cohort_findings[].affected_count",
+        "cohort_findings[].evidence.records[].sample_id",
+        "cohort_findings[].evidence.records[].gc_percent",
+        "cohort_findings[].evidence.records[].reason"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "review_cohort_gc_distribution",
+          "target": "samples with unusual GC percent",
+          "reason": "Samples with GC composition far from the cohort should be reviewed before interpreting batch results.",
+          "recommended_tool": "FastaGuard compare",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "BlobToolKit",
+          "role": "inspect composition and coverage context for affected samples after FASTA preflight"
+        },
+        {
+          "tool": "QUAST",
+          "role": "run assembly-level QC after FASTA preflight issues are understood"
+        }
+      ],
+      "cannot_conclude": [
+        "taxonomic contamination",
+        "biological origin",
+        "sample identity without external evidence"
+      ]
     },
     {
       "id": "invalid_fasta_structure",

@@ -602,6 +602,7 @@
         "verdict",
         "gate_status",
         "readiness_status",
+        "readiness_categories",
         "sequence_count",
         "total_length",
         "n50",
@@ -646,6 +647,13 @@
         },
         "readiness_status": {
           "$ref": "#/$defs/readiness_status"
+        },
+        "readiness_categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readiness_category"
+          },
+          "minItems": 7
         },
         "sequence_count": {
           "type": "integer",

@@ -85,6 +85,7 @@ fn schema_supports_compare_reports() {
     let schema: serde_json::Value =
         serde_json::from_str(fastaguard::contract::schema_json()).unwrap();
     let compare_report = &schema["$defs"]["compare_report"];
+    let compare_sample = &schema["$defs"]["compare_sample"];
 
     assert!(compare_report.is_object(), "{schema}");
     assert!(compare_report["required"]
@@ -92,6 +93,15 @@ fn schema_supports_compare_reports() {
         .unwrap()
         .iter()
         .any(|value| value == "samples"));
+    assert!(compare_sample["required"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|value| value == "readiness_categories"));
+    assert_eq!(
+        compare_sample["properties"]["readiness_categories"]["items"]["$ref"],
+        "#/$defs/readiness_category"
+    );
 }
 
 #[test]

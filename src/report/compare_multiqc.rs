@@ -214,6 +214,13 @@ mod tests {
                 verdict: VerdictStatus::Pass,
                 gate_status: VerdictStatus::Pass,
                 readiness_status: crate::readiness::ReadinessStatus::Pass,
+                readiness_categories: crate::readiness::build_readiness(
+                    VerdictStatus::Pass,
+                    &[],
+                    &[],
+                    crate::readiness::ReadinessScope::Single,
+                )
+                .categories,
                 sequence_count: 2,
                 total_length: 100,
                 n50: 60,
