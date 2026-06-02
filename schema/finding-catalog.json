@@ -35,6 +35,132 @@
       "cannot_conclude": ["biological duplication", "assembly correctness"]
     },
     {
+      "id": "duplicate_first_token_ids",
+      "category": "duplication",
+      "severity": "critical",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "description": "First whitespace-delimited FASTA identifiers collide.",
+      "meaning": "First whitespace-delimited FASTA identifiers collide.",
+      "why_it_matters": "Many downstream tools index records by the first header token.",
+      "evidence_fields": [
+        "summary.duplicate_first_token_id_count",
+        "findings[].affected_count"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "rename_records",
+          "target": "first-token FASTA identifiers",
+          "reason": "Tools that index by first token can retrieve or annotate the wrong record when first-token IDs collide.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "inspect and rename records with colliding first-token identifiers"
+        }
+      ],
+      "cannot_conclude": ["biological duplication", "assembly correctness"]
+    },
+    {
+      "id": "unsafe_ids",
+      "category": "validity",
+      "severity": "major",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "default_severity": "major",
+      "default_verdict_effect": "warn",
+      "description": "One or more FASTA identifiers contain characters that may be unsafe for downstream tools.",
+      "meaning": "One or more FASTA identifiers contain characters that may be unsafe for downstream tools.",
+      "why_it_matters": "Some indexing, database, submission, and workflow tools assume simple portable record identifiers.",
+      "evidence_fields": ["summary.unsafe_id_count", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "normalize_headers",
+          "target": "FASTA headers and identifiers",
+          "reason": "Portable headers reduce surprises in indexes, database builders, submission validators, and tabular joins.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "normalize FASTA identifiers before indexing or submission"
+        }
+      ],
+      "cannot_conclude": ["sequence quality", "assembly correctness"]
+    },
+    {
+      "id": "long_headers",
+      "category": "validity",
+      "severity": "minor",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "default_severity": "minor",
+      "default_verdict_effect": "warn",
+      "description": "One or more FASTA headers exceed the compatibility length limit.",
+      "meaning": "One or more FASTA headers exceed the compatibility length limit.",
+      "why_it_matters": "Long headers can be truncated or rejected by some database, indexing, and submission workflows.",
+      "evidence_fields": ["summary.long_header_count", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "normalize_headers",
+          "target": "FASTA headers and identifiers",
+          "reason": "Portable headers reduce surprises in indexes, database builders, submission validators, and tabular joins.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "shorten headers or move descriptive metadata into sidecar tables"
+        }
+      ],
+      "cannot_conclude": ["sequence quality", "assembly correctness"]
+    },
+    {
+      "id": "reserved_header_chars",
+      "category": "validity",
+      "severity": "minor",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "default_severity": "minor",
+      "default_verdict_effect": "warn",
+      "description": "One or more FASTA headers contain reserved compatibility characters.",
+      "meaning": "One or more FASTA headers contain reserved compatibility characters.",
+      "why_it_matters": "Reserved header characters can confuse parsers, database builders, or submission validators.",
+      "evidence_fields": [
+        "summary.reserved_header_char_count",
+        "findings[].affected_count"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "normalize_headers",
+          "target": "FASTA headers and identifiers",
+          "reason": "Portable headers reduce surprises in indexes, database builders, submission validators, and tabular joins.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "normalize headers before database construction or submission"
+        }
+      ],
+      "cannot_conclude": ["sequence quality", "assembly correctness"]
+    },
+    {
       "id": "invalid_chars",
       "category": "validity",
       "confidence": "high",
@@ -161,6 +287,112 @@
         }
       ],
       "cannot_conclude": ["gap correctness", "misassembly status without alignment evidence"]
+    },
+    {
+      "id": "terminal_ns",
+      "category": "structure",
+      "severity": "major",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "default_severity": "major",
+      "default_verdict_effect": "warn",
+      "description": "One or more records have leading or trailing N bases.",
+      "meaning": "One or more records have leading or trailing N bases.",
+      "why_it_matters": "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.",
+      "evidence_fields": [
+        "summary.terminal_n_sequence_count",
+        "findings[].affected_count",
+        "findings[].evidence.records[].signals"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "review_terminal_ns",
+          "target": "records with leading or trailing N bases",
+          "reason": "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "inspect records with leading or trailing N bases"
+        }
+      ],
+      "cannot_conclude": ["gap correctness", "submission acceptance"]
+    },
+    {
+      "id": "gap_pattern_warnings",
+      "category": "structure",
+      "severity": "minor",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "default_severity": "minor",
+      "default_verdict_effect": "warn",
+      "description": "One or more records contain repeated 100 bp N gap patterns.",
+      "meaning": "One or more records contain repeated 100 bp N gap patterns.",
+      "why_it_matters": "Repeated gap patterns can be legitimate scaffold placeholders, but they are often worth checking before submission or annotation.",
+      "evidence_fields": [
+        "summary.repeated_gap_pattern_sequence_count",
+        "findings[].affected_count",
+        "findings[].evidence.records[].signals"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "review_gap_patterns",
+          "target": "records with repeated 100 bp N gap patterns",
+          "reason": "Repeated placeholder-like gaps should be confirmed before submission or annotation workflows.",
+          "recommended_tool": "QUAST",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "QUAST",
+          "role": "evaluate scaffold gap patterns after FASTA preflight"
+        }
+      ],
+      "cannot_conclude": ["gap correctness", "misassembly status without alignment evidence"]
+    },
+    {
+      "id": "expected_size_outlier",
+      "category": "structure",
+      "severity": "major",
+      "confidence": "moderate",
+      "requires_followup_tool": true,
+      "profile": "assembly",
+      "default_severity": "major",
+      "default_verdict_effect": "warn",
+      "description": "Assembly ungapped total length falls outside the configured expected-size range.",
+      "meaning": "Assembly ungapped total length falls outside the configured expected-size range.",
+      "why_it_matters": "Unexpected assembly size can indicate missing sequence, extra sequence, contamination, or incorrect expected-size metadata.",
+      "evidence_fields": [
+        "summary.ungapped_total_length",
+        "profile.expected_size_bases",
+        "profile.expected_size_tolerance"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "review_expected_size",
+          "target": "assembly ungapped total length",
+          "reason": "Unexpected assembly size can indicate missing sequence, extra sequence, contamination, or incorrect expected-size metadata.",
+          "recommended_tool": "NCBI expected genome size check",
+          "requires_external_database": true
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "NCBI expected genome size check",
+          "role": "compare assembly size against submission expectations"
+        },
+        {
+          "tool": "QUAST",
+          "role": "run deeper assembly QC after checking the expected-size metadata"
+        }
+      ],
+      "cannot_conclude": ["contamination", "missing sequence cause", "submission acceptance"]
     },
     {
       "id": "duplicate_sequences",

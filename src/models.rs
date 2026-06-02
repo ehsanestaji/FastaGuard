@@ -446,6 +446,20 @@ pub fn finding_actions(id: &str) -> Vec<FindingAction> {
             "seqkit",
             false,
         )],
+        "duplicate_first_token_ids" => vec![action(
+            "rename_records",
+            "first-token FASTA identifiers",
+            "Tools that index by first token can retrieve or annotate the wrong record when first-token IDs collide.",
+            "seqkit",
+            false,
+        )],
+        "unsafe_ids" | "long_headers" | "reserved_header_chars" => vec![action(
+            "normalize_headers",
+            "FASTA headers and identifiers",
+            "Portable headers reduce surprises in indexes, database builders, submission validators, and tabular joins.",
+            "seqkit",
+            false,
+        )],
         "invalid_chars" => vec![action(
             "correct_symbols",
             "records with invalid sequence symbols",
@@ -482,6 +496,27 @@ pub fn finding_actions(id: &str) -> Vec<FindingAction> {
             "Long gaps may require gap closing, masking review, or scaffold-level inspection.",
             "QUAST",
             false,
+        )],
+        "terminal_ns" => vec![action(
+            "review_terminal_ns",
+            "records with leading or trailing N bases",
+            "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.",
+            "seqkit",
+            false,
+        )],
+        "gap_pattern_warnings" => vec![action(
+            "review_gap_patterns",
+            "records with repeated 100 bp N gap patterns",
+            "Repeated placeholder-like gaps should be confirmed before submission or annotation workflows.",
+            "QUAST",
+            false,
+        )],
+        "expected_size_outlier" => vec![action(
+            "review_expected_size",
+            "assembly ungapped total length",
+            "Unexpected assembly size can indicate missing sequence, extra sequence, contamination, or incorrect expected-size metadata.",
+            "NCBI expected genome size check",
+            true,
         )],
         "duplicate_sequences" => vec![action(
             "deduplicate_or_confirm",
@@ -583,6 +618,18 @@ fn routing_hints(findings: &[Finding]) -> Vec<RoutingHint> {
                 "deduplicate_or_rename_records",
                 false,
             ),
+            "duplicate_first_token_ids" => push_routing_hint(
+                &mut hints,
+                "index_readiness_failure",
+                "rename_records_before_indexing",
+                false,
+            ),
+            "unsafe_ids" | "long_headers" | "reserved_header_chars" => push_routing_hint(
+                &mut hints,
+                "header_compatibility_warning",
+                "review_headers_before_database_or_submission",
+                false,
+            ),
             "invalid_chars" | "invalid_fasta_structure" => push_routing_hint(
                 &mut hints,
                 "validity_failure",
@@ -594,6 +641,18 @@ fn routing_hints(findings: &[Finding]) -> Vec<RoutingHint> {
                 "assembly_ambiguity",
                 "gap_closing_or_polishing_review",
                 false,
+            ),
+            "terminal_ns" | "gap_pattern_warnings" => push_routing_hint(
+                &mut hints,
+                "submission_readiness_warning",
+                "review_gap_and_terminal_n_patterns",
+                false,
+            ),
+            "expected_size_outlier" => push_routing_hint(
+                &mut hints,
+                "expected_size_warning",
+                "run_submission_or_contamination_followup",
+                true,
             ),
             "tiny_contigs" => push_routing_hint(
                 &mut hints,

@@ -2,8 +2,8 @@ use crate::cli::RuleConfig;
 use crate::metrics::AssemblyMetrics;
 use crate::metrics::SequenceSummary;
 use crate::models::{
-    finding_actions, EvidenceRecord, Finding, FindingCategory, FindingConfidence, FindingEvidence,
-    Severity, VerdictStatus,
+    empty_evidence, finding_actions, EvidenceRecord, Finding, FindingCategory, FindingConfidence,
+    FindingEvidence, Severity, VerdictStatus,
 };
 use crate::profile::ProfileConfig;
 use crate::stats::composition::round2;
@@ -55,6 +55,119 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
                     "Duplicate IDs can break indexing, annotation, mapping, and workflow joins.",
                 suggested_next_step:
                     "Rename records so every FASTA identifier is unique before running downstream tools.",
+            },
+        ));
+    }
+
+    if metrics.duplicate_first_token_id_count > 0 {
+        findings.push(finding(
+            "duplicate_first_token_ids",
+            Severity::Critical,
+            profile,
+            metrics.duplicate_first_token_id_count,
+            affected_fraction(
+                metrics.duplicate_first_token_id_count,
+                metrics.sequence_count,
+            ),
+            evidence_for_sequences(
+                metrics.duplicate_first_token_id_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.duplicate_first_token_id),
+                "duplicate first whitespace-delimited FASTA identifier",
+                EvidenceKind::DuplicateFirstTokenId,
+            ),
+            FindingText {
+                message: format!(
+                    "{} duplicate first-token FASTA IDs were found.",
+                    metrics.duplicate_first_token_id_count
+                ),
+                why_it_matters:
+                    "Many indexing, mapping, BLAST, and annotation tools treat the first header token as the record name.",
+                suggested_next_step:
+                    "Rename records so every first-token FASTA identifier is unique before running downstream tools.",
+            },
+        ));
+    }
+
+    if metrics.unsafe_id_count > 0 {
+        findings.push(finding(
+            "unsafe_ids",
+            Severity::Major,
+            profile,
+            metrics.unsafe_id_count,
+            affected_fraction(metrics.unsafe_id_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.unsafe_id_count,
+                metrics.sequences.iter().filter(|sequence| sequence.unsafe_id),
+                "FASTA identifier contains characters that may be unsafe in indexes, paths, or tabular joins",
+                EvidenceKind::UnsafeId,
+            ),
+            FindingText {
+                message: format!(
+                    "{} FASTA IDs contain characters that may be unsafe for downstream tools.",
+                    metrics.unsafe_id_count
+                ),
+                why_it_matters:
+                    "Some indexing, database, submission, and workflow tools assume simple portable record identifiers.",
+                suggested_next_step:
+                    "Review and normalize identifiers before building databases, indexes, or submission packages.",
+            },
+        ));
+    }
+
+    if metrics.long_header_count > 0 {
+        findings.push(finding(
+            "long_headers",
+            Severity::Minor,
+            profile,
+            metrics.long_header_count,
+            affected_fraction(metrics.long_header_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.long_header_count,
+                metrics.sequences.iter().filter(|sequence| sequence.long_header),
+                "FASTA header is longer than the compatibility limit",
+                EvidenceKind::HeaderCompatibility,
+            ),
+            FindingText {
+                message: format!(
+                    "{} FASTA headers are longer than the compatibility limit.",
+                    metrics.long_header_count
+                ),
+                why_it_matters:
+                    "Long headers can be truncated or rejected by some database, indexing, and submission workflows.",
+                suggested_next_step:
+                    "Shorten headers or move descriptive metadata into a sidecar table before downstream use.",
+            },
+        ));
+    }
+
+    if metrics.reserved_header_char_count > 0 {
+        findings.push(finding(
+            "reserved_header_chars",
+            Severity::Minor,
+            profile,
+            metrics.reserved_header_char_count,
+            affected_fraction(metrics.reserved_header_char_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.reserved_header_char_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.reserved_header_chars),
+                "FASTA header contains reserved compatibility characters",
+                EvidenceKind::HeaderCompatibility,
+            ),
+            FindingText {
+                message: format!(
+                    "{} FASTA headers contain reserved compatibility characters.",
+                    metrics.reserved_header_char_count
+                ),
+                why_it_matters:
+                    "Reserved header characters can confuse parsers, database builders, or submission validators.",
+                suggested_next_step:
+                    "Normalize headers to portable characters before database construction or submission.",
             },
         ));
     }
@@ -185,6 +298,91 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
                     "Long gap runs can indicate unresolved assembly regions and may disrupt mapping or annotation.",
                 suggested_next_step:
                     "Inspect scaffolds with long N runs and consider gap closing or masking review.",
+            },
+        ));
+    }
+
+    if metrics.terminal_n_sequence_count > 0 {
+        findings.push(finding(
+            "terminal_ns",
+            Severity::Major,
+            profile,
+            metrics.terminal_n_sequence_count,
+            affected_fraction(metrics.terminal_n_sequence_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.terminal_n_sequence_count,
+                metrics.sequences.iter().filter(|sequence| {
+                    sequence.terminal_n_prefix > 0 || sequence.terminal_n_suffix > 0
+                }),
+                "record has leading or trailing N bases",
+                EvidenceKind::TerminalN,
+            ),
+            FindingText {
+                message: format!(
+                    "{} records have leading or trailing N bases.",
+                    metrics.terminal_n_sequence_count
+                ),
+                why_it_matters:
+                    "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.",
+                suggested_next_step:
+                    "Review terminal N runs and trim or justify them before submission-oriented workflows.",
+            },
+        ));
+    }
+
+    if metrics.repeated_gap_pattern_sequence_count > 0 {
+        findings.push(finding(
+            "gap_pattern_warnings",
+            Severity::Minor,
+            profile,
+            metrics.repeated_gap_pattern_sequence_count,
+            affected_fraction(
+                metrics.repeated_gap_pattern_sequence_count,
+                metrics.sequence_count,
+            ),
+            evidence_for_sequences(
+                metrics.repeated_gap_pattern_sequence_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.gap_run_100_count > 0),
+                "record contains repeated 100 bp N gap patterns",
+                EvidenceKind::GapPattern,
+            ),
+            FindingText {
+                message: format!(
+                    "{} records contain repeated 100 bp N gap patterns.",
+                    metrics.repeated_gap_pattern_sequence_count
+                ),
+                why_it_matters:
+                    "Repeated gap patterns can be legitimate scaffold placeholders, but they are often worth checking before submission or annotation.",
+                suggested_next_step:
+                    "Review scaffold gap patterns and confirm they match the intended assembly representation.",
+            },
+        ));
+    }
+
+    if expected_size_outlier(metrics.ungapped_total_length, profile) {
+        let expected_size = profile.expected_size_bases.unwrap();
+        let tolerance = profile.expected_size_tolerance.unwrap_or(0.0);
+        findings.push(finding(
+            "expected_size_outlier",
+            Severity::Major,
+            profile,
+            1,
+            1.0,
+            empty_evidence(),
+            FindingText {
+                message: format!(
+                    "Assembly ungapped total length is {} bp, outside expected size {} bp with {:.2}% tolerance.",
+                    metrics.ungapped_total_length,
+                    expected_size,
+                    tolerance * 100.0
+                ),
+                why_it_matters:
+                    "Unexpected assembly size can indicate missing sequence, extra sequence, contamination, or incorrect expected-size metadata, but FASTA-only checks cannot determine the cause.",
+                suggested_next_step:
+                    "Review the expected-size input and run submission validation or deeper assembly QC before drawing biological conclusions.",
             },
         ));
     }
@@ -351,10 +549,15 @@ fn finding_metadata(id: &str) -> FindingMetadata {
     use FindingConfidence::{High, Moderate};
 
     let (category, confidence) = match id {
-        "duplicate_ids" | "duplicate_sequences" => (Duplication, High),
+        "duplicate_ids" | "duplicate_sequences" | "duplicate_first_token_ids" => {
+            (Duplication, High)
+        }
         "invalid_chars" | "invalid_fasta_structure" => (Validity, High),
+        "unsafe_ids" | "long_headers" | "reserved_header_chars" => (Validity, Moderate),
         "high_n_rate" => (Composition, High),
-        "tiny_contigs" => (Structure, Moderate),
+        "tiny_contigs" | "terminal_ns" | "gap_pattern_warnings" | "expected_size_outlier" => {
+            (Structure, Moderate)
+        }
         "gap_runs" => (Structure, High),
         "gc_outliers" => (Composition, Moderate),
         "length_outliers" => (Structure, Moderate),
@@ -365,7 +568,10 @@ fn finding_metadata(id: &str) -> FindingMetadata {
     FindingMetadata {
         category,
         confidence,
-        requires_followup_tool: matches!(id, "gc_outliers" | "composite_anomalies"),
+        requires_followup_tool: matches!(
+            id,
+            "gc_outliers" | "composite_anomalies" | "expected_size_outlier"
+        ),
     }
 }
 
@@ -402,6 +608,19 @@ mod taxonomy_tests {
             finding_metadata("length_outliers").category,
             FindingCategory::Structure
         );
+        assert_eq!(
+            finding_metadata("duplicate_first_token_ids").category,
+            FindingCategory::Duplication
+        );
+        assert_eq!(
+            finding_metadata("unsafe_ids").category,
+            FindingCategory::Validity
+        );
+        assert_eq!(
+            finding_metadata("terminal_ns").category,
+            FindingCategory::Structure
+        );
+        assert!(finding_metadata("expected_size_outlier").requires_followup_tool);
         assert!(finding_metadata("composite_anomalies").requires_followup_tool);
     }
 }
@@ -425,11 +644,18 @@ const MAX_EVIDENCE_RECORDS: usize = 20;
 #[derive(Debug, Clone, Copy)]
 enum EvidenceKind {
     DuplicateId,
+    DuplicateFirstTokenId,
     DuplicateSequence,
     InvalidChars,
     HighN,
     TinyContig,
     GapRun,
+    UnsafeId,
+    HeaderCompatibility,
+    TerminalN,
+    GapPattern,
+    #[allow(dead_code)]
+    ExpectedSize,
     CompositionOutlier,
     AssemblyOutlier,
 }
@@ -536,16 +762,58 @@ fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind)
         EvidenceKind::TinyContig => {
             record.gc_percent = Some(sequence.gc_percent);
         }
+        EvidenceKind::TerminalN => {
+            record.n_fraction = Some(round2(sequence.n_fraction));
+            record.n_percent = Some(round2(sequence.n_fraction * 100.0));
+            record
+                .signals
+                .push(format!("terminal_n_prefix={}", sequence.terminal_n_prefix));
+            record
+                .signals
+                .push(format!("terminal_n_suffix={}", sequence.terminal_n_suffix));
+        }
+        EvidenceKind::GapPattern => {
+            record.max_gap_run = Some(sequence.max_gap_run);
+            record
+                .signals
+                .push(format!("gap_run_100_count={}", sequence.gap_run_100_count));
+        }
+        EvidenceKind::UnsafeId => {
+            record.signals.push("unsafe_id".to_string());
+        }
+        EvidenceKind::HeaderCompatibility => {
+            if sequence.long_header {
+                record.signals.push("long_header".to_string());
+            }
+            if sequence.reserved_header_chars {
+                record.signals.push("reserved_header_chars".to_string());
+            }
+        }
         EvidenceKind::CompositionOutlier | EvidenceKind::AssemblyOutlier => {
             record.gc_percent = Some(sequence.gc_percent);
             record.gc_zscore = sequence.gc_zscore;
             record.n_fraction = Some(round2(sequence.n_fraction));
             record.n_percent = Some(round2(sequence.n_fraction * 100.0));
         }
-        EvidenceKind::DuplicateId | EvidenceKind::DuplicateSequence => {}
+        EvidenceKind::DuplicateId
+        | EvidenceKind::DuplicateFirstTokenId
+        | EvidenceKind::DuplicateSequence
+        | EvidenceKind::ExpectedSize => {}
     }
 
     record
+}
+
+fn expected_size_outlier(ungapped_total_length: u64, profile: &ProfileConfig) -> bool {
+    let Some(expected_size) = profile.expected_size_bases else {
+        return false;
+    };
+    let tolerance = profile.expected_size_tolerance.unwrap_or(0.0);
+    let lower_bound = expected_size as f64 * (1.0 - tolerance);
+    let upper_bound = expected_size as f64 * (1.0 + tolerance);
+    let observed = ungapped_total_length as f64;
+
+    observed < lower_bound || observed > upper_bound
 }
 
 fn composite_signals(sequence: &SequenceSummary, profile: &ProfileConfig) -> Vec<String> {
@@ -724,6 +992,14 @@ mod tests {
         }
     }
 
+    fn sequence_summary_with_id(id: &str, length: u64, n_count: u64) -> SequenceSummary {
+        let mut sequence = sequence_summary(length, n_count);
+        sequence.id = id.to_string();
+        sequence.header = id.to_string();
+        sequence.first_token_id = id.to_string();
+        sequence
+    }
+
     #[test]
     fn duplicate_ids_can_fail_when_configured() {
         let mut metrics = clean_metrics();
@@ -733,6 +1009,66 @@ mod tests {
 
         assert_eq!(analysis.status, VerdictStatus::Fail);
         assert_eq!(analysis.reasons, ["duplicate_ids"]);
+    }
+
+    #[test]
+    fn duplicate_first_token_ids_are_critical_findings() {
+        let mut metrics = clean_metrics();
+        metrics.sequence_count = 2;
+        metrics.duplicate_first_token_id_count = 1;
+        metrics.sequences = vec![
+            sequence_summary_with_id("contig1", 100, 0),
+            sequence_summary_with_id("contig1", 100, 0),
+        ];
+        metrics.sequences[1].duplicate_first_token_id = true;
+
+        let analysis = analyze(&metrics, &profile(), &rules(&[]));
+
+        assert_eq!(analysis.status, VerdictStatus::Fail);
+        assert_eq!(analysis.reasons, ["duplicate_first_token_ids"]);
+        assert_eq!(analysis.findings[0].id, "duplicate_first_token_ids");
+        assert_eq!(analysis.findings[0].severity, Severity::Critical);
+    }
+
+    #[test]
+    fn terminal_ns_warn_and_include_prefix_suffix_evidence() {
+        let mut metrics = clean_metrics();
+        metrics.sequence_count = 1;
+        metrics.terminal_n_sequence_count = 1;
+        metrics.sequences = vec![sequence_summary_with_id("edge_n", 10, 2)];
+        metrics.sequences[0].terminal_n_prefix = 1;
+        metrics.sequences[0].terminal_n_suffix = 1;
+
+        let analysis = analyze(&metrics, &profile(), &rules(&[]));
+
+        assert_eq!(analysis.status, VerdictStatus::Warn);
+        let finding = analysis
+            .findings
+            .iter()
+            .find(|finding| finding.id == "terminal_ns")
+            .unwrap();
+        assert_eq!(finding.affected_count, 1);
+        assert!(finding.why_it_matters.contains("submission"));
+    }
+
+    #[test]
+    fn expected_size_outlier_uses_ungapped_length() {
+        let mut metrics = clean_metrics();
+        metrics.total_length = 1_100_000;
+        metrics.ungapped_total_length = 1_000_000;
+        let profile = ProfileConfig::assembly(ThresholdOverrides {
+            max_n_rate: None,
+            min_contig_length: None,
+            expected_size_bases: Some(500_000),
+            expected_size_tolerance: Some(0.10),
+        });
+
+        let analysis = analyze(&metrics, &profile, &rules(&[]));
+
+        assert!(analysis
+            .findings
+            .iter()
+            .any(|finding| finding.id == "expected_size_outlier"));
     }
 
     #[test]

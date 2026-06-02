@@ -4,7 +4,8 @@ use std::collections::BTreeSet;
 
 use crate::models::{Finding, GateDecision, Severity, VerdictStatus};
 
-pub const PIPELINE_FAIL_ON: [&str; 4] = [
+pub const PIPELINE_FAIL_ON: &[&str] = &[
+    "duplicate_first_token_ids",
     "duplicate_ids",
     "high_n_rate",
     "invalid_chars",
@@ -38,7 +39,7 @@ pub fn final_fail_on(mode: GateMode, explicit_rules: &[String]) -> BTreeSet<Stri
         .collect::<BTreeSet<_>>();
 
     if mode == GateMode::Pipeline {
-        fail_on.extend(PIPELINE_FAIL_ON.into_iter().map(ToOwned::to_owned));
+        fail_on.extend(PIPELINE_FAIL_ON.iter().map(|id| (*id).to_string()));
     }
 
     fail_on

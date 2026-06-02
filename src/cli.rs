@@ -348,6 +348,7 @@ mod tests {
         assert_eq!(
             config.rules.fail_on,
             [
+                "duplicate_first_token_ids",
                 "duplicate_ids",
                 "high_n_rate",
                 "invalid_chars",
