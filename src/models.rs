@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{BufReader, Read};
@@ -35,6 +36,66 @@ pub struct FastaguardReport {
     pub plots: Plots,
     pub findings: Vec<Finding>,
     pub artifacts: Artifacts,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompareReport {
+    pub schema_version: String,
+    pub report_type: String,
+    pub tool: ToolInfo,
+    pub input: CompareInputInfo,
+    pub summary: CompareSummary,
+    pub samples: Vec<CompareSample>,
+    pub cohort_findings: Vec<CohortFinding>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompareInputInfo {
+    pub profile: String,
+    pub sample_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompareSummary {
+    pub sample_count: usize,
+    pub pass_count: usize,
+    pub warn_count: usize,
+    pub fail_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CompareSample {
+    pub sample_id: String,
+    pub input_path: String,
+    pub verdict: VerdictStatus,
+    pub gate_status: VerdictStatus,
+    pub readiness_status: crate::readiness::ReadinessStatus,
+    pub sequence_count: u64,
+    pub total_length: u64,
+    pub n50: u64,
+    pub n90: u64,
+    pub gc_percent: f64,
+    pub n_percent: f64,
+    pub duplicate_id_count: u64,
+    pub invalid_sequence_count: u64,
+    pub high_n_sequence_count: u64,
+    pub tiny_contig_count: u64,
+    pub max_gap_run: u64,
+    pub gc_outlier_count: u64,
+    pub length_outlier_count: u64,
+    pub finding_count: usize,
+    pub finding_ids: Vec<String>,
+    pub readiness_blockers: Vec<String>,
+    pub recommended_next_tools: Vec<RecommendedTool>,
+    pub input_sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CohortFinding {
+    pub id: String,
+    pub severity: Severity,
+    pub affected_count: usize,
+    pub evidence: Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

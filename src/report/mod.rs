@@ -5,10 +5,12 @@ pub mod tsv;
 
 use anyhow::{anyhow, Context, Result};
 use std::collections::BTreeSet;
+use std::fs::File;
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 
 use crate::cli::OutputPaths;
-use crate::models::FastaguardReport;
+use crate::models::{CompareReport, FastaguardReport};
 
 pub fn write_all(report: &FastaguardReport, outputs: &OutputPaths) -> Result<()> {
     validate_output_paths(outputs)?;
@@ -17,6 +19,32 @@ pub fn write_all(report: &FastaguardReport, outputs: &OutputPaths) -> Result<()>
     tsv::write(report, &outputs.tsv)?;
     multiqc::write(report, &outputs.multiqc)?;
     html::write(report, &outputs.html)?;
+    Ok(())
+}
+
+pub fn write_compare_all(report: &CompareReport, outputs: &OutputPaths) -> Result<()> {
+    validate_output_paths(outputs)?;
+
+    let mut json_file = File::create(&outputs.json)
+        .with_context(|| format!("failed to create {}", outputs.json.display()))?;
+    serde_json::to_writer_pretty(&mut json_file, report)
+        .with_context(|| format!("failed to write JSON report {}", outputs.json.display()))?;
+    writeln!(json_file)
+        .with_context(|| format!("failed to write JSON report {}", outputs.json.display()))?;
+
+    std::fs::write(&outputs.tsv, "sample_id\tverdict\n")
+        .with_context(|| format!("failed to write TSV report {}", outputs.tsv.display()))?;
+    std::fs::write(&outputs.multiqc, "{}\n").with_context(|| {
+        format!(
+            "failed to write MultiQC report {}",
+            outputs.multiqc.display()
+        )
+    })?;
+    std::fs::write(
+        &outputs.html,
+        "<!doctype html><title>FastaGuard Compare</title>\n",
+    )
+    .with_context(|| format!("failed to write HTML report {}", outputs.html.display()))?;
     Ok(())
 }
 

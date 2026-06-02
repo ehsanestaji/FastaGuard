@@ -121,6 +121,39 @@ fn compare_requires_at_least_two_inputs() {
 }
 
 #[test]
+fn compare_writes_json_with_mixed_status_samples() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "cohort");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "compare",
+        "testdata/valid_assembly.fa",
+        "testdata/problem_assembly.fa",
+        "--gate",
+        "pipeline",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["report_type"], json!("compare"));
+    assert_eq!(report["schema_version"], json!("0.4.0"));
+    assert_eq!(report["summary"]["sample_count"], json!(2));
+    assert_eq!(report["summary"]["fail_count"], json!(1));
+    assert_eq!(report["samples"].as_array().unwrap().len(), 2);
+}
+
+#[test]
 fn valid_assembly_writes_all_outputs_and_warns_for_terminal_ns() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "valid");

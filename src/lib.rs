@@ -39,32 +39,38 @@ fn print_contract(cli: &Cli) -> Result<()> {
 
 fn run_single(config: cli::RunConfig) -> Result<i32> {
     let run_started = Instant::now();
+    let outputs = config.outputs.clone();
+    let output = build_single_report(config, run_started)?;
+    report::write_all(&output, &outputs)?;
+    Ok(output.exit_code())
+}
+
+pub(crate) fn build_single_report(
+    config: cli::RunConfig,
+    started: Instant,
+) -> Result<models::FastaguardReport> {
     let profile = profile::ProfileConfig::assembly(config.thresholds);
     let metrics = match metrics::AssemblyMetrics::from_path(&config.input, &profile) {
         Ok(metrics) => metrics,
         Err(error) if parser::is_structural_fasta_error(&error) => {
-            let output = models::FastaguardReport::from_invalid_fasta(
+            return models::FastaguardReport::from_invalid_fasta(
                 config.clone(),
                 &profile,
                 error.to_string(),
-                measured_duration_ms(&config, run_started),
-            )?;
-            report::write_all(&output, &config.outputs)?;
-            return Ok(output.exit_code());
+                measured_duration_ms(&config, started),
+            );
         }
         Err(error) => return Err(error),
     };
     let analysis = findings::analyze(&metrics, &profile, &config.rules);
-    let duration_ms = measured_duration_ms(&config, run_started);
-    let output = models::FastaguardReport::from_analysis(
+    let duration_ms = measured_duration_ms(&config, started);
+    models::FastaguardReport::from_analysis(
         config.clone(),
         &profile,
         metrics,
         analysis,
         duration_ms,
-    )?;
-    report::write_all(&output, &config.outputs)?;
-    Ok(output.exit_code())
+    )
 }
 
 fn measured_duration_ms(config: &cli::RunConfig, started: Instant) -> u64 {
