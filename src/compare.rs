@@ -263,11 +263,11 @@ mod tests {
     #[test]
     fn cohort_total_length_outliers_rank_unusual_samples() {
         let samples = vec![
-            sample_for_cohort("sample_a", 100_000, 50.0),
-            sample_for_cohort("sample_b", 101_000, 50.2),
-            sample_for_cohort("sample_c", 99_500, 49.8),
-            sample_for_cohort("sample_d", 102_000, 50.1),
-            sample_for_cohort("sample_e", 1_000_000, 50.0),
+            sample_for_cohort("sample_a", 100_000, 50.0, 0.1, 10, 20_000),
+            sample_for_cohort("sample_b", 101_000, 50.2, 0.1, 11, 20_500),
+            sample_for_cohort("sample_c", 99_500, 49.8, 0.1, 10, 19_500),
+            sample_for_cohort("sample_d", 102_000, 50.1, 0.1, 12, 21_000),
+            sample_for_cohort("sample_e", 1_000_000, 50.0, 0.1, 20, 100_000),
         ];
 
         let findings = cohort_findings(&samples);
@@ -291,19 +291,26 @@ mod tests {
         );
     }
 
-    fn sample_for_cohort(sample_id: &str, total_length: u64, gc_percent: f64) -> CompareSample {
+    fn sample_for_cohort(
+        sample_id: &str,
+        total_length: u64,
+        gc_percent: f64,
+        n_percent: f64,
+        sequence_count: u64,
+        n50: u64,
+    ) -> CompareSample {
         CompareSample {
             sample_id: sample_id.to_string(),
             input_path: format!("{sample_id}.fa"),
             verdict: VerdictStatus::Pass,
             gate_status: VerdictStatus::Pass,
             readiness_status: crate::readiness::ReadinessStatus::Pass,
-            sequence_count: 1,
+            sequence_count,
             total_length,
-            n50: total_length,
-            n90: total_length,
+            n50,
+            n90: n50,
             gc_percent,
-            n_percent: 0.0,
+            n_percent,
             duplicate_id_count: 0,
             invalid_sequence_count: 0,
             high_n_sequence_count: 0,
