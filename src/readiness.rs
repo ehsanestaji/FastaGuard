@@ -55,6 +55,7 @@ pub fn build_readiness(
     scope: ReadinessScope,
 ) -> ReadinessReport {
     let mut categories = base_categories(scope);
+    let mut blockers = Vec::new();
     for finding in findings {
         for category_id in category_ids_for_finding(&finding.id) {
             if let Some(category) = categories
@@ -70,20 +71,13 @@ pub fn build_readiness(
                     ReadinessStatus::Warn
                 };
                 category.status = max_status(category.status, status);
+                if is_blocking {
+                    blockers.push(format!("{}.{}", category_id, finding.id));
+                }
             }
         }
     }
 
-    let blockers = categories
-        .iter()
-        .filter(|category| category.status == ReadinessStatus::Fail)
-        .flat_map(|category| {
-            category
-                .findings
-                .iter()
-                .map(move |finding| format!("{}.{}", category.id, finding))
-        })
-        .collect::<Vec<_>>();
     let overall_status = if !blockers.is_empty() {
         ReadinessStatus::Fail
     } else {
@@ -198,6 +192,25 @@ mod tests {
         let index = readiness.category("index").unwrap();
         assert_eq!(index.status, ReadinessStatus::Fail);
         assert_eq!(index.findings, ["duplicate_first_token_ids"]);
+    }
+
+    #[test]
+    fn blockers_only_include_blocking_findings_in_failed_categories() {
+        let readiness = build_readiness(
+            VerdictStatus::Fail,
+            &["duplicate_ids".to_string()],
+            &[
+                finding("duplicate_ids", Severity::Major),
+                finding("unsafe_ids", Severity::Major),
+            ],
+            ReadinessScope::Single,
+        );
+
+        assert_eq!(readiness.overall.status, ReadinessStatus::Fail);
+        assert_eq!(readiness.overall.blockers, ["index.duplicate_ids"]);
+        let index = readiness.category("index").unwrap();
+        assert_eq!(index.status, ReadinessStatus::Fail);
+        assert_eq!(index.findings, ["duplicate_ids", "unsafe_ids"]);
     }
 
     #[test]
