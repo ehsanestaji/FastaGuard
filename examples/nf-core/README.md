@@ -38,14 +38,20 @@ fastaguard sample.fa --profile assembly --gate pipeline
 That gate contract blocks downstream workflow steps on duplicate IDs, invalid
 characters, invalid FASTA structure, and high-N content. Gate failures intentionally exit with code `2` after writing reports, so downstream workflow steps stop while the JSON/HTML evidence remains available.
 
+This is a local fail-fast starter example: FastaGuard WARN exits 1 and FAIL exits 2.
+Depending on workflow engine behavior, naive fail-fast runs may leave evidence
+only in the work directory. A production wrapper can use a collect-then-gate
+pattern to publish JSON/HTML/TSV/MultiQC evidence before applying stop/go logic.
+
 For v0.4 cohort triage, compare mode is a starter pattern:
 
 ```bash
 fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
 ```
 
-This is local starter guidance only. It is not yet an upstream nf-core module
-submission, and the Snakemake example is not yet an official wrapper submission.
+This is local fail-fast starter guidance only. It is not yet an upstream nf-core
+module submission, and the Snakemake example is not yet an official wrapper
+submission.
 
 Example include:
 

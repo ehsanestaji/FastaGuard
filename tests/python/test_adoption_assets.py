@@ -85,30 +85,43 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("Gate failures intentionally exit with code `2`", snakemake_readme)
 
     def test_v0_4_docs_explain_preflight_readiness_and_compare_mode(self):
+        readme = ROOT / "README.md"
         readiness = ROOT / "docs" / "preflight-readiness.md"
         compare = ROOT / "docs" / "compare-mode.md"
         value = ROOT / "docs" / "value-benchmark.md"
+        benchmarking = ROOT / "docs" / "benchmarking.md"
+        release = ROOT / "docs" / "releases" / "v0.4.0.md"
 
         for path in (readiness, compare, value):
             self.assertTrue(path.exists(), path)
 
+        self.assertIn("v0.4 development/unreleased", readme.read_text())
         self.assertIn("before interpretive QC tools", readiness.read_text())
         self.assertIn("Index readiness", readiness.read_text())
         self.assertIn("fastaguard compare", compare.read_text())
         self.assertIn("fastaguard_compare_mqc.json", compare.read_text())
         self.assertIn("0.98 seconds", value.read_text())
         self.assertIn("50 MB", value.read_text())
+        self.assertIn("v0.3 single-file baseline", benchmarking.read_text())
+        self.assertIn("Draft / unreleased", release.read_text())
 
     def test_v0_4_examples_mention_compare_as_starter_pattern(self):
-        text = "\n".join(
-            [
-                (ROOT / "examples" / "nf-core" / "README.md").read_text(),
-                (ROOT / "examples" / "snakemake" / "Snakefile").read_text(),
-                (ROOT / "examples" / "nextflow" / "main.nf").read_text(),
-            ]
-        )
-        self.assertIn("fastaguard compare", text)
-        self.assertIn("starter", text.lower())
+        paths = [
+            ROOT / "examples" / "nf-core" / "README.md",
+            ROOT / "examples" / "snakemake" / "Snakefile",
+            ROOT / "examples" / "nextflow" / "main.nf",
+        ]
+
+        for path in paths:
+            with self.subTest(path=path):
+                text = path.read_text()
+                lower = text.lower()
+                self.assertIn("fastaguard compare", text)
+                self.assertIn("starter", lower)
+                self.assertIn("local", lower)
+                self.assertIn("WARN exits 1", text)
+                self.assertIn("FAIL exits 2", text)
+                self.assertIn("fail-fast starter", lower)
 
     def test_multiqc_parser_reads_fastaguard_custom_content(self):
         fixture = ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard_mqc.json"

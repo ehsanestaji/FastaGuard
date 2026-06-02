@@ -11,6 +11,9 @@ Frame timings as evidence, not formal universal benchmark claims. These numbers
 show the order of magnitude for local preflight overhead on deterministic
 synthetic FASTA files.
 
+This is a v0.3 single-file baseline. It is not a v0.4 compare-mode timing and
+should not be read as a cohort benchmark.
+
 The practical value is pipeline triage: a sub-second to seconds-level FASTA
 preflight can prevent minutes, CPU-hours, or days of downstream work on inputs
 that are malformed, ambiguous, hard to index, or not ready for submission.

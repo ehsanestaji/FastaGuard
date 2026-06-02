@@ -94,10 +94,12 @@ Use it to answer:
 
 Do not use it to claim performance on contaminated assemblies, highly ambiguous assemblies, or compressed FASTA until separate fixtures cover those cases.
 
-## Local Value Evidence
+## Local Value Evidence Baseline
 
-The v0.4 value benchmark is documented in
-[`docs/value-benchmark.md`](value-benchmark.md). The measured local frame is:
+The value benchmark is documented in
+[`docs/value-benchmark.md`](value-benchmark.md) as a v0.3 single-file baseline.
+It is local evidence for preflight overhead, not a v0.4 compare-mode timing. The
+measured local frame is:
 
 - `fastaguard 0.3.0`, commit `1873216`, macOS ARM64
 - 10 Mbp synthetic FASTA, 10k records: PASS, 0.51 seconds, about 17 MB RSS

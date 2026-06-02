@@ -109,17 +109,20 @@ Pipeline gate example:
 fastaguard sample.fa --profile assembly --gate pipeline
 ```
 
-Compare starter example for v0.4 cohort triage:
-
-```bash
-fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
-```
-
 The `pipeline` gate is the v0.3 assembly preset for workflow stop/go decisions.
 It fails on duplicate IDs, invalid characters, invalid FASTA structure, and
 high-N content. GC and length outliers remain advisory by default because they
 are routing signals, not proof of contamination or misassembly. To make an
 advisory finding block a pipeline, add it explicitly with `--fail-on`.
+
+v0.4 development/unreleased compare starter example:
+
+```bash
+fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
+```
+
+This command is part of the v0.4 readiness and compare-mode work on the
+development branch. It is not part of the published v0.3.0 release.
 
 Inspect the machine-readable contract:
 
