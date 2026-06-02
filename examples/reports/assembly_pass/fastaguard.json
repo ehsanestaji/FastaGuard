@@ -2,7 +2,7 @@
   "schema_version": "0.4.0",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "input": {
     "path": "testdata/valid_assembly.fa",
@@ -125,9 +125,9 @@
       "max_gap_run": 100,
       "gc_outlier_zscore": 3.0
     },
-    "command": "fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json",
-    "started_at": "2026-05-23T00:00:00Z",
-    "completed_at": "2026-05-23T00:00:00Z",
+    "command": "target/release/fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json",
+    "started_at": "2026-06-02T12:17:31Z",
+    "completed_at": "2026-06-02T12:17:31Z",
     "duration_ms": 0,
     "input_size_bytes": 92,
     "input_sha256": "373699c0422b364607fc6879c46c053c105413c81df9403998d3d26a7122d2e8"

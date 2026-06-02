@@ -6,7 +6,7 @@ use clap::{ArgGroup, ArgMatches, Args, CommandFactory, FromArgMatches, Parser, S
 use std::collections::BTreeSet;
 use std::env::VarError;
 use std::ffi::OsString;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::gate::{self, GateMode};
 use crate::profile::ThresholdOverrides;
@@ -436,10 +436,10 @@ impl AnalysisArgs {
 
 impl RunOutputArgs {
     fn has_overrides(&self) -> bool {
-        self.out != PathBuf::from("fastaguard_report.html")
-            || self.json != PathBuf::from("fastaguard.json")
-            || self.tsv != PathBuf::from("fastaguard.tsv")
-            || self.multiqc != PathBuf::from("fastaguard_mqc.json")
+        self.out != Path::new("fastaguard_report.html")
+            || self.json != Path::new("fastaguard.json")
+            || self.tsv != Path::new("fastaguard.tsv")
+            || self.multiqc != Path::new("fastaguard_mqc.json")
     }
 
     fn output_paths(&self) -> OutputPaths {

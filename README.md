@@ -23,24 +23,25 @@ Before QUAST. Before BUSCO. Before BlobToolKit. Before annotation.
 Run FastaGuard first.
 ```
 
-## Current Release
+## Release Status
 
 | Channel | Status |
 | --- | --- |
-| GitHub release | `v0.3.0` is live with Linux and macOS binaries |
-| Bioconda | `v0.3.0` is live for Linux and macOS x86_64/ARM64 |
-| BioContainers | `v0.3.0` is live as a pinned workflow image |
-| Source build | `v0.3.0` can be built from the Git tag |
+| Source/package metadata | prepared for `v0.4.0` release prep |
+| GitHub release | `v0.3.0` is live with Linux and macOS binaries; `v0.4.0` artifacts are follow-up |
+| Bioconda | `v0.3.0` is live for Linux and macOS x86_64/ARM64; `v0.4.0` packaging is follow-up |
+| BioContainers | `v0.3.0` is live as a pinned workflow image; `v0.4.0` image publication is follow-up |
+| Source build | local checkout builds report package version `0.4.0`; install from a `v0.4.0` Git tag after publication |
 
 ## Install
 
-Recommended bioinformatics install:
+Published bioinformatics install:
 
 ```bash
 mamba install -c conda-forge -c bioconda fastaguard=0.3.0
 ```
 
-Containerized workflow install:
+Published containerized workflow install:
 
 ```bash
 docker pull quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0
@@ -68,7 +69,7 @@ tar -xzf fastaguard-v0.3.0-aarch64-apple-darwin.tar.gz
 ./fastaguard-v0.3.0-aarch64-apple-darwin/fastaguard --version
 ```
 
-Build from the released Git tag:
+Build from the latest published Git tag:
 
 ```bash
 cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v0.3.0
@@ -88,9 +89,18 @@ Local development build:
 cargo build --release --locked
 ```
 
+Local release-prep install from this checkout:
+
+```bash
+cargo install --path . --locked
+fastaguard --version
+```
+
 ## Quickstart
 
 The `--gate pipeline` examples below require FastaGuard `v0.3.0` or newer.
+The `fastaguard compare` example requires the source/package version prepared
+for `v0.4.0` or a later published release.
 
 Run the assembly preflight check:
 
@@ -115,14 +125,15 @@ high-N content. GC and length outliers remain advisory by default because they
 are routing signals, not proof of contamination or misassembly. To make an
 advisory finding block a pipeline, add it explicitly with `--fail-on`.
 
-v0.4 development/unreleased compare starter example:
+v0.4 release-prep compare starter example:
 
 ```bash
 fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
 ```
 
-This command is part of the v0.4 readiness and compare-mode work on the
-development branch. It is not part of the published v0.3.0 release.
+This command is part of the source/package version prepared for `v0.4.0`.
+Published GitHub, Bioconda, and BioContainers artifacts may still be `v0.3.0`
+until release publication follow-up is complete.
 
 Inspect the machine-readable contract:
 
@@ -271,6 +282,10 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [First-release design](docs/superpowers/specs/2026-05-18-fastaguard-first-release-design.md)
 
 ## Status
+
+The source/package metadata is prepared for FastaGuard v0.4.0. GitHub release
+artifacts, Bioconda, and BioContainers publication remain follow-up work until
+they are explicitly published.
 
 v0.3.0 is published on GitHub with Linux and macOS release binaries. It adds the
 assembly gate contract, checksum provenance, and evidence workflow.

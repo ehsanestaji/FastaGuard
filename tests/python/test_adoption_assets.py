@@ -95,7 +95,7 @@ class AdoptionAssetsTest(unittest.TestCase):
         for path in (readiness, compare, value):
             self.assertTrue(path.exists(), path)
 
-        self.assertIn("v0.4 development/unreleased", readme.read_text())
+        self.assertIn("v0.4 release-prep", readme.read_text())
         self.assertIn("before interpretive QC tools", readiness.read_text())
         self.assertIn("Index readiness", readiness.read_text())
         self.assertIn("fastaguard compare", compare.read_text())
@@ -103,7 +103,9 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("0.98 seconds", value.read_text())
         self.assertIn("50 MB", value.read_text())
         self.assertIn("v0.3 single-file baseline", benchmarking.read_text())
-        self.assertIn("Draft / unreleased", release.read_text())
+        self.assertIn(
+            "source/package version prepared for v0.4.0", release.read_text()
+        )
 
     def test_v0_4_examples_mention_compare_as_starter_pattern(self):
         paths = [

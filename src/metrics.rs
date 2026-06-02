@@ -182,11 +182,13 @@ impl<'a> MetricsAccumulator<'a> {
             id,
             header,
             first_token_id,
-            duplicate_id,
-            duplicate_first_token_id,
-            unsafe_id,
-            long_header,
-            reserved_header_chars,
+            HeaderReadinessFlags {
+                duplicate_id,
+                duplicate_first_token_id,
+                unsafe_id,
+                long_header,
+                reserved_header_chars,
+            },
         ));
     }
 
@@ -329,6 +331,14 @@ impl<'a> MetricsAccumulator<'a> {
     }
 }
 
+struct HeaderReadinessFlags {
+    duplicate_id: bool,
+    duplicate_first_token_id: bool,
+    unsafe_id: bool,
+    long_header: bool,
+    reserved_header_chars: bool,
+}
+
 struct SequenceSummaryBuilder {
     id: String,
     header: String,
@@ -360,21 +370,17 @@ impl SequenceSummaryBuilder {
         id: String,
         header: String,
         first_token_id: String,
-        duplicate_id: bool,
-        duplicate_first_token_id: bool,
-        unsafe_id: bool,
-        long_header: bool,
-        reserved_header_chars: bool,
+        flags: HeaderReadinessFlags,
     ) -> Self {
         Self {
             id,
             header,
             first_token_id,
-            duplicate_id,
-            duplicate_first_token_id,
-            unsafe_id,
-            long_header,
-            reserved_header_chars,
+            duplicate_id: flags.duplicate_id,
+            duplicate_first_token_id: flags.duplicate_first_token_id,
+            unsafe_id: flags.unsafe_id,
+            long_header: flags.long_header,
+            reserved_header_chars: flags.reserved_header_chars,
             hasher: Sha256::new(),
             length: 0,
             gc_count: 0,

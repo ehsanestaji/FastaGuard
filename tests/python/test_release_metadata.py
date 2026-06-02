@@ -10,10 +10,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ReleaseMetadataTest(unittest.TestCase):
-    def test_package_targets_v0_3_0(self):
+    def test_package_targets_v0_4_0(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
 
-        self.assertEqual(cargo["package"]["version"], "0.3.0")
+        self.assertEqual(cargo["package"]["version"], "0.4.0")
 
     def test_bioconda_recipe_tracks_published_v0_3_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
