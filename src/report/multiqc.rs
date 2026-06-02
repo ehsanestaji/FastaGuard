@@ -175,10 +175,20 @@ mod tests {
         assert_eq!(output["section_name"], "FastaGuard");
         assert_eq!(output["plot_type"], "table");
         assert_eq!(output["pconfig"]["id"], "fastaguard_summary");
+        assert_eq!(
+            output["pconfig"]["headers"]["readiness_status"]["title"],
+            "Readiness"
+        );
+        assert_eq!(
+            output["pconfig"]["headers"]["readiness_blockers"]["title"],
+            "Readiness blockers"
+        );
         assert_eq!(output["data"]["sample"]["verdict"], "PASS");
         assert_eq!(output["data"]["sample"]["gate_mode"], "none");
         assert_eq!(output["data"]["sample"]["gate_status"], "PASS");
         assert_eq!(output["data"]["sample"]["gate_blocking_findings"], "");
+        assert_eq!(output["data"]["sample"]["readiness_status"], "PASS");
+        assert_eq!(output["data"]["sample"]["readiness_blockers"], "");
         assert_eq!(output["data"]["sample"]["sequence_count"], 2);
         assert_eq!(output["data"]["sample"]["duplicate_id_count"], 0);
         assert_eq!(output["data"]["sample"]["invalid_sequence_count"], 0);

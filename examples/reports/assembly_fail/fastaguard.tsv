@@ -24,6 +24,13 @@ l50	1
 l90	3
 gc_percent	8.28
 n_percent	80.69
+duplicate_first_token_id_count	1
+unsafe_id_count	0
+long_header_count	0
+reserved_header_char_count	0
+terminal_n_sequence_count	1
+repeated_gap_pattern_sequence_count	0
+ungapped_total_length	28
 gc_outlier_count	0
 length_outlier_count	1
 composite_anomaly_count	1

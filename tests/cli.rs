@@ -110,7 +110,7 @@ fn contract_unknown_finding_is_tool_error() {
 }
 
 #[test]
-fn valid_assembly_writes_all_outputs_and_passes() {
+fn valid_assembly_writes_all_outputs_and_warns_for_terminal_ns() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "valid");
 
@@ -197,7 +197,7 @@ fn valid_report_includes_machine_summary_scope_and_provenance() {
 }
 
 #[test]
-fn report_includes_v0_3_provenance_and_routing_hints() {
+fn report_includes_v0_4_provenance_and_routing_hints() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "v02_contract");
 

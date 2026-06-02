@@ -4,10 +4,10 @@ profile	assembly
 verdict	WARN
 gate_mode	none
 gate_status	WARN
-gate_blocking_findings	
+gate_blocking_findings
 gate_advisory_findings	terminal_ns
 readiness_status	WARN
-readiness_blockers	
+readiness_blockers
 readiness_file_status	PASS
 readiness_structure_status	PASS
 readiness_alphabet_status	PASS
@@ -24,6 +24,13 @@ l50	2
 l90	3
 gc_percent	34.04
 n_percent	2.13
+duplicate_first_token_id_count	0
+unsafe_id_count	0
+long_header_count	0
+reserved_header_char_count	0
+terminal_n_sequence_count	1
+repeated_gap_pattern_sequence_count	0
+ungapped_total_length	46
 gc_outlier_count	0
 length_outlier_count	0
 composite_anomaly_count	0

@@ -62,6 +62,41 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
     write_metric(&mut writer, "n_percent", report.summary.n_percent)?;
     write_metric(
         &mut writer,
+        "duplicate_first_token_id_count",
+        report.summary.duplicate_first_token_id_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "unsafe_id_count",
+        report.summary.unsafe_id_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "long_header_count",
+        report.summary.long_header_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "reserved_header_char_count",
+        report.summary.reserved_header_char_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "terminal_n_sequence_count",
+        report.summary.terminal_n_sequence_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "repeated_gap_pattern_sequence_count",
+        report.summary.repeated_gap_pattern_sequence_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "ungapped_total_length",
+        report.summary.ungapped_total_length,
+    )?;
+    write_metric(
+        &mut writer,
         "gc_outlier_count",
         affected_record_count(report, "gc_outliers"),
     )?;
@@ -87,7 +122,12 @@ fn write_metric(
     metric: &str,
     value: impl std::fmt::Display,
 ) -> std::io::Result<()> {
-    writeln!(writer, "{metric}\t{value}")
+    let value = value.to_string();
+    if value.is_empty() {
+        writeln!(writer, "{metric}")
+    } else {
+        writeln!(writer, "{metric}\t{value}")
+    }
 }
 
 fn affected_record_count(report: &FastaguardReport, finding_id: &str) -> u64 {
@@ -185,6 +225,56 @@ mod tests {
             output.contains(&format!("input_sha256\t{checksum}\n")),
             "{output}"
         );
+    }
+
+    #[test]
+    fn writes_v0_4_summary_counter_rows() {
+        let mut report = test_report(VerdictStatus::Warn);
+        report.summary.duplicate_first_token_id_count = 1;
+        report.summary.unsafe_id_count = 2;
+        report.summary.long_header_count = 3;
+        report.summary.reserved_header_char_count = 4;
+        report.summary.terminal_n_sequence_count = 5;
+        report.summary.repeated_gap_pattern_sequence_count = 6;
+        report.summary.ungapped_total_length = 94;
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(
+            output.contains("duplicate_first_token_id_count\t1\n"),
+            "{output}"
+        );
+        assert!(output.contains("unsafe_id_count\t2\n"), "{output}");
+        assert!(output.contains("long_header_count\t3\n"), "{output}");
+        assert!(
+            output.contains("reserved_header_char_count\t4\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("terminal_n_sequence_count\t5\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("repeated_gap_pattern_sequence_count\t6\n"),
+            "{output}"
+        );
+        assert!(output.contains("ungapped_total_length\t94\n"), "{output}");
+    }
+
+    #[test]
+    fn writes_empty_metric_values_without_trailing_whitespace() {
+        let report = test_report(VerdictStatus::Pass);
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        for line in output.lines() {
+            assert!(!line.ends_with('\t'), "{line:?} in {output}");
+            assert!(!line.ends_with(' '), "{line:?} in {output}");
+        }
     }
 
     fn test_report(status: VerdictStatus) -> FastaguardReport {
