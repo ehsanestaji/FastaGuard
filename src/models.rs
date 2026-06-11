@@ -723,18 +723,34 @@ fn routing_hints(findings: &[Finding]) -> Vec<RoutingHint> {
                 "deduplicate_or_rename_records",
                 false,
             ),
-            "duplicate_first_token_ids" => push_routing_hint(
-                &mut hints,
-                "index_readiness_failure",
-                "rename_records_before_indexing",
-                false,
-            ),
-            "unsafe_ids" | "long_headers" | "reserved_header_chars" => push_routing_hint(
-                &mut hints,
-                "header_compatibility_warning",
-                "review_headers_before_database_or_submission",
-                false,
-            ),
+            "duplicate_first_token_ids" => {
+                push_routing_hint(
+                    &mut hints,
+                    "index_readiness_failure",
+                    "rename_records_before_indexing",
+                    false,
+                );
+                push_routing_hint(
+                    &mut hints,
+                    "submission_readiness_failure",
+                    "fix_fasta_before_official_validation",
+                    false,
+                );
+            }
+            "unsafe_ids" | "long_headers" | "reserved_header_chars" => {
+                push_routing_hint(
+                    &mut hints,
+                    "header_compatibility_warning",
+                    "review_headers_before_database_or_submission",
+                    false,
+                );
+                push_routing_hint(
+                    &mut hints,
+                    "submission_readiness_failure",
+                    "fix_fasta_before_official_validation",
+                    false,
+                );
+            }
             "invalid_chars" | "invalid_fasta_structure" => push_routing_hint(
                 &mut hints,
                 "validity_failure",
@@ -828,7 +844,39 @@ fn recommended_next_tools(status: VerdictStatus, findings: &[Finding]) -> Vec<Re
         }
     }
 
+    if has_any_finding(
+        findings,
+        &[
+            "unsafe_ids",
+            "long_headers",
+            "reserved_header_chars",
+            "duplicate_first_token_ids",
+            "terminal_ns",
+            "gap_pattern_warnings",
+        ],
+    ) {
+        push_tool(
+            &mut tools,
+            "official submission validator",
+            "Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator.",
+        );
+    }
+
+    if has_any_finding(findings, &["high_n_rate", "gap_runs"]) {
+        push_tool(
+            &mut tools,
+            "NCBI FCS",
+            "Run database-backed contamination/adaptor screening when submission-oriented ambiguity or gap signals need follow-up.",
+        );
+    }
+
     tools
+}
+
+fn has_any_finding(findings: &[Finding], ids: &[&str]) -> bool {
+    findings
+        .iter()
+        .any(|finding| ids.contains(&finding.id.as_str()))
 }
 
 fn push_tool(tools: &mut Vec<RecommendedTool>, tool: &str, reason: &str) {
@@ -851,12 +899,16 @@ fn fasta_preflight_scope() -> Scope {
             "invalid sequence symbols".to_string(),
             "basic structural statistics".to_string(),
             "sequence composition red flags".to_string(),
+            "FASTA-level submission readiness".to_string(),
         ],
         cannot_conclude: vec![
             "biological completeness".to_string(),
             "taxonomic contamination".to_string(),
             "whole-assembly accuracy".to_string(),
             "misassembly status without alignment evidence".to_string(),
+            "repository acceptance".to_string(),
+            "official validator acceptance".to_string(),
+            "annotation correctness".to_string(),
         ],
     }
 }

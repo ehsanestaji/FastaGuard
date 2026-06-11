@@ -136,6 +136,14 @@
       {
         "tool": "BlobToolKit",
         "reason": "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review."
+      },
+      {
+        "tool": "official submission validator",
+        "reason": "Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator."
+      },
+      {
+        "tool": "NCBI FCS",
+        "reason": "Run database-backed contamination/adaptor screening when submission-oriented ambiguity or gap signals need follow-up."
       }
     ],
     "routing_hints": [
@@ -147,6 +155,11 @@
       {
         "condition": "index_readiness_failure",
         "suggested_route": "rename_records_before_indexing",
+        "requires_external_database": false
+      },
+      {
+        "condition": "submission_readiness_failure",
+        "suggested_route": "fix_fasta_before_official_validation",
         "requires_external_database": false
       },
       {
@@ -188,13 +201,17 @@
       "duplicate identifiers",
       "invalid sequence symbols",
       "basic structural statistics",
-      "sequence composition red flags"
+      "sequence composition red flags",
+      "FASTA-level submission readiness"
     ],
     "cannot_conclude": [
       "biological completeness",
       "taxonomic contamination",
       "whole-assembly accuracy",
-      "misassembly status without alignment evidence"
+      "misassembly status without alignment evidence",
+      "repository acceptance",
+      "official validator acceptance",
+      "annotation correctness"
     ]
   },
   "provenance": {

@@ -1248,6 +1248,14 @@ fn submission_target_ncbi_is_serialized_when_requested() {
     let report = read_json(&outputs.json);
     assert_eq!(report["gate"]["submission_target"], json!("ncbi"));
     assert_eq!(report["provenance"]["submission_target"], json!("ncbi"));
+    assert!(array_contains_string(
+        &report["scope"]["can_conclude"],
+        "FASTA-level submission readiness"
+    ));
+    assert!(array_contains_string(
+        &report["scope"]["cannot_conclude"],
+        "repository acceptance"
+    ));
 }
 
 #[test]
@@ -1298,6 +1306,43 @@ fn submission_gate_fails_identifier_hazards() {
         .unwrap();
     assert_eq!(submission_readiness["target"], json!("ncbi"));
     assert_eq!(submission_readiness["status"], json!("FAIL"));
+}
+
+#[test]
+fn submission_identifier_hazards_route_to_official_validators_without_claiming_results() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_routes");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/submission_ids.fa",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ncbi",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2);
+
+    let report = read_json(&outputs.json);
+    assert_routing_hint(
+        &report,
+        "submission_readiness_failure",
+        "fix_fasta_before_official_validation",
+        false,
+    );
+    assert!(array_contains_tool(
+        &report["machine_summary"]["recommended_next_tools"],
+        "official submission validator"
+    ));
 }
 
 #[test]

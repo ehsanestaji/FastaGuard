@@ -92,7 +92,8 @@
       ],
       "readiness_blockers": [],
       "recommended_next_tools": [
-        "seqkit"
+        "seqkit",
+        "official submission validator"
       ],
       "input_sha256": "373699c0422b364607fc6879c46c053c105413c81df9403998d3d26a7122d2e8"
     },
@@ -202,7 +203,9 @@
       "recommended_next_tools": [
         "seqkit",
         "QUAST",
-        "BlobToolKit"
+        "BlobToolKit",
+        "official submission validator",
+        "NCBI FCS"
       ],
       "input_sha256": "4b8551daeda739b62c8e7aaa1ebf300e4118167ca582c51eeccfa1549c96f0a5"
     }

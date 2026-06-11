@@ -108,13 +108,17 @@
       "duplicate identifiers",
       "invalid sequence symbols",
       "basic structural statistics",
-      "sequence composition red flags"
+      "sequence composition red flags",
+      "FASTA-level submission readiness"
     ],
     "cannot_conclude": [
       "biological completeness",
       "taxonomic contamination",
       "whole-assembly accuracy",
-      "misassembly status without alignment evidence"
+      "misassembly status without alignment evidence",
+      "repository acceptance",
+      "official validator acceptance",
+      "annotation correctness"
     ]
   },
   "provenance": {

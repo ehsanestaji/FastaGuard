@@ -88,6 +88,10 @@
       {
         "tool": "seqkit",
         "reason": "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review."
+      },
+      {
+        "tool": "official submission validator",
+        "reason": "Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator."
       }
     ],
     "routing_hints": [
@@ -105,13 +109,17 @@
       "duplicate identifiers",
       "invalid sequence symbols",
       "basic structural statistics",
-      "sequence composition red flags"
+      "sequence composition red flags",
+      "FASTA-level submission readiness"
     ],
     "cannot_conclude": [
       "biological completeness",
       "taxonomic contamination",
       "whole-assembly accuracy",
-      "misassembly status without alignment evidence"
+      "misassembly status without alignment evidence",
+      "repository acceptance",
+      "official validator acceptance",
+      "annotation correctness"
     ]
   },
   "provenance": {
