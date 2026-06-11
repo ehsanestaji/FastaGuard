@@ -1346,6 +1346,53 @@ fn submission_identifier_hazards_route_to_official_validators_without_claiming_r
 }
 
 #[test]
+fn submission_gate_outputs_tsv_multiqc_and_html_fields() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_outputs");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/submission_ids.fa",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ncbi",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2);
+
+    let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
+    assert!(tsv.contains("submission_target\tncbi\n"), "{tsv}");
+    assert!(tsv.contains("submission_status\tFAIL\n"), "{tsv}");
+    assert!(tsv.contains("unsafe_identifier_count\t"), "{tsv}");
+
+    let multiqc = read_json(&outputs.multiqc);
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_target"],
+        json!("ncbi")
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_status"],
+        json!("FAIL")
+    );
+
+    let html = std::fs::read_to_string(&outputs.html).unwrap();
+    assert!(html.contains("Submission Readiness"), "{html}");
+    assert!(
+        html.contains("Official validators are still required"),
+        "{html}"
+    );
+}
+
+#[test]
 fn unknown_submission_target_is_cli_error() {
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     cmd.args([

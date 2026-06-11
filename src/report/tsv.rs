@@ -51,6 +51,48 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
             readiness_status(category.status),
         )?;
     }
+    write_metric(
+        &mut writer,
+        "submission_target",
+        report
+            .gate
+            .submission_target
+            .map(crate::submission::SubmissionTarget::as_str)
+            .unwrap_or("."),
+    )?;
+    write_metric(&mut writer, "submission_status", submission_status(report))?;
+    let (submission_blocking_findings, submission_advisory_findings) =
+        submission_finding_partitions(report);
+    write_metric(
+        &mut writer,
+        "submission_blocking_findings",
+        submission_blocking_findings.join(","),
+    )?;
+    write_metric(
+        &mut writer,
+        "submission_advisory_findings",
+        submission_advisory_findings.join(","),
+    )?;
+    write_metric(
+        &mut writer,
+        "unsafe_identifier_count",
+        report.summary.unsafe_id_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "long_identifier_count",
+        report.summary.long_header_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "submission_duplicate_first_token_id_count",
+        report.summary.duplicate_first_token_id_count,
+    )?;
+    write_metric(
+        &mut writer,
+        "gap_like_n_run_count",
+        report.summary.repeated_gap_pattern_sequence_count,
+    )?;
     write_metric(&mut writer, "input_sha256", &report.provenance.input_sha256)?;
 
     write_metric(&mut writer, "sequence_count", report.summary.sequence_count)?;
@@ -193,6 +235,42 @@ fn readiness_status(status: crate::readiness::ReadinessStatus) -> &'static str {
     }
 }
 
+fn submission_status(report: &FastaguardReport) -> &'static str {
+    report
+        .readiness
+        .category("submission")
+        .map(|category| readiness_status(category.status))
+        .unwrap_or("PASS")
+}
+
+fn submission_finding_partitions(report: &FastaguardReport) -> (Vec<String>, Vec<String>) {
+    let Some(category) = report.readiness.category("submission") else {
+        return (Vec::new(), Vec::new());
+    };
+    let submission_blockers: Vec<&str> = report
+        .readiness
+        .overall
+        .blockers
+        .iter()
+        .filter_map(|blocker| blocker.strip_prefix("submission."))
+        .collect();
+
+    let mut blocking = Vec::new();
+    let mut advisory = Vec::new();
+    for finding_id in &category.findings {
+        if submission_blockers
+            .iter()
+            .any(|blocker| *blocker == finding_id.as_str())
+        {
+            blocking.push(finding_id.clone());
+        } else {
+            advisory.push(finding_id.clone());
+        }
+    }
+
+    (blocking, advisory)
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -313,6 +391,107 @@ mod tests {
         );
         assert!(output.contains("max_gap_run\t12\n"), "{output}");
         assert!(output.contains("ungapped_total_length\t94\n"), "{output}");
+    }
+
+    #[test]
+    fn writes_submission_output_rows() {
+        let mut report = test_report(VerdictStatus::Fail);
+        report.gate.mode = "submission".to_string();
+        report.gate.submission_target = Some(crate::submission::SubmissionTarget::Ncbi);
+        report.gate.status = VerdictStatus::Fail;
+        report.gate.blocking_findings = vec!["unsafe_ids".to_string()];
+        report.gate.advisory_findings = vec!["tiny_contigs".to_string()];
+        report.summary.unsafe_id_count = 2;
+        report.summary.long_header_count = 3;
+        report.summary.duplicate_first_token_id_count = 4;
+        report.summary.repeated_gap_pattern_sequence_count = 5;
+        report.readiness = crate::readiness::build_readiness(
+            VerdictStatus::Fail,
+            &report.gate.blocking_findings,
+            &[
+                test_finding("unsafe_ids", 2),
+                test_finding("tiny_contigs", 1),
+            ],
+            crate::readiness::ReadinessScope::Single,
+            report.gate.submission_target,
+        );
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(output.contains("submission_target\tncbi\n"), "{output}");
+        assert!(output.contains("submission_status\tFAIL\n"), "{output}");
+        assert!(
+            output.contains("submission_blocking_findings\tunsafe_ids\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("submission_advisory_findings\ttiny_contigs\n"),
+            "{output}"
+        );
+        assert!(output.contains("unsafe_identifier_count\t2\n"), "{output}");
+        assert!(output.contains("long_identifier_count\t3\n"), "{output}");
+        assert!(
+            output.contains("submission_duplicate_first_token_id_count\t4\n"),
+            "{output}"
+        );
+        assert!(output.contains("gap_like_n_run_count\t5\n"), "{output}");
+    }
+
+    #[test]
+    fn submission_findings_are_partitioned_from_readiness_category() {
+        let mut report = test_report(VerdictStatus::Fail);
+        report.gate.mode = "pipeline".to_string();
+        report.gate.status = VerdictStatus::Fail;
+        report.gate.blocking_findings = vec!["invalid_chars".to_string()];
+        report.gate.advisory_findings = vec!["terminal_ns".to_string()];
+        report.readiness = crate::readiness::build_readiness(
+            VerdictStatus::Warn,
+            &[],
+            &[test_finding("terminal_ns", 1)],
+            crate::readiness::ReadinessScope::Single,
+            None,
+        );
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(
+            !output.contains("submission_blocking_findings\tinvalid_chars\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("submission_blocking_findings\t.\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("submission_advisory_findings\tterminal_ns\n"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn submission_findings_are_empty_without_submission_category() {
+        let mut report = test_report(VerdictStatus::Fail);
+        report
+            .readiness
+            .categories
+            .retain(|category| category.id != "submission");
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(
+            output.contains("submission_blocking_findings\t.\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("submission_advisory_findings\t.\n"),
+            "{output}"
+        );
     }
 
     #[test]
