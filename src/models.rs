@@ -14,6 +14,7 @@ use crate::metrics::AssemblyMetrics;
 use crate::profile::ProfileConfig;
 use crate::readiness::{self, ReadinessReport, ReadinessScope};
 use crate::stats::composition::percent;
+use crate::submission::SubmissionTarget;
 
 pub const SCHEMA_VERSION: &str = "0.4.0";
 pub const TOOL_NAME: &str = "FastaGuard";
@@ -121,6 +122,8 @@ pub struct Verdict {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GateDecision {
     pub mode: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub submission_target: Option<SubmissionTarget>,
     pub status: VerdictStatus,
     pub blocking_findings: Vec<String>,
     pub advisory_findings: Vec<String>,
@@ -159,6 +162,8 @@ pub struct Scope {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Provenance {
     pub profile: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub submission_target: Option<SubmissionTarget>,
     pub threads: usize,
     pub fail_on: Vec<String>,
     pub thresholds: ProvenanceThresholds,
@@ -341,12 +346,13 @@ impl FastaguardReport {
         let findings = analysis.findings;
         let plots = build_plots(&metrics, profile);
         let provenance = build_provenance(&config, profile, duration_ms)?;
-        let gate = gate::decision(
+        let mut gate = gate::decision(
             config.gate_mode,
             analysis.status,
             &findings,
             &config.rules.fail_on,
         );
+        gate.submission_target = config.submission_target;
         let readiness = readiness::build_readiness(
             analysis.status,
             &gate.blocking_findings,
@@ -438,12 +444,13 @@ impl FastaguardReport {
             actions: finding_actions("invalid_fasta_structure"),
         }];
         let provenance = build_provenance(&config, profile, duration_ms)?;
-        let gate = gate::decision(
+        let mut gate = gate::decision(
             config.gate_mode,
             VerdictStatus::Fail,
             &findings,
             &config.rules.fail_on,
         );
+        gate.submission_target = config.submission_target;
         let readiness = readiness::build_readiness(
             VerdictStatus::Fail,
             &gate.blocking_findings,
@@ -873,6 +880,7 @@ fn build_provenance(
 
     Ok(Provenance {
         profile: profile.name.clone(),
+        submission_target: config.submission_target,
         threads: config.threads,
         fail_on: config.rules.fail_on.iter().cloned().collect(),
         thresholds: ProvenanceThresholds {
@@ -1061,6 +1069,7 @@ mod tests {
             input,
             profile: "assembly".to_string(),
             gate_mode: GateMode::None,
+            submission_target: None,
             outputs: OutputPaths {
                 html: PathBuf::from("fastaguard_report.html"),
                 json: PathBuf::from("fastaguard.json"),

@@ -225,6 +225,7 @@ mod tests {
             },
             gate: GateDecision {
                 mode: "none".to_string(),
+                submission_target: None,
                 status: VerdictStatus::Pass,
                 blocking_findings: Vec::new(),
                 advisory_findings: Vec::new(),
@@ -250,6 +251,7 @@ mod tests {
             },
             provenance: Provenance {
                 profile: "assembly".to_string(),
+                submission_target: None,
                 threads: 1,
                 fail_on: Vec::new(),
                 thresholds: ProvenanceThresholds {

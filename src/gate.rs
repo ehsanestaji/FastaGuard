@@ -18,6 +18,7 @@ pub const PIPELINE_FAIL_ON: &[&str] = &[
 pub enum GateMode {
     None,
     Pipeline,
+    Submission,
 }
 
 impl GateMode {
@@ -25,6 +26,7 @@ impl GateMode {
         match self {
             GateMode::None => "none",
             GateMode::Pipeline => "pipeline",
+            GateMode::Submission => "submission",
         }
     }
 }
@@ -64,6 +66,7 @@ pub fn decision(
 
     GateDecision {
         mode: mode.as_str().to_string(),
+        submission_target: None,
         status,
         blocking_findings,
         advisory_findings,

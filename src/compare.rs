@@ -59,6 +59,7 @@ fn run_one_sample(config: &CompareConfig, input: &Path) -> Result<FastaguardRepo
             input: input.to_path_buf(),
             profile: config.profile.clone(),
             gate_mode: config.gate_mode,
+            submission_target: config.submission_target,
             outputs: config.outputs.clone(),
             rules: config.rules.clone(),
             thresholds: config.thresholds,

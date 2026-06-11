@@ -1187,6 +1187,84 @@ fn invalid_provenance_timestamp_override_is_tool_error() {
         ));
 }
 
+#[test]
+fn submission_gate_defaults_to_generic_target() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_default");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--min-contig-length",
+        "1",
+        "--gate",
+        "submission",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(1)
+    .stderr(predicate::str::is_empty());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["gate"]["mode"], json!("submission"));
+    assert_eq!(report["gate"]["submission_target"], json!("generic"));
+    assert_eq!(report["provenance"]["submission_target"], json!("generic"));
+}
+
+#[test]
+fn submission_target_ncbi_is_serialized_when_requested() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_ncbi");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--min-contig-length",
+        "1",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ncbi",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(1)
+    .stderr(predicate::str::is_empty());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["gate"]["submission_target"], json!("ncbi"));
+    assert_eq!(report["provenance"]["submission_target"], json!("ncbi"));
+}
+
+#[test]
+fn unknown_submission_target_is_cli_error() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ena",
+    ])
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("invalid value 'ena'"));
+}
+
 struct OutputPaths {
     html: std::path::PathBuf,
     json: std::path::PathBuf,

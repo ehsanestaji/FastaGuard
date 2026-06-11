@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 
 use crate::gate::{self, GateMode};
 use crate::profile::ThresholdOverrides;
+use crate::submission::SubmissionTarget;
 
 #[derive(Debug, Parser)]
 #[command(name = "fastaguard")]
@@ -86,6 +87,10 @@ pub struct AnalysisArgs {
     #[arg(long, value_enum, default_value_t = GateMode::None)]
     pub gate: GateMode,
 
+    /// Submission-readiness target to record; defaults to generic with --gate submission.
+    #[arg(long, value_enum)]
+    pub submission_target: Option<SubmissionTarget>,
+
     /// Comma-separated rule IDs that should fail the run when triggered.
     #[arg(long, value_delimiter = ',')]
     pub fail_on: Vec<String>,
@@ -161,6 +166,7 @@ pub struct RunConfig {
     pub input: PathBuf,
     pub profile: String,
     pub gate_mode: GateMode,
+    pub submission_target: Option<SubmissionTarget>,
     pub outputs: OutputPaths,
     pub rules: RuleConfig,
     pub thresholds: ThresholdOverrides,
@@ -175,6 +181,7 @@ pub struct CompareConfig {
     pub inputs: Vec<PathBuf>,
     pub profile: String,
     pub gate_mode: GateMode,
+    pub submission_target: Option<SubmissionTarget>,
     pub outputs: OutputPaths,
     pub rules: RuleConfig,
     pub thresholds: ThresholdOverrides,
@@ -201,6 +208,7 @@ pub struct RuleConfig {
 struct ValidatedAnalysis {
     profile: String,
     gate_mode: GateMode,
+    submission_target: Option<SubmissionTarget>,
     rules: RuleConfig,
     thresholds: ThresholdOverrides,
     threads: usize,
@@ -280,6 +288,7 @@ const ROOT_RUN_ARG_IDS: &[&str] = &[
     "input",
     "profile",
     "gate",
+    "submission_target",
     "fail_on",
     "max_n_rate",
     "min_contig_length",
@@ -338,6 +347,7 @@ impl RunArgs {
             input,
             profile: analysis.profile,
             gate_mode: analysis.gate_mode,
+            submission_target: analysis.submission_target,
             outputs: self.outputs.output_paths(),
             rules: analysis.rules,
             thresholds: analysis.thresholds,
@@ -364,6 +374,7 @@ impl CompareArgs {
             inputs: self.inputs.clone(),
             profile: analysis.profile,
             gate_mode: analysis.gate_mode,
+            submission_target: analysis.submission_target,
             outputs: self.outputs.output_paths(),
             rules: analysis.rules,
             thresholds: analysis.thresholds,
@@ -381,6 +392,7 @@ impl AnalysisArgs {
     fn has_overrides(&self) -> bool {
         self.profile != "assembly"
             || self.gate != GateMode::None
+            || self.submission_target.is_some()
             || !self.fail_on.is_empty()
             || self.max_n_rate.is_some()
             || self.min_contig_length.is_some()
@@ -416,10 +428,15 @@ impl AnalysisArgs {
             .as_deref()
             .map(parse_expected_size)
             .transpose()?;
+        let submission_target = match (self.gate, self.submission_target) {
+            (GateMode::Submission, None) => Some(SubmissionTarget::Generic),
+            (_, target) => target,
+        };
 
         Ok(ValidatedAnalysis {
             profile: self.profile.clone(),
             gate_mode: self.gate,
+            submission_target,
             rules: RuleConfig {
                 fail_on: gate::final_fail_on(self.gate, &self.fail_on),
             },
@@ -540,6 +557,7 @@ mod tests {
                 analysis: AnalysisArgs {
                     profile: "assembly".to_string(),
                     gate: GateMode::None,
+                    submission_target: None,
                     fail_on: Vec::new(),
                     max_n_rate,
                     min_contig_length: None,
