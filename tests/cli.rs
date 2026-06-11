@@ -1393,6 +1393,101 @@ fn submission_gate_outputs_tsv_multiqc_and_html_fields() {
 }
 
 #[test]
+fn compare_submission_gate_aggregates_submission_status() {
+    let temp_dir = TempDir::new().unwrap();
+    let clean = temp_dir.path().join("clean.fa");
+    std::fs::write(&clean, format!(">clean\n{}\n", "ACGT".repeat(60))).unwrap();
+    let outputs = output_paths(&temp_dir, "submission_compare");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("compare")
+        .arg(&clean)
+        .arg("testdata/submission_ids.fa")
+        .args([
+            "--gate",
+            "submission",
+            "--submission-target",
+            "ncbi",
+            "--json",
+        ])
+        .arg(&outputs.json)
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .code(2);
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["summary"]["submission_fail_count"], json!(1));
+    assert_eq!(report["summary"]["submission_ready_count"], json!(1));
+    let failing = report["samples"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|sample| sample["sample_id"] == "submission_ids")
+        .unwrap();
+    assert_eq!(failing["submission_target"], json!("ncbi"));
+    assert_eq!(failing["submission_status"], json!("FAIL"));
+
+    let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
+    let mut tsv_lines = tsv.lines();
+    let headers = tsv_lines.next().unwrap().split('\t').collect::<Vec<_>>();
+    let failing_row = tsv_lines
+        .map(|line| line.split('\t').collect::<Vec<_>>())
+        .find(|row| row[0] == "submission_ids")
+        .unwrap();
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_target"),
+        "ncbi"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_status"),
+        "FAIL"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_ready_count"),
+        "1"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_warn_count"),
+        "0"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_fail_count"),
+        "1"
+    );
+
+    let multiqc = read_json(&outputs.multiqc);
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_status"],
+        json!("FAIL")
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_ready_count"],
+        json!(1)
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_warn_count"],
+        json!(0)
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_fail_count"],
+        json!(1)
+    );
+}
+
+fn tsv_value<'a>(headers: &[&str], row: &'a [&str], name: &str) -> &'a str {
+    let index = headers
+        .iter()
+        .position(|header| *header == name)
+        .unwrap_or_else(|| panic!("missing TSV column {name}"));
+    row[index]
+}
+
+#[test]
 fn unknown_submission_target_is_cli_error() {
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     cmd.args([

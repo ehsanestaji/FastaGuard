@@ -62,6 +62,9 @@ pub struct CompareSummary {
     pub pass_count: u64,
     pub warn_count: u64,
     pub fail_count: u64,
+    pub submission_ready_count: u64,
+    pub submission_warn_count: u64,
+    pub submission_fail_count: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,6 +74,8 @@ pub struct CompareSample {
     pub verdict: VerdictStatus,
     pub gate_status: VerdictStatus,
     pub readiness_status: crate::readiness::ReadinessStatus,
+    pub submission_target: Option<String>,
+    pub submission_status: crate::readiness::ReadinessStatus,
     pub readiness_categories: Vec<crate::readiness::ReadinessCategory>,
     pub sequence_count: u64,
     pub total_length: u64,

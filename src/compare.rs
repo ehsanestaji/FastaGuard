@@ -73,12 +73,24 @@ fn run_one_sample(config: &CompareConfig, input: &Path) -> Result<FastaguardRepo
 }
 
 fn compare_sample(input: &Path, report: &FastaguardReport) -> CompareSample {
+    let submission_status = report
+        .readiness
+        .category("submission")
+        .map(|category| category.status)
+        .unwrap_or(crate::readiness::ReadinessStatus::Pass);
+
     CompareSample {
         sample_id: sample_id(input),
         input_path: report.input.path.clone(),
         verdict: report.verdict.status,
         gate_status: report.gate.status,
         readiness_status: report.readiness.overall.status,
+        submission_target: report
+            .gate
+            .submission_target
+            .map(crate::submission::SubmissionTarget::as_str)
+            .map(ToOwned::to_owned),
+        submission_status,
         readiness_categories: report.readiness.categories.clone(),
         sequence_count: report.summary.sequence_count,
         total_length: report.summary.total_length,
@@ -116,6 +128,18 @@ fn compare_summary(samples: &[CompareSample]) -> CompareSummary {
         pass_count: count_status(samples, VerdictStatus::Pass),
         warn_count: count_status(samples, VerdictStatus::Warn),
         fail_count: count_status(samples, VerdictStatus::Fail),
+        submission_ready_count: count_readiness_status(
+            samples,
+            crate::readiness::ReadinessStatus::Pass,
+        ),
+        submission_warn_count: count_readiness_status(
+            samples,
+            crate::readiness::ReadinessStatus::Warn,
+        ),
+        submission_fail_count: count_readiness_status(
+            samples,
+            crate::readiness::ReadinessStatus::Fail,
+        ),
     }
 }
 
@@ -182,6 +206,18 @@ fn count_status(samples: &[CompareSample], status: VerdictStatus) -> u64 {
         samples
             .iter()
             .filter(|sample| sample.gate_status == status)
+            .count(),
+    )
+}
+
+fn count_readiness_status(
+    samples: &[CompareSample],
+    status: crate::readiness::ReadinessStatus,
+) -> u64 {
+    usize_to_u64(
+        samples
+            .iter()
+            .filter(|sample| sample.submission_status == status)
             .count(),
     )
 }
@@ -307,6 +343,8 @@ mod tests {
             verdict: VerdictStatus::Pass,
             gate_status: VerdictStatus::Pass,
             readiness_status: crate::readiness::ReadinessStatus::Pass,
+            submission_target: None,
+            submission_status: crate::readiness::ReadinessStatus::Pass,
             readiness_categories: crate::readiness::build_readiness(
                 VerdictStatus::Pass,
                 &[],
