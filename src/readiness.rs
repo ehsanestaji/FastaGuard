@@ -44,7 +44,6 @@ pub struct ReadinessOverall {
 pub struct ReadinessCategory {
     pub id: String,
     pub label: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     pub status: ReadinessStatus,
     pub findings: Vec<String>,

@@ -61,6 +61,22 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <ul><li>terminal_ns</li></ul>
 </section>
 </div>
+<h2>Submission Readiness</h2>
+<div class="grid">
+<section class="panel">
+<h3>Target</h3>
+<p>.</p>
+</section>
+<section class="panel">
+<h3>Status</h3>
+<p>WARN</p>
+</section>
+<section class="panel">
+<h3>Findings</h3>
+<ul><li>terminal_ns</li></ul>
+</section>
+</div>
+<p class="muted">Official validators are still required. FastaGuard reports FASTA-level preflight risks only.</p>
 <section>
 <h2>Readiness</h2>
 <p><span class="label">Overall:</span> WARN</p>
@@ -78,7 +94,8 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <h3>Recommended Next Tools</h3>
 <table>
 <thead><tr><th>Tool</th><th>Reason</th></tr></thead>
-<tbody><tr><td>seqkit</td><td>Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.</td></tr></tbody>
+<tbody><tr><td>seqkit</td><td>Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.</td></tr>
+<tr><td>official submission validator</td><td>Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator.</td></tr></tbody>
 </table>
 </section>
 </div>
@@ -102,14 +119,18 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <li>duplicate identifiers</li>
 <li>invalid sequence symbols</li>
 <li>basic structural statistics</li>
-<li>sequence composition red flags</li></ul>
+<li>sequence composition red flags</li>
+<li>FASTA-level submission readiness</li></ul>
 </section>
 <section class="panel">
 <h3>Cannot Conclude</h3>
 <ul><li>biological completeness</li>
 <li>taxonomic contamination</li>
 <li>whole-assembly accuracy</li>
-<li>misassembly status without alignment evidence</li></ul>
+<li>misassembly status without alignment evidence</li>
+<li>repository acceptance</li>
+<li>official validator acceptance</li>
+<li>annotation correctness</li></ul>
 </section>
 </div>
 <h2>Plots</h2>
@@ -177,10 +198,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </section>
 <h2>JSON</h2>
 <pre>{
-  &quot;schema_version&quot;: &quot;0.4.0&quot;,
+  &quot;schema_version&quot;: &quot;0.5.0&quot;,
   &quot;tool&quot;: {
     &quot;name&quot;: &quot;FastaGuard&quot;,
-    &quot;version&quot;: &quot;0.4.0&quot;
+    &quot;version&quot;: &quot;0.5.0&quot;
   },
   &quot;input&quot;: {
     &quot;path&quot;: &quot;testdata/valid_assembly.fa&quot;,
@@ -195,6 +216,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
   },
   &quot;gate&quot;: {
     &quot;mode&quot;: &quot;none&quot;,
+    &quot;submission_target&quot;: null,
     &quot;status&quot;: &quot;WARN&quot;,
     &quot;blocking_findings&quot;: [],
     &quot;advisory_findings&quot;: [
@@ -211,30 +233,35 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;id&quot;: &quot;file&quot;,
         &quot;label&quot;: &quot;File readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;PASS&quot;,
         &quot;findings&quot;: []
       },
       {
         &quot;id&quot;: &quot;structure&quot;,
         &quot;label&quot;: &quot;Structure readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;PASS&quot;,
         &quot;findings&quot;: []
       },
       {
         &quot;id&quot;: &quot;alphabet&quot;,
         &quot;label&quot;: &quot;Alphabet readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;PASS&quot;,
         &quot;findings&quot;: []
       },
       {
         &quot;id&quot;: &quot;index&quot;,
         &quot;label&quot;: &quot;Index readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;PASS&quot;,
         &quot;findings&quot;: []
       },
       {
         &quot;id&quot;: &quot;assembly&quot;,
         &quot;label&quot;: &quot;Assembly readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;WARN&quot;,
         &quot;findings&quot;: [
           &quot;terminal_ns&quot;
@@ -243,6 +270,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;id&quot;: &quot;submission&quot;,
         &quot;label&quot;: &quot;Submission readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;WARN&quot;,
         &quot;findings&quot;: [
           &quot;terminal_ns&quot;
@@ -251,6 +279,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;id&quot;: &quot;machine&quot;,
         &quot;label&quot;: &quot;Machine readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;PASS&quot;,
         &quot;findings&quot;: []
       }
@@ -266,6 +295,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;tool&quot;: &quot;seqkit&quot;,
         &quot;reason&quot;: &quot;Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review.&quot;
+      },
+      {
+        &quot;tool&quot;: &quot;official submission validator&quot;,
+        &quot;reason&quot;: &quot;Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator.&quot;
       }
     ],
     &quot;routing_hints&quot;: [
@@ -283,17 +316,22 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       &quot;duplicate identifiers&quot;,
       &quot;invalid sequence symbols&quot;,
       &quot;basic structural statistics&quot;,
-      &quot;sequence composition red flags&quot;
+      &quot;sequence composition red flags&quot;,
+      &quot;FASTA-level submission readiness&quot;
     ],
     &quot;cannot_conclude&quot;: [
       &quot;biological completeness&quot;,
       &quot;taxonomic contamination&quot;,
       &quot;whole-assembly accuracy&quot;,
-      &quot;misassembly status without alignment evidence&quot;
+      &quot;misassembly status without alignment evidence&quot;,
+      &quot;repository acceptance&quot;,
+      &quot;official validator acceptance&quot;,
+      &quot;annotation correctness&quot;
     ]
   },
   &quot;provenance&quot;: {
     &quot;profile&quot;: &quot;assembly&quot;,
+    &quot;submission_target&quot;: null,
     &quot;threads&quot;: 1,
     &quot;fail_on&quot;: [],
     &quot;thresholds&quot;: {

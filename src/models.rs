@@ -16,7 +16,7 @@ use crate::readiness::{self, ReadinessReport, ReadinessScope};
 use crate::stats::composition::percent;
 use crate::submission::SubmissionTarget;
 
-pub const SCHEMA_VERSION: &str = "0.4.0";
+pub const SCHEMA_VERSION: &str = "0.5.0";
 pub const TOOL_NAME: &str = "FastaGuard";
 pub const TOOL_VERSION: &str = env!("CARGO_PKG_VERSION");
 const LENGTH_HISTOGRAM_BIN_COUNT: u64 = 10;
@@ -127,7 +127,6 @@ pub struct Verdict {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GateDecision {
     pub mode: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub submission_target: Option<SubmissionTarget>,
     pub status: VerdictStatus,
     pub blocking_findings: Vec<String>,
@@ -167,7 +166,6 @@ pub struct Scope {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Provenance {
     pub profile: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub submission_target: Option<SubmissionTarget>,
     pub threads: usize,
     pub fail_on: Vec<String>,

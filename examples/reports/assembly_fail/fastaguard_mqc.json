@@ -7,11 +7,29 @@
     "id": "fastaguard_summary",
     "title": "FastaGuard FASTA preflight summary",
     "headers": {
+      "duplicate_first_token_id_count": {
+        "title": "Duplicate First-Token IDs"
+      },
+      "gap_like_n_run_count": {
+        "title": "Gap-Like N Runs"
+      },
+      "long_identifier_count": {
+        "title": "Long Headers"
+      },
       "readiness_blockers": {
         "title": "Readiness blockers"
       },
       "readiness_status": {
         "title": "Readiness"
+      },
+      "submission_status": {
+        "title": "Submission Status"
+      },
+      "submission_target": {
+        "title": "Submission Target"
+      },
+      "unsafe_identifier_count": {
+        "title": "Unsafe IDs"
       }
     }
   },
@@ -22,7 +40,13 @@
       "gate_status": "FAIL",
       "gate_blocking_findings": "duplicate_ids,duplicate_first_token_ids,invalid_chars",
       "readiness_status": "FAIL",
-      "readiness_blockers": "index.duplicate_ids,index.duplicate_first_token_ids,alphabet.invalid_chars",
+      "readiness_blockers": "index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars",
+      "submission_target": ".",
+      "submission_status": "FAIL",
+      "unsafe_identifier_count": 0,
+      "long_identifier_count": 0,
+      "duplicate_first_token_id_count": 1,
+      "gap_like_n_run_count": 0,
       "sequence_count": 5,
       "total_length": 145,
       "n50": 110,

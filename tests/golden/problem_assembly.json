@@ -1,8 +1,8 @@
 {
-  "schema_version": "0.4.0",
+  "schema_version": "0.5.0",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "input": {
     "path": "testdata/problem_assembly.fa",
@@ -19,6 +19,7 @@
   },
   "gate": {
     "mode": "none",
+    "submission_target": null,
     "status": "FAIL",
     "blocking_findings": [
       "duplicate_ids",
@@ -50,18 +51,21 @@
       {
         "id": "file",
         "label": "File readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "structure",
         "label": "Structure readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "alphabet",
         "label": "Alphabet readiness",
+        "target": null,
         "status": "FAIL",
         "findings": [
           "invalid_chars"
@@ -70,6 +74,7 @@
       {
         "id": "index",
         "label": "Index readiness",
+        "target": null,
         "status": "FAIL",
         "findings": [
           "duplicate_ids",
@@ -79,6 +84,7 @@
       {
         "id": "assembly",
         "label": "Assembly readiness",
+        "target": null,
         "status": "WARN",
         "findings": [
           "high_n_rate",
@@ -92,6 +98,7 @@
       {
         "id": "submission",
         "label": "Submission readiness",
+        "target": null,
         "status": "FAIL",
         "findings": [
           "duplicate_ids",
@@ -105,6 +112,7 @@
       {
         "id": "machine",
         "label": "Machine readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       }
@@ -216,6 +224,7 @@
   },
   "provenance": {
     "profile": "assembly",
+    "submission_target": null,
     "threads": 1,
     "fail_on": [],
     "thresholds": {

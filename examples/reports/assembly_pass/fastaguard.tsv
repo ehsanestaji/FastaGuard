@@ -1,5 +1,5 @@
 metric	value
-schema_version	0.4.0
+schema_version	0.5.0
 profile	assembly
 verdict	WARN
 gate_mode	none
@@ -15,6 +15,14 @@ readiness_index_status	PASS
 readiness_assembly_status	WARN
 readiness_submission_status	WARN
 readiness_machine_status	PASS
+submission_target	.
+submission_status	WARN
+submission_blocking_findings	.
+submission_advisory_findings	terminal_ns
+unsafe_identifier_count	0
+long_identifier_count	0
+submission_duplicate_first_token_id_count	0
+gap_like_n_run_count	0
 input_sha256	373699c0422b364607fc6879c46c053c105413c81df9403998d3d26a7122d2e8
 sequence_count	3
 total_length	47

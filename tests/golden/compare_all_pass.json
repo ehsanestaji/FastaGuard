@@ -1,9 +1,9 @@
 {
-  "schema_version": "0.4.0",
+  "schema_version": "0.5.0",
   "report_type": "compare",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "input": {
     "profile": "assembly",
@@ -13,7 +13,10 @@
     "sample_count": 2,
     "pass_count": 2,
     "warn_count": 0,
-    "fail_count": 0
+    "fail_count": 0,
+    "submission_ready_count": 2,
+    "submission_warn_count": 0,
+    "submission_fail_count": 0
   },
   "samples": [
     {
@@ -22,46 +25,55 @@
       "verdict": "PASS",
       "gate_status": "PASS",
       "readiness_status": "PASS",
+      "submission_target": null,
+      "submission_status": "PASS",
       "readiness_categories": [
         {
           "id": "file",
           "label": "File readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "structure",
           "label": "Structure readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "alphabet",
           "label": "Alphabet readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "index",
           "label": "Index readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "assembly",
           "label": "Assembly readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "submission",
           "label": "Submission readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "machine",
           "label": "Machine readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         }
@@ -95,46 +107,55 @@
       "verdict": "PASS",
       "gate_status": "PASS",
       "readiness_status": "PASS",
+      "submission_target": null,
+      "submission_status": "PASS",
       "readiness_categories": [
         {
           "id": "file",
           "label": "File readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "structure",
           "label": "Structure readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "alphabet",
           "label": "Alphabet readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "index",
           "label": "Index readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "assembly",
           "label": "Assembly readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "submission",
           "label": "Submission readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         },
         {
           "id": "machine",
           "label": "Machine readiness",
+          "target": null,
           "status": "PASS",
           "findings": []
         }

@@ -48,7 +48,7 @@ fn schema_requires_gate_and_input_sha256() {
 
     assert_eq!(
         single_report["properties"]["schema_version"]["const"],
-        "0.4.0"
+        "0.5.0"
     );
     assert!(report_required.contains(&serde_json::json!("gate")));
     assert!(gate_required.contains(&serde_json::json!("mode")));
@@ -76,7 +76,81 @@ fn schema_requires_readiness_for_single_reports() {
         .any(|value| value == "readiness"));
     assert_eq!(
         single_report["properties"]["schema_version"]["const"],
-        "0.4.0"
+        "0.5.0"
+    );
+}
+
+#[test]
+fn schema_supports_submission_gate_fields() {
+    let schema: serde_json::Value =
+        serde_json::from_str(fastaguard::contract::schema_json()).unwrap();
+    let gate = &schema["$defs"]["single_report"]["properties"]["gate"];
+    let provenance = &schema["$defs"]["single_report"]["properties"]["provenance"];
+    let readiness_category = &schema["$defs"]["readiness_category"];
+    let compare_summary = &schema["$defs"]["compare_summary"];
+    let compare_sample = &schema["$defs"]["compare_sample"];
+    let nullable_target = serde_json::json!([null, "generic", "ncbi"]);
+
+    assert!(gate["required"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|value| value == "submission_target"));
+    assert_eq!(
+        gate["properties"]["mode"]["enum"],
+        serde_json::json!(["none", "pipeline", "submission"])
+    );
+    assert_eq!(
+        gate["properties"]["submission_target"]["enum"],
+        nullable_target
+    );
+    assert!(provenance["required"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|value| value == "submission_target"));
+    assert_eq!(
+        provenance["properties"]["submission_target"]["enum"],
+        nullable_target
+    );
+    assert!(readiness_category["required"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|value| value == "target"));
+    assert_eq!(
+        readiness_category["properties"]["target"]["enum"],
+        nullable_target
+    );
+    for field in [
+        "submission_ready_count",
+        "submission_warn_count",
+        "submission_fail_count",
+    ] {
+        assert!(compare_summary["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|value| value == field));
+        assert_eq!(
+            compare_summary["properties"][field]["type"],
+            serde_json::json!("integer")
+        );
+    }
+    for field in ["submission_target", "submission_status"] {
+        assert!(compare_sample["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|value| value == field));
+    }
+    assert_eq!(
+        compare_sample["properties"]["submission_target"]["enum"],
+        nullable_target
+    );
+    assert_eq!(
+        compare_sample["properties"]["submission_status"]["$ref"],
+        "#/$defs/readiness_status"
     );
 }
 
