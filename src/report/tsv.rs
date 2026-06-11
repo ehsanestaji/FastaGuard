@@ -258,10 +258,7 @@ fn submission_finding_partitions(report: &FastaguardReport) -> (Vec<String>, Vec
     let mut blocking = Vec::new();
     let mut advisory = Vec::new();
     for finding_id in &category.findings {
-        if submission_blockers
-            .iter()
-            .any(|blocker| *blocker == finding_id.as_str())
-        {
+        if submission_blockers.contains(&finding_id.as_str()) {
             blocking.push(finding_id.clone());
         } else {
             advisory.push(finding_id.clone());
