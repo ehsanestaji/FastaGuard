@@ -358,6 +358,7 @@ impl FastaguardReport {
             &gate.blocking_findings,
             &findings,
             ReadinessScope::Single,
+            config.submission_target,
         );
 
         Ok(Self {
@@ -456,6 +457,7 @@ impl FastaguardReport {
             &gate.blocking_findings,
             &findings,
             ReadinessScope::Single,
+            config.submission_target,
         );
 
         Ok(Self {

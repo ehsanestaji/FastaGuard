@@ -298,6 +298,7 @@ mod tests {
                 &[],
                 &[],
                 crate::readiness::ReadinessScope::Single,
+                None,
             ),
             machine_summary: MachineSummary {
                 verdict: VerdictStatus::Pass,

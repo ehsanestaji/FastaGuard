@@ -61,6 +61,7 @@
           "label": "Submission readiness",
           "status": "WARN",
           "findings": [
+            "tiny_contigs",
             "terminal_ns"
           ]
         },
@@ -147,8 +148,13 @@
         {
           "id": "submission",
           "label": "Submission readiness",
-          "status": "WARN",
+          "status": "FAIL",
           "findings": [
+            "duplicate_ids",
+            "duplicate_first_token_ids",
+            "high_n_rate",
+            "tiny_contigs",
+            "gap_runs",
             "terminal_ns"
           ]
         },
@@ -186,9 +192,12 @@
       ],
       "readiness_blockers": [
         "index.duplicate_ids",
+        "submission.duplicate_ids",
         "index.duplicate_first_token_ids",
+        "submission.duplicate_first_token_ids",
         "alphabet.invalid_chars",
-        "assembly.high_n_rate"
+        "assembly.high_n_rate",
+        "submission.high_n_rate"
       ],
       "recommended_next_tools": [
         "seqkit",

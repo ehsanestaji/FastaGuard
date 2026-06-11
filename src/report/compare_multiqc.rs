@@ -219,6 +219,7 @@ mod tests {
                     &[],
                     &[],
                     crate::readiness::ReadinessScope::Single,
+                    None,
                 )
                 .categories,
                 sequence_count: 2,

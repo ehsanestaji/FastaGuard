@@ -1290,6 +1290,14 @@ fn submission_gate_fails_identifier_hazards() {
         &report["gate"]["blocking_findings"],
         "reserved_header_chars",
     ));
+    let submission_readiness = report["readiness"]["categories"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|category| category["id"] == json!("submission"))
+        .unwrap();
+    assert_eq!(submission_readiness["target"], json!("ncbi"));
+    assert_eq!(submission_readiness["status"], json!("FAIL"));
 }
 
 #[test]
