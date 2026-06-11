@@ -173,6 +173,7 @@
           "findings": [
             "duplicate_ids",
             "duplicate_first_token_ids",
+            "invalid_chars",
             "high_n_rate",
             "tiny_contigs",
             "gap_runs",
@@ -218,6 +219,7 @@
         "index.duplicate_first_token_ids",
         "submission.duplicate_first_token_ids",
         "alphabet.invalid_chars",
+        "submission.invalid_chars",
         "assembly.high_n_rate",
         "submission.high_n_rate"
       ],

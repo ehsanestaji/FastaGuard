@@ -143,6 +143,7 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("FastaGuard does not replace NCBI, ENA, DDBJ", roadmap)
         self.assertIn("repository acceptance", evidence)
         self.assertIn("mkdir -p target/evidence/v0.5", evidence)
+        self.assertTrue((ROOT / "testdata" / "submission_warnings.fa").exists())
 
     def test_multiqc_parser_reads_fastaguard_custom_content(self):
         fixture = ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard_mqc.json"
@@ -170,7 +171,7 @@ class AdoptionAssetsTest(unittest.TestCase):
                 "gate_status": "FAIL",
                 "gate_blocking_findings": "duplicate_ids,duplicate_first_token_ids,invalid_chars",
                 "readiness_status": "FAIL",
-                "readiness_blockers": "index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars",
+                "readiness_blockers": "index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars,submission.invalid_chars",
                 "sequence_count": 5,
                 "total_length": 145,
                 "n50": 110,

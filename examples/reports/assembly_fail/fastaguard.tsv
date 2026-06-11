@@ -7,7 +7,7 @@ gate_status	FAIL
 gate_blocking_findings	duplicate_ids,duplicate_first_token_ids,invalid_chars
 gate_advisory_findings	high_n_rate,tiny_contigs,gap_runs,terminal_ns,length_outliers,composite_anomalies
 readiness_status	FAIL
-readiness_blockers	index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars
+readiness_blockers	index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars,submission.invalid_chars
 readiness_file_status	PASS
 readiness_structure_status	PASS
 readiness_alphabet_status	FAIL
@@ -17,7 +17,7 @@ readiness_submission_status	FAIL
 readiness_machine_status	PASS
 submission_target	.
 submission_status	FAIL
-submission_blocking_findings	duplicate_ids,duplicate_first_token_ids
+submission_blocking_findings	duplicate_ids,duplicate_first_token_ids,invalid_chars
 submission_advisory_findings	high_n_rate,tiny_contigs,gap_runs,terminal_ns
 unsafe_identifier_count	0
 long_identifier_count	0

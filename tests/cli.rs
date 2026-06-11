@@ -1309,6 +1309,54 @@ fn submission_gate_fails_identifier_hazards() {
 }
 
 #[test]
+fn submission_gate_invalid_chars_fail_submission_readiness() {
+    let temp_dir = TempDir::new().unwrap();
+    let input = temp_dir.path().join("invalid_chars_only.fa");
+    std::fs::write(
+        &input,
+        format!(">invalid_chars_only\n{}X\n", "ACGT".repeat(60)),
+    )
+    .unwrap();
+    let outputs = output_paths(&temp_dir, "submission_invalid_chars");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg(&input)
+        .args([
+            "--gate",
+            "submission",
+            "--submission-target",
+            "generic",
+            "--json",
+        ])
+        .arg(&outputs.json)
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .code(2);
+
+    let report = read_json(&outputs.json);
+    let submission_readiness = report["readiness"]["categories"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|category| category["id"] == json!("submission"))
+        .unwrap();
+    assert_eq!(submission_readiness["status"], json!("FAIL"));
+    assert!(array_contains_string(
+        &submission_readiness["findings"],
+        "invalid_chars"
+    ));
+    assert!(array_contains_string(
+        &report["readiness"]["overall"]["blockers"],
+        "submission.invalid_chars"
+    ));
+}
+
+#[test]
 fn submission_identifier_hazards_route_to_official_validators_without_claiming_results() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "submission_routes");

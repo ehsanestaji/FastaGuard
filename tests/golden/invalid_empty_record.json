@@ -30,7 +30,8 @@
       "status": "FAIL",
       "blockers": [
         "file.invalid_fasta_structure",
-        "structure.invalid_fasta_structure"
+        "structure.invalid_fasta_structure",
+        "submission.invalid_fasta_structure"
       ]
     },
     "categories": [
@@ -77,8 +78,10 @@
         "id": "submission",
         "label": "Submission readiness",
         "target": null,
-        "status": "PASS",
-        "findings": []
+        "status": "FAIL",
+        "findings": [
+          "invalid_fasta_structure"
+        ]
       },
       {
         "id": "machine",

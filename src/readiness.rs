@@ -134,8 +134,8 @@ fn base_categories(scope: ReadinessScope) -> Vec<ReadinessCategory> {
 
 fn category_ids_for_finding(id: &str) -> &'static [&'static str] {
     match id {
-        "invalid_fasta_structure" => &["file", "structure"],
-        "invalid_chars" => &["alphabet"],
+        "invalid_fasta_structure" => &["file", "structure", "submission"],
+        "invalid_chars" => &["alphabet", "submission"],
         "duplicate_ids" | "duplicate_first_token_ids" => &["index", "submission"],
         "unsafe_ids" | "long_headers" | "reserved_header_chars" => &["index", "submission"],
         "terminal_ns" | "gap_pattern_warnings" | "gap_runs" => &["assembly", "submission"],
@@ -277,6 +277,38 @@ mod tests {
         assert_eq!(submission.target.as_deref(), Some("generic"));
         assert_eq!(submission.status, ReadinessStatus::Warn);
         assert!(readiness.overall.blockers.is_empty());
+    }
+
+    #[test]
+    fn submission_gate_blockers_fail_submission_readiness() {
+        let readiness = build_readiness(
+            VerdictStatus::Fail,
+            &[
+                "invalid_chars".to_string(),
+                "invalid_fasta_structure".to_string(),
+            ],
+            &[
+                finding("invalid_chars", Severity::Critical),
+                finding("invalid_fasta_structure", Severity::Critical),
+            ],
+            ReadinessScope::Single,
+            Some(crate::submission::SubmissionTarget::Generic),
+        );
+
+        let submission = readiness.category("submission").unwrap();
+        assert_eq!(submission.status, ReadinessStatus::Fail);
+        assert_eq!(
+            submission.findings,
+            ["invalid_chars", "invalid_fasta_structure"]
+        );
+        assert!(readiness
+            .overall
+            .blockers
+            .contains(&"submission.invalid_chars".to_string()));
+        assert!(readiness
+            .overall
+            .blockers
+            .contains(&"submission.invalid_fasta_structure".to_string()));
     }
 
     #[test]

@@ -40,7 +40,7 @@
       "gate_status": "FAIL",
       "gate_blocking_findings": "duplicate_ids,duplicate_first_token_ids,invalid_chars",
       "readiness_status": "FAIL",
-      "readiness_blockers": "index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars",
+      "readiness_blockers": "index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars,submission.invalid_chars",
       "submission_target": ".",
       "submission_status": "FAIL",
       "unsafe_identifier_count": 0,

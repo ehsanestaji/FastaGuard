@@ -82,6 +82,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <h3>Findings</h3>
 <ul><li>duplicate_ids</li>
 <li>duplicate_first_token_ids</li>
+<li>invalid_chars</li>
 <li>high_n_rate</li>
 <li>tiny_contigs</li>
 <li>gap_runs</li>
@@ -100,6 +101,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <li>length_outliers</li>
 <li>composite_anomalies</li></ul></td></tr><tr><td>Submission readiness</td><td class="status-fail">FAIL</td><td><ul><li>duplicate_ids</li>
 <li>duplicate_first_token_ids</li>
+<li>invalid_chars</li>
 <li>high_n_rate</li>
 <li>tiny_contigs</li>
 <li>gap_runs</li>
@@ -619,7 +621,8 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
         &quot;submission.duplicate_ids&quot;,
         &quot;index.duplicate_first_token_ids&quot;,
         &quot;submission.duplicate_first_token_ids&quot;,
-        &quot;alphabet.invalid_chars&quot;
+        &quot;alphabet.invalid_chars&quot;,
+        &quot;submission.invalid_chars&quot;
       ]
     },
     &quot;categories&quot;: [
@@ -678,6 +681,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
         &quot;findings&quot;: [
           &quot;duplicate_ids&quot;,
           &quot;duplicate_first_token_ids&quot;,
+          &quot;invalid_chars&quot;,
           &quot;high_n_rate&quot;,
           &quot;tiny_contigs&quot;,
           &quot;gap_runs&quot;,
