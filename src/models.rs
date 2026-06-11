@@ -346,13 +346,13 @@ impl FastaguardReport {
         let findings = analysis.findings;
         let plots = build_plots(&metrics, profile);
         let provenance = build_provenance(&config, profile, duration_ms)?;
-        let mut gate = gate::decision(
+        let gate = gate::decision(
             config.gate_mode,
+            config.submission_target,
             analysis.status,
             &findings,
             &config.rules.fail_on,
         );
-        gate.submission_target = config.submission_target;
         let readiness = readiness::build_readiness(
             analysis.status,
             &gate.blocking_findings,
@@ -444,13 +444,13 @@ impl FastaguardReport {
             actions: finding_actions("invalid_fasta_structure"),
         }];
         let provenance = build_provenance(&config, profile, duration_ms)?;
-        let mut gate = gate::decision(
+        let gate = gate::decision(
             config.gate_mode,
+            config.submission_target,
             VerdictStatus::Fail,
             &findings,
             &config.rules.fail_on,
         );
-        gate.submission_target = config.submission_target;
         let readiness = readiness::build_readiness(
             VerdictStatus::Fail,
             &gate.blocking_findings,

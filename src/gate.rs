@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
 use crate::models::{Finding, GateDecision, Severity, VerdictStatus};
+use crate::submission::SubmissionTarget;
 
 pub const PIPELINE_FAIL_ON: &[&str] = &[
     "duplicate_first_token_ids",
@@ -10,6 +11,23 @@ pub const PIPELINE_FAIL_ON: &[&str] = &[
     "high_n_rate",
     "invalid_chars",
     "invalid_fasta_structure",
+];
+
+pub const SUBMISSION_FAIL_ON_GENERIC: &[&str] = &[
+    "duplicate_first_token_ids",
+    "duplicate_ids",
+    "invalid_chars",
+    "invalid_fasta_structure",
+    "unsafe_ids",
+];
+
+pub const SUBMISSION_FAIL_ON_NCBI: &[&str] = &[
+    "duplicate_first_token_ids",
+    "duplicate_ids",
+    "invalid_chars",
+    "invalid_fasta_structure",
+    "reserved_header_chars",
+    "unsafe_ids",
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
@@ -31,7 +49,11 @@ impl GateMode {
     }
 }
 
-pub fn final_fail_on(mode: GateMode, explicit_rules: &[String]) -> BTreeSet<String> {
+pub fn final_fail_on(
+    mode: GateMode,
+    submission_target: Option<SubmissionTarget>,
+    explicit_rules: &[String],
+) -> BTreeSet<String> {
     let mut fail_on = explicit_rules
         .iter()
         .flat_map(|value| value.split(','))
@@ -40,8 +62,16 @@ pub fn final_fail_on(mode: GateMode, explicit_rules: &[String]) -> BTreeSet<Stri
         .map(ToOwned::to_owned)
         .collect::<BTreeSet<_>>();
 
-    if mode == GateMode::Pipeline {
-        fail_on.extend(PIPELINE_FAIL_ON.iter().map(|id| (*id).to_string()));
+    match mode {
+        GateMode::Pipeline => fail_on.extend(PIPELINE_FAIL_ON.iter().map(|id| (*id).to_string())),
+        GateMode::Submission => {
+            let preset = match submission_target.unwrap_or(SubmissionTarget::Generic) {
+                SubmissionTarget::Generic => SUBMISSION_FAIL_ON_GENERIC,
+                SubmissionTarget::Ncbi => SUBMISSION_FAIL_ON_NCBI,
+            };
+            fail_on.extend(preset.iter().map(|id| (*id).to_string()));
+        }
+        GateMode::None => {}
     }
 
     fail_on
@@ -49,6 +79,7 @@ pub fn final_fail_on(mode: GateMode, explicit_rules: &[String]) -> BTreeSet<Stri
 
 pub fn decision(
     mode: GateMode,
+    submission_target: Option<SubmissionTarget>,
     status: VerdictStatus,
     findings: &[Finding],
     fail_on: &BTreeSet<String>,
@@ -66,7 +97,7 @@ pub fn decision(
 
     GateDecision {
         mode: mode.as_str().to_string(),
-        submission_target: None,
+        submission_target,
         status,
         blocking_findings,
         advisory_findings,

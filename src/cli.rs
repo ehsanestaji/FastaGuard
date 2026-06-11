@@ -438,7 +438,7 @@ impl AnalysisArgs {
             gate_mode: self.gate,
             submission_target,
             rules: RuleConfig {
-                fail_on: gate::final_fail_on(self.gate, &self.fail_on),
+                fail_on: gate::final_fail_on(self.gate, submission_target, &self.fail_on),
             },
             thresholds: ThresholdOverrides {
                 max_n_rate: self.max_n_rate,

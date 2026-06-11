@@ -1,0 +1,8 @@
+>seq/one
+ACGTACGT
+>seq two
+ACGTACGT
+>seq two duplicate-description
+ACGTACGA
+>pipe|id
+ACGTACGT

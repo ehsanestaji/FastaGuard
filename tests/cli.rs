@@ -1251,6 +1251,48 @@ fn submission_target_ncbi_is_serialized_when_requested() {
 }
 
 #[test]
+fn submission_gate_fails_identifier_hazards() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_ids");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/submission_ids.fa",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ncbi",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["gate"]["mode"], json!("submission"));
+    assert_eq!(report["gate"]["status"], json!("FAIL"));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "duplicate_first_token_ids",
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "unsafe_ids",
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "reserved_header_chars",
+    ));
+}
+
+#[test]
 fn unknown_submission_target_is_cli_error() {
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     cmd.args([
