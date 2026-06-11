@@ -91,6 +91,7 @@ Make assembly FASTA files safer to hand to official validators, annotation, and 
 
 Submission readiness should stay FASTA-level and database-free:
 
+- explicit `--gate submission` workflow behavior
 - stricter identifier and first-token ID safety checks
 - target-aware advisories with `--submission-target generic|ncbi`
 - gap-like `N` run summaries
@@ -102,6 +103,11 @@ Submission readiness should stay FASTA-level and database-free:
 FastaGuard should not claim repository acceptance, biological completeness,
 annotation correctness, or contamination confirmation. It should help users fix
 FASTA-level blockers before those later checks.
+
+The v0.5 contract should make workflow routing explicit through `gate.mode`,
+`gate.status`, `gate.blocking_findings`, and the
+`readiness.categories[id=submission]` record, while still pointing users to
+official validators for final repository-specific checks.
 
 ### v0.6: Transcriptome Profile
 

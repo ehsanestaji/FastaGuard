@@ -13,6 +13,11 @@ Bioconda serves v0.3.0 on Linux and macOS x86_64/ARM64 platforms.
 BioContainers provides the pinned v0.3 workflow image generated from the
 Bioconda package. Docker remains useful for local smoke tests.
 
+This branch/package metadata targets v0.5.0, including the
+`--gate submission` and `--submission-target generic|ncbi` contract. Do not
+document v0.5 as published on Bioconda or BioContainers until those packages
+exist; the verified published package and workflow image remain v0.3.0.
+
 ## Bioconda
 
 Recommended install:
@@ -58,6 +63,17 @@ Run it:
   --json fastaguard.json \
   --tsv fastaguard.tsv \
   --multiqc fastaguard_mqc.json
+```
+
+Run a local v0.5 submission-readiness preflight before official validators:
+
+```bash
+./target/release/fastaguard testdata/submission_ids.fa \
+  --profile assembly \
+  --gate submission \
+  --submission-target ncbi \
+  --json fastaguard.json \
+  --out fastaguard_report.html
 ```
 
 ## Docker

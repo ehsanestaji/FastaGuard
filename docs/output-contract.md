@@ -26,6 +26,9 @@ cohort_report.html
 fastaguard_compare_mqc.json
 ```
 
+v0.5 adds submission-readiness gate fields to the same JSON, TSV, HTML,
+MultiQC, and compare artifacts. JSON remains the source of truth.
+
 ## JSON Contract
 
 Example v0.3 shape:
@@ -340,6 +343,33 @@ filtering and spreadsheet review, the HTML report is for human triage, and
 Compare mode ranks and routes FASTA files before QUAST, BUSCO, BlobToolKit,
 CheckM, official validators, annotation, or other interpretive QC tools; it does
 not replace them.
+
+## Submission Gate Contract
+
+The v0.5 contract adds `--gate submission` and
+`--submission-target generic|ncbi` for FASTA-level submission readiness:
+
+```bash
+fastaguard sample.fa \
+  --profile assembly \
+  --gate submission \
+  --submission-target ncbi \
+  --json fastaguard.json \
+  --out fastaguard_report.html
+```
+
+Pipeline authors should route on:
+
+- `gate.mode`
+- `gate.status`
+- `gate.blocking_findings`
+- `readiness.categories[id=submission]`
+
+The submission gate promotes existing identifier, header, gap, ambiguity, and
+tiny-record findings into a submission-readiness view. It can report
+FASTA-level hazards before official validators, but it does not guarantee NCBI,
+ENA, or DDBJ repository acceptance and does not replace NCBI FCS, QUAST, BUSCO,
+BlobToolKit, CheckM, or annotation validation.
 
 ## Machine-Actionable Contract
 

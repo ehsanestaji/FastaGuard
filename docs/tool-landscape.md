@@ -67,9 +67,10 @@ machine concerns. Compare mode gives many FASTA files one starter cohort triage
 table before teams spend time in QUAST, BUSCO, BlobToolKit, CheckM, official
 validators, annotation, or other interpretive tools.
 
-v0.5 should make the submission part of readiness explicit. The useful product
-move is not to replace NCBI, ENA, DDBJ, FCS, or annotation validators. It is to
-catch FASTA-level submission hazards first: unsafe identifiers, duplicate
+v0.5 makes the submission part of readiness explicit with `--gate submission`
+and `--submission-target generic|ncbi`. The useful product move is not to
+replace NCBI, ENA, DDBJ, FCS, official validators, or annotation validators. It
+is to catch FASTA-level submission hazards first: unsafe identifiers, duplicate
 first-token IDs, invalid characters, gap-like `N` runs, high ambiguity, and
 tiny-record advisories.
 
@@ -100,6 +101,8 @@ Current product evidence:
   `docs/evidence/fastaguard-v0.3-evidence.md`.
 - v0.4 documentation defines preflight readiness, compare mode, and local value
   benchmark framing for adoption discussions.
+- v0.5 documentation defines the submission-readiness gate, local evidence
+  commands, and the boundary before official validators.
 
 Evidence still needed:
 

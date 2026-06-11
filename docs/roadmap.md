@@ -111,8 +111,12 @@ Development scope:
 - high ambiguity and tiny-record submission advisories
 - submission readiness fields in JSON, TSV, HTML, and MultiQC outputs
 - compare-mode aggregation of submission readiness across many FASTA files
+- evidence and release notes for `--gate submission` workflows before official
+  validators
 - clear scope boundaries: FastaGuard does not replace NCBI, ENA, DDBJ, FCS,
   QUAST, BUSCO, BlobToolKit, CheckM, or annotation validation
+- FastaGuard does not replace NCBI, ENA, DDBJ official validators or guarantee
+  repository acceptance
 
 ## v0.6: Transcriptome Profile
 

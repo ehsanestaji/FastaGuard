@@ -15,6 +15,9 @@ from fastaguard_multiqc.parser import load_custom_content_summary
 
 
 class AdoptionAssetsTest(unittest.TestCase):
+    def read(self, path):
+        return (ROOT / path).read_text()
+
     def test_v0_3_gate_docs_and_examples_are_present(self):
         readme = (ROOT / "README.md").read_text()
         output_contract = (ROOT / "docs" / "output-contract.md").read_text()
@@ -126,6 +129,21 @@ class AdoptionAssetsTest(unittest.TestCase):
                 self.assertIn("FAIL exits 2", text)
                 self.assertIn("fail-fast starter", lower)
 
+    def test_v0_5_submission_readiness_docs_are_present(self):
+        readme = self.read("README.md")
+        roadmap = self.read("docs/roadmap.md")
+        evidence = self.read("docs/evidence/fastaguard-v0.5-submission-readiness.md")
+        release = self.read("docs/releases/v0.5.0.md")
+
+        for text in [readme, roadmap, evidence, release]:
+            self.assertIn("--gate submission", text)
+            self.assertIn("--submission-target", text)
+            self.assertIn("official validators", text)
+
+        self.assertIn("FastaGuard does not replace NCBI, ENA, DDBJ", roadmap)
+        self.assertIn("repository acceptance", evidence)
+        self.assertIn("mkdir -p target/evidence/v0.5", evidence)
+
     def test_multiqc_parser_reads_fastaguard_custom_content(self):
         fixture = ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard_mqc.json"
 
@@ -152,7 +170,7 @@ class AdoptionAssetsTest(unittest.TestCase):
                 "gate_status": "FAIL",
                 "gate_blocking_findings": "duplicate_ids,duplicate_first_token_ids,invalid_chars",
                 "readiness_status": "FAIL",
-                "readiness_blockers": "index.duplicate_ids,index.duplicate_first_token_ids,alphabet.invalid_chars",
+                "readiness_blockers": "index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars",
                 "sequence_count": 5,
                 "total_length": 145,
                 "n50": 110,

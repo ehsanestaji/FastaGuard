@@ -30,6 +30,21 @@ The wrapper also includes a v0.3 Conda environment:
 snakemake -s Snakefile --cores 1 --use-conda
 ```
 
+For v0.5 submission-readiness preflight before official validators, use the
+source/package contract rather than the currently published v0.3 package or
+container:
+
+```bash
+fastaguard {input.fasta} --gate submission --submission-target ncbi
+```
+
+Pipeline authors should route on:
+
+- `gate.mode`
+- `gate.status`
+- `gate.blocking_findings`
+- `readiness.categories[id=submission]`
+
 For containerized workflow runs, the latest pinned BioContainers image is:
 
 ```text
