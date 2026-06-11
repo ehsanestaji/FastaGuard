@@ -29,6 +29,12 @@ v0.4 positioning:
 Preflight readiness and starter cohort triage before interpretive QC.
 ```
 
+v0.5 positioning:
+
+```text
+Submission-readiness preflight before official validators and expensive QC.
+```
+
 ## Where FastaGuard Fits
 
 | Tool | Primary role | When it runs | What FastaGuard adds before it |
@@ -60,6 +66,12 @@ Readiness separates file, structure, alphabet, index, assembly, submission, and
 machine concerns. Compare mode gives many FASTA files one starter cohort triage
 table before teams spend time in QUAST, BUSCO, BlobToolKit, CheckM, official
 validators, annotation, or other interpretive tools.
+
+v0.5 should make the submission part of readiness explicit. The useful product
+move is not to replace NCBI, ENA, DDBJ, FCS, or annotation validators. It is to
+catch FASTA-level submission hazards first: unsafe identifiers, duplicate
+first-token IDs, invalid characters, gap-like `N` runs, high ambiguity, and
+tiny-record advisories.
 
 ## Product Evidence We Have
 
@@ -95,6 +107,8 @@ Evidence still needed:
 - user feedback from real pipeline authors
 - broader public assembly evidence runs
 - real cohort compare-mode examples from public assemblies
+- submission-readiness examples that show fixable FASTA hazards before official
+  validators
 - official MultiQC module or packaged plugin
 - comparison examples showing what FastaGuard catches before QUAST/BUSCO/BlobToolKit
 

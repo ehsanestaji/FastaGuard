@@ -94,7 +94,27 @@ Development scope:
   CheckM, official validators, annotation, or other downstream tools; it does
   not replace them
 
-## v0.5: Transcriptome Profile
+## v0.5: Submission Readiness Gate
+
+Goal:
+
+```text
+Make assembly FASTA files safer to hand to official validators, annotation, and downstream QC.
+```
+
+Development scope:
+
+- `--gate submission` for stricter assembly FASTA preflight
+- `--submission-target <generic|ncbi>` for target-aware submission advisories
+- stricter identifier and first-token ID safety checks
+- gap-like `N` run summaries for submission review
+- high ambiguity and tiny-record submission advisories
+- submission readiness fields in JSON, TSV, HTML, and MultiQC outputs
+- compare-mode aggregation of submission readiness across many FASTA files
+- clear scope boundaries: FastaGuard does not replace NCBI, ENA, DDBJ, FCS,
+  QUAST, BUSCO, BlobToolKit, CheckM, or annotation validation
+
+## v0.6: Transcriptome Profile
 
 Potential additions:
 
@@ -104,7 +124,7 @@ Potential additions:
 - extreme GC outliers
 - isoform-heavy warning heuristics
 
-## v0.6: Protein Profile
+## v0.7: Protein Profile
 
 Potential additions:
 
@@ -114,7 +134,7 @@ Potential additions:
 - low-complexity regions
 - suspicious nucleotide-looking proteins
 
-## v0.7: Reference Panel Profile
+## v0.8: Reference Panel Profile
 
 Potential additions:
 
@@ -166,6 +186,6 @@ Completed foundation:
 
 Recommended next sequence:
 
-- extend evidence tables across future transcriptome, protein, reference, and compare modes
+- extend evidence tables across submission, transcriptome, protein, reference, and compare modes
 - keep the v0.3 gate contract stable through workflow adoption examples
 - explore an MCP or tool-server interface after the CLI schema is stable
