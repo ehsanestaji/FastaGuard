@@ -48,8 +48,8 @@ fn contract_finding_catalog_can_be_printed_without_input() {
     cmd.arg("--finding-catalog")
         .assert()
         .success()
-        .stdout(predicate::str::contains(r#""schema_version": "0.4.0""#))
-        .stdout(predicate::str::contains(r#""catalog_version": "0.4.0""#))
+        .stdout(predicate::str::contains(r#""schema_version": "0.5.0""#))
+        .stdout(predicate::str::contains(r#""catalog_version": "0.5.0""#))
         .stdout(predicate::str::contains(r#""duplicate_ids""#))
         .stdout(predicate::str::contains(r#""invalid_fasta_structure""#))
         .stdout(predicate::str::contains(r#""gc_outliers""#))
@@ -160,7 +160,7 @@ fn compare_writes_json_with_mixed_status_samples() {
 
     let report = read_json(&outputs.json);
     assert_eq!(report["report_type"], json!("compare"));
-    assert_eq!(report["schema_version"], json!("0.4.0"));
+    assert_eq!(report["schema_version"], json!("0.5.0"));
     assert_eq!(report["summary"]["sample_count"], json!(2));
     assert_eq!(report["summary"]["fail_count"], json!(1));
     let samples = report["samples"].as_array().unwrap();
@@ -451,7 +451,7 @@ fn report_includes_v0_4_provenance_and_routing_hints() {
     .code(1);
 
     let report = read_json(&outputs.json);
-    assert_eq!(report["schema_version"], json!("0.4.0"));
+    assert_eq!(report["schema_version"], json!("0.5.0"));
     assert_eq!(report["gate"]["mode"], json!("none"));
     assert_eq!(report["gate"]["status"], json!("WARN"));
     assert_eq!(report["gate"]["blocking_findings"], json!([]));
@@ -756,7 +756,7 @@ fn pipeline_gate_report_lists_blocking_and_advisory_findings() {
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
-    assert_eq!(report["schema_version"], json!("0.4.0"));
+    assert_eq!(report["schema_version"], json!("0.5.0"));
     assert_eq!(report["gate"]["mode"], json!("pipeline"));
     assert_eq!(report["gate"]["status"], json!("FAIL"));
     assert!(array_contains_string(
@@ -1185,6 +1185,369 @@ fn invalid_provenance_timestamp_override_is_tool_error() {
         .stderr(predicate::str::contains(
             "FASTAGUARD_PROVENANCE_TIMESTAMP must be a valid RFC3339 date-time",
         ));
+}
+
+#[test]
+fn submission_gate_defaults_to_generic_target() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_default");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--min-contig-length",
+        "1",
+        "--gate",
+        "submission",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(1)
+    .stderr(predicate::str::is_empty());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["gate"]["mode"], json!("submission"));
+    assert_eq!(report["gate"]["submission_target"], json!("generic"));
+    assert_eq!(report["provenance"]["submission_target"], json!("generic"));
+}
+
+#[test]
+fn submission_target_ncbi_is_serialized_when_requested() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_ncbi");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--min-contig-length",
+        "1",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ncbi",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(1)
+    .stderr(predicate::str::is_empty());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["gate"]["submission_target"], json!("ncbi"));
+    assert_eq!(report["provenance"]["submission_target"], json!("ncbi"));
+    assert!(array_contains_string(
+        &report["scope"]["can_conclude"],
+        "FASTA-level submission readiness"
+    ));
+    assert!(array_contains_string(
+        &report["scope"]["cannot_conclude"],
+        "repository acceptance"
+    ));
+}
+
+#[test]
+fn submission_gate_fails_identifier_hazards() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_ids");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/submission_ids.fa",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ncbi",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["gate"]["mode"], json!("submission"));
+    assert_eq!(report["gate"]["status"], json!("FAIL"));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "duplicate_first_token_ids",
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "unsafe_ids",
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "reserved_header_chars",
+    ));
+    let submission_readiness = report["readiness"]["categories"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|category| category["id"] == json!("submission"))
+        .unwrap();
+    assert_eq!(submission_readiness["target"], json!("ncbi"));
+    assert_eq!(submission_readiness["status"], json!("FAIL"));
+}
+
+#[test]
+fn submission_gate_invalid_chars_fail_submission_readiness() {
+    let temp_dir = TempDir::new().unwrap();
+    let input = temp_dir.path().join("invalid_chars_only.fa");
+    std::fs::write(
+        &input,
+        format!(">invalid_chars_only\n{}X\n", "ACGT".repeat(60)),
+    )
+    .unwrap();
+    let outputs = output_paths(&temp_dir, "submission_invalid_chars");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg(&input)
+        .args([
+            "--gate",
+            "submission",
+            "--submission-target",
+            "generic",
+            "--json",
+        ])
+        .arg(&outputs.json)
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .code(2);
+
+    let report = read_json(&outputs.json);
+    let submission_readiness = report["readiness"]["categories"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|category| category["id"] == json!("submission"))
+        .unwrap();
+    assert_eq!(submission_readiness["status"], json!("FAIL"));
+    assert!(array_contains_string(
+        &submission_readiness["findings"],
+        "invalid_chars"
+    ));
+    assert!(array_contains_string(
+        &report["readiness"]["overall"]["blockers"],
+        "submission.invalid_chars"
+    ));
+}
+
+#[test]
+fn submission_identifier_hazards_route_to_official_validators_without_claiming_results() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_routes");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/submission_ids.fa",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ncbi",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2);
+
+    let report = read_json(&outputs.json);
+    assert_routing_hint(
+        &report,
+        "submission_readiness_failure",
+        "fix_fasta_before_official_validation",
+        false,
+    );
+    assert!(array_contains_tool(
+        &report["machine_summary"]["recommended_next_tools"],
+        "official submission validator"
+    ));
+}
+
+#[test]
+fn submission_gate_outputs_tsv_multiqc_and_html_fields() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "submission_outputs");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/submission_ids.fa",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ncbi",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(2);
+
+    let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
+    assert!(tsv.contains("submission_target\tncbi\n"), "{tsv}");
+    assert!(tsv.contains("submission_status\tFAIL\n"), "{tsv}");
+    assert!(tsv.contains("unsafe_identifier_count\t"), "{tsv}");
+
+    let multiqc = read_json(&outputs.multiqc);
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_target"],
+        json!("ncbi")
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_status"],
+        json!("FAIL")
+    );
+
+    let html = std::fs::read_to_string(&outputs.html).unwrap();
+    assert!(html.contains("Submission Readiness"), "{html}");
+    assert!(
+        html.contains("Official validators are still required"),
+        "{html}"
+    );
+}
+
+#[test]
+fn compare_submission_gate_aggregates_submission_status() {
+    let temp_dir = TempDir::new().unwrap();
+    let clean = temp_dir.path().join("clean.fa");
+    std::fs::write(&clean, format!(">clean\n{}\n", "ACGT".repeat(60))).unwrap();
+    let outputs = output_paths(&temp_dir, "submission_compare");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("compare")
+        .arg(&clean)
+        .arg("testdata/submission_ids.fa")
+        .args([
+            "--gate",
+            "submission",
+            "--submission-target",
+            "ncbi",
+            "--json",
+        ])
+        .arg(&outputs.json)
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .code(2);
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["summary"]["submission_fail_count"], json!(1));
+    assert_eq!(report["summary"]["submission_ready_count"], json!(1));
+    let failing = report["samples"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|sample| sample["sample_id"] == "submission_ids")
+        .unwrap();
+    assert_eq!(failing["submission_target"], json!("ncbi"));
+    assert_eq!(failing["submission_status"], json!("FAIL"));
+
+    let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
+    let mut tsv_lines = tsv.lines();
+    let headers = tsv_lines.next().unwrap().split('\t').collect::<Vec<_>>();
+    let failing_row = tsv_lines
+        .map(|line| line.split('\t').collect::<Vec<_>>())
+        .find(|row| row[0] == "submission_ids")
+        .unwrap();
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_target"),
+        "ncbi"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_status"),
+        "FAIL"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_ready_count"),
+        "1"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_warn_count"),
+        "0"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_fail_count"),
+        "1"
+    );
+
+    let multiqc = read_json(&outputs.multiqc);
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_status"],
+        json!("FAIL")
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_ready_count"],
+        json!(1)
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_warn_count"],
+        json!(0)
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_fail_count"],
+        json!(1)
+    );
+}
+
+fn tsv_value<'a>(headers: &[&str], row: &'a [&str], name: &str) -> &'a str {
+    let index = headers
+        .iter()
+        .position(|header| *header == name)
+        .unwrap_or_else(|| panic!("missing TSV column {name}"));
+    row[index]
+}
+
+#[test]
+fn unknown_submission_target_is_cli_error() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--gate",
+        "submission",
+        "--submission-target",
+        "ena",
+    ])
+    .assert()
+    .code(2)
+    .stderr(predicate::str::contains("invalid value 'ena'"));
 }
 
 struct OutputPaths {

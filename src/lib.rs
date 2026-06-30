@@ -10,6 +10,7 @@ pub mod profile;
 pub mod readiness;
 pub mod report;
 pub mod stats;
+pub mod submission;
 
 use anyhow::Result;
 use cli::{Cli, CommandConfig};
@@ -116,6 +117,7 @@ mod tests {
             input: PathBuf::from("input.fa"),
             profile: "assembly".to_string(),
             gate_mode: GateMode::None,
+            submission_target: None,
             outputs: OutputPaths {
                 html: PathBuf::from("fastaguard_report.html"),
                 json: PathBuf::from("fastaguard.json"),

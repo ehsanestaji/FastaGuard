@@ -14,8 +14,9 @@ use crate::metrics::AssemblyMetrics;
 use crate::profile::ProfileConfig;
 use crate::readiness::{self, ReadinessReport, ReadinessScope};
 use crate::stats::composition::percent;
+use crate::submission::SubmissionTarget;
 
-pub const SCHEMA_VERSION: &str = "0.4.0";
+pub const SCHEMA_VERSION: &str = "0.5.0";
 pub const TOOL_NAME: &str = "FastaGuard";
 pub const TOOL_VERSION: &str = env!("CARGO_PKG_VERSION");
 const LENGTH_HISTOGRAM_BIN_COUNT: u64 = 10;
@@ -61,6 +62,9 @@ pub struct CompareSummary {
     pub pass_count: u64,
     pub warn_count: u64,
     pub fail_count: u64,
+    pub submission_ready_count: u64,
+    pub submission_warn_count: u64,
+    pub submission_fail_count: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,6 +74,8 @@ pub struct CompareSample {
     pub verdict: VerdictStatus,
     pub gate_status: VerdictStatus,
     pub readiness_status: crate::readiness::ReadinessStatus,
+    pub submission_target: Option<String>,
+    pub submission_status: crate::readiness::ReadinessStatus,
     pub readiness_categories: Vec<crate::readiness::ReadinessCategory>,
     pub sequence_count: u64,
     pub total_length: u64,
@@ -121,6 +127,7 @@ pub struct Verdict {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GateDecision {
     pub mode: String,
+    pub submission_target: Option<SubmissionTarget>,
     pub status: VerdictStatus,
     pub blocking_findings: Vec<String>,
     pub advisory_findings: Vec<String>,
@@ -159,6 +166,7 @@ pub struct Scope {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Provenance {
     pub profile: String,
+    pub submission_target: Option<SubmissionTarget>,
     pub threads: usize,
     pub fail_on: Vec<String>,
     pub thresholds: ProvenanceThresholds,
@@ -343,6 +351,7 @@ impl FastaguardReport {
         let provenance = build_provenance(&config, profile, duration_ms)?;
         let gate = gate::decision(
             config.gate_mode,
+            config.submission_target,
             analysis.status,
             &findings,
             &config.rules.fail_on,
@@ -352,6 +361,7 @@ impl FastaguardReport {
             &gate.blocking_findings,
             &findings,
             ReadinessScope::Single,
+            config.submission_target,
         );
 
         Ok(Self {
@@ -440,6 +450,7 @@ impl FastaguardReport {
         let provenance = build_provenance(&config, profile, duration_ms)?;
         let gate = gate::decision(
             config.gate_mode,
+            config.submission_target,
             VerdictStatus::Fail,
             &findings,
             &config.rules.fail_on,
@@ -449,6 +460,7 @@ impl FastaguardReport {
             &gate.blocking_findings,
             &findings,
             ReadinessScope::Single,
+            config.submission_target,
         );
 
         Ok(Self {
@@ -714,18 +726,34 @@ fn routing_hints(findings: &[Finding]) -> Vec<RoutingHint> {
                 "deduplicate_or_rename_records",
                 false,
             ),
-            "duplicate_first_token_ids" => push_routing_hint(
-                &mut hints,
-                "index_readiness_failure",
-                "rename_records_before_indexing",
-                false,
-            ),
-            "unsafe_ids" | "long_headers" | "reserved_header_chars" => push_routing_hint(
-                &mut hints,
-                "header_compatibility_warning",
-                "review_headers_before_database_or_submission",
-                false,
-            ),
+            "duplicate_first_token_ids" => {
+                push_routing_hint(
+                    &mut hints,
+                    "index_readiness_failure",
+                    "rename_records_before_indexing",
+                    false,
+                );
+                push_routing_hint(
+                    &mut hints,
+                    "submission_readiness_failure",
+                    "fix_fasta_before_official_validation",
+                    false,
+                );
+            }
+            "unsafe_ids" | "long_headers" | "reserved_header_chars" => {
+                push_routing_hint(
+                    &mut hints,
+                    "header_compatibility_warning",
+                    "review_headers_before_database_or_submission",
+                    false,
+                );
+                push_routing_hint(
+                    &mut hints,
+                    "submission_readiness_failure",
+                    "fix_fasta_before_official_validation",
+                    false,
+                );
+            }
             "invalid_chars" | "invalid_fasta_structure" => push_routing_hint(
                 &mut hints,
                 "validity_failure",
@@ -819,7 +847,39 @@ fn recommended_next_tools(status: VerdictStatus, findings: &[Finding]) -> Vec<Re
         }
     }
 
+    if has_any_finding(
+        findings,
+        &[
+            "unsafe_ids",
+            "long_headers",
+            "reserved_header_chars",
+            "duplicate_first_token_ids",
+            "terminal_ns",
+            "gap_pattern_warnings",
+        ],
+    ) {
+        push_tool(
+            &mut tools,
+            "official submission validator",
+            "Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator.",
+        );
+    }
+
+    if has_any_finding(findings, &["high_n_rate", "gap_runs"]) {
+        push_tool(
+            &mut tools,
+            "NCBI FCS",
+            "Run database-backed contamination/adaptor screening when submission-oriented ambiguity or gap signals need follow-up.",
+        );
+    }
+
     tools
+}
+
+fn has_any_finding(findings: &[Finding], ids: &[&str]) -> bool {
+    findings
+        .iter()
+        .any(|finding| ids.contains(&finding.id.as_str()))
 }
 
 fn push_tool(tools: &mut Vec<RecommendedTool>, tool: &str, reason: &str) {
@@ -842,12 +902,16 @@ fn fasta_preflight_scope() -> Scope {
             "invalid sequence symbols".to_string(),
             "basic structural statistics".to_string(),
             "sequence composition red flags".to_string(),
+            "FASTA-level submission readiness".to_string(),
         ],
         cannot_conclude: vec![
             "biological completeness".to_string(),
             "taxonomic contamination".to_string(),
             "whole-assembly accuracy".to_string(),
             "misassembly status without alignment evidence".to_string(),
+            "repository acceptance".to_string(),
+            "official validator acceptance".to_string(),
+            "annotation correctness".to_string(),
         ],
     }
 }
@@ -873,6 +937,7 @@ fn build_provenance(
 
     Ok(Provenance {
         profile: profile.name.clone(),
+        submission_target: config.submission_target,
         threads: config.threads,
         fail_on: config.rules.fail_on.iter().cloned().collect(),
         thresholds: ProvenanceThresholds {
@@ -1061,6 +1126,7 @@ mod tests {
             input,
             profile: "assembly".to_string(),
             gate_mode: GateMode::None,
+            submission_target: None,
             outputs: OutputPaths {
                 html: PathBuf::from("fastaguard_report.html"),
                 json: PathBuf::from("fastaguard.json"),

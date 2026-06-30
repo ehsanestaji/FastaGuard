@@ -68,6 +68,28 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <li>composite_anomalies</li></ul>
 </section>
 </div>
+<h2>Submission Readiness</h2>
+<div class="grid">
+<section class="panel">
+<h3>Target</h3>
+<p>.</p>
+</section>
+<section class="panel">
+<h3>Status</h3>
+<p>FAIL</p>
+</section>
+<section class="panel">
+<h3>Findings</h3>
+<ul><li>duplicate_ids</li>
+<li>duplicate_first_token_ids</li>
+<li>invalid_chars</li>
+<li>high_n_rate</li>
+<li>tiny_contigs</li>
+<li>gap_runs</li>
+<li>terminal_ns</li></ul>
+</section>
+</div>
+<p class="muted">Official validators are still required. FastaGuard reports FASTA-level preflight risks only.</p>
 <section>
 <h2>Readiness</h2>
 <p><span class="label">Overall:</span> FAIL</p>
@@ -77,7 +99,13 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <li>gap_runs</li>
 <li>terminal_ns</li>
 <li>length_outliers</li>
-<li>composite_anomalies</li></ul></td></tr><tr><td>Submission readiness</td><td class="status-warn">WARN</td><td><ul><li>terminal_ns</li></ul></td></tr><tr><td>Machine readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr></tbody></table>
+<li>composite_anomalies</li></ul></td></tr><tr><td>Submission readiness</td><td class="status-fail">FAIL</td><td><ul><li>duplicate_ids</li>
+<li>duplicate_first_token_ids</li>
+<li>invalid_chars</li>
+<li>high_n_rate</li>
+<li>tiny_contigs</li>
+<li>gap_runs</li>
+<li>terminal_ns</li></ul></td></tr><tr><td>Machine readiness</td><td class="status-pass">PASS</td><td><p>None</p></td></tr></tbody></table>
 </section>
 <h2>Machine Summary</h2>
 <div class="grid">
@@ -93,7 +121,9 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <thead><tr><th>Tool</th><th>Reason</th></tr></thead>
 <tbody><tr><td>seqkit</td><td>Downstream tools often assume FASTA identifiers are unique.</td></tr>
 <tr><td>QUAST</td><td>Assembly-level evaluation can show whether ambiguity affects broader assembly quality.</td></tr>
-<tr><td>BlobToolKit</td><td>Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.</td></tr></tbody>
+<tr><td>BlobToolKit</td><td>Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.</td></tr>
+<tr><td>official submission validator</td><td>Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator.</td></tr>
+<tr><td>NCBI FCS</td><td>Run database-backed contamination/adaptor screening when submission-oriented ambiguity or gap signals need follow-up.</td></tr></tbody>
 </table>
 </section>
 </div>
@@ -117,14 +147,18 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <li>duplicate identifiers</li>
 <li>invalid sequence symbols</li>
 <li>basic structural statistics</li>
-<li>sequence composition red flags</li></ul>
+<li>sequence composition red flags</li>
+<li>FASTA-level submission readiness</li></ul>
 </section>
 <section class="panel">
 <h3>Cannot Conclude</h3>
 <ul><li>biological completeness</li>
 <li>taxonomic contamination</li>
 <li>whole-assembly accuracy</li>
-<li>misassembly status without alignment evidence</li></ul>
+<li>misassembly status without alignment evidence</li>
+<li>repository acceptance</li>
+<li>official validator acceptance</li>
+<li>annotation correctness</li></ul>
 </section>
 </div>
 <h2>Plots</h2>
@@ -542,10 +576,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </section>
 <h2>JSON</h2>
 <pre>{
-  &quot;schema_version&quot;: &quot;0.4.0&quot;,
+  &quot;schema_version&quot;: &quot;0.5.0&quot;,
   &quot;tool&quot;: {
     &quot;name&quot;: &quot;FastaGuard&quot;,
-    &quot;version&quot;: &quot;0.4.0&quot;
+    &quot;version&quot;: &quot;0.5.0&quot;
   },
   &quot;input&quot;: {
     &quot;path&quot;: &quot;testdata/problem_assembly.fa&quot;,
@@ -562,6 +596,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
   },
   &quot;gate&quot;: {
     &quot;mode&quot;: &quot;none&quot;,
+    &quot;submission_target&quot;: null,
     &quot;status&quot;: &quot;FAIL&quot;,
     &quot;blocking_findings&quot;: [
       &quot;duplicate_ids&quot;,
@@ -583,26 +618,32 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       &quot;status&quot;: &quot;FAIL&quot;,
       &quot;blockers&quot;: [
         &quot;index.duplicate_ids&quot;,
+        &quot;submission.duplicate_ids&quot;,
         &quot;index.duplicate_first_token_ids&quot;,
-        &quot;alphabet.invalid_chars&quot;
+        &quot;submission.duplicate_first_token_ids&quot;,
+        &quot;alphabet.invalid_chars&quot;,
+        &quot;submission.invalid_chars&quot;
       ]
     },
     &quot;categories&quot;: [
       {
         &quot;id&quot;: &quot;file&quot;,
         &quot;label&quot;: &quot;File readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;PASS&quot;,
         &quot;findings&quot;: []
       },
       {
         &quot;id&quot;: &quot;structure&quot;,
         &quot;label&quot;: &quot;Structure readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;PASS&quot;,
         &quot;findings&quot;: []
       },
       {
         &quot;id&quot;: &quot;alphabet&quot;,
         &quot;label&quot;: &quot;Alphabet readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;FAIL&quot;,
         &quot;findings&quot;: [
           &quot;invalid_chars&quot;
@@ -611,6 +652,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;id&quot;: &quot;index&quot;,
         &quot;label&quot;: &quot;Index readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;FAIL&quot;,
         &quot;findings&quot;: [
           &quot;duplicate_ids&quot;,
@@ -620,6 +662,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;id&quot;: &quot;assembly&quot;,
         &quot;label&quot;: &quot;Assembly readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;WARN&quot;,
         &quot;findings&quot;: [
           &quot;high_n_rate&quot;,
@@ -633,14 +676,22 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;id&quot;: &quot;submission&quot;,
         &quot;label&quot;: &quot;Submission readiness&quot;,
-        &quot;status&quot;: &quot;WARN&quot;,
+        &quot;target&quot;: null,
+        &quot;status&quot;: &quot;FAIL&quot;,
         &quot;findings&quot;: [
+          &quot;duplicate_ids&quot;,
+          &quot;duplicate_first_token_ids&quot;,
+          &quot;invalid_chars&quot;,
+          &quot;high_n_rate&quot;,
+          &quot;tiny_contigs&quot;,
+          &quot;gap_runs&quot;,
           &quot;terminal_ns&quot;
         ]
       },
       {
         &quot;id&quot;: &quot;machine&quot;,
         &quot;label&quot;: &quot;Machine readiness&quot;,
+        &quot;target&quot;: null,
         &quot;status&quot;: &quot;PASS&quot;,
         &quot;findings&quot;: []
       }
@@ -672,6 +723,14 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;tool&quot;: &quot;BlobToolKit&quot;,
         &quot;reason&quot;: &quot;Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review.&quot;
+      },
+      {
+        &quot;tool&quot;: &quot;official submission validator&quot;,
+        &quot;reason&quot;: &quot;Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator.&quot;
+      },
+      {
+        &quot;tool&quot;: &quot;NCBI FCS&quot;,
+        &quot;reason&quot;: &quot;Run database-backed contamination/adaptor screening when submission-oriented ambiguity or gap signals need follow-up.&quot;
       }
     ],
     &quot;routing_hints&quot;: [
@@ -683,6 +742,11 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       {
         &quot;condition&quot;: &quot;index_readiness_failure&quot;,
         &quot;suggested_route&quot;: &quot;rename_records_before_indexing&quot;,
+        &quot;requires_external_database&quot;: false
+      },
+      {
+        &quot;condition&quot;: &quot;submission_readiness_failure&quot;,
+        &quot;suggested_route&quot;: &quot;fix_fasta_before_official_validation&quot;,
         &quot;requires_external_database&quot;: false
       },
       {
@@ -724,17 +788,22 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       &quot;duplicate identifiers&quot;,
       &quot;invalid sequence symbols&quot;,
       &quot;basic structural statistics&quot;,
-      &quot;sequence composition red flags&quot;
+      &quot;sequence composition red flags&quot;,
+      &quot;FASTA-level submission readiness&quot;
     ],
     &quot;cannot_conclude&quot;: [
       &quot;biological completeness&quot;,
       &quot;taxonomic contamination&quot;,
       &quot;whole-assembly accuracy&quot;,
-      &quot;misassembly status without alignment evidence&quot;
+      &quot;misassembly status without alignment evidence&quot;,
+      &quot;repository acceptance&quot;,
+      &quot;official validator acceptance&quot;,
+      &quot;annotation correctness&quot;
     ]
   },
   &quot;provenance&quot;: {
     &quot;profile&quot;: &quot;assembly&quot;,
+    &quot;submission_target&quot;: null,
     &quot;threads&quot;: 1,
     &quot;fail_on&quot;: [],
     &quot;thresholds&quot;: {

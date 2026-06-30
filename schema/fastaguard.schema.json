@@ -31,7 +31,7 @@
       ],
       "properties": {
         "schema_version": {
-          "const": "0.4.0",
+          "const": "0.5.0",
           "description": "Version of the FastaGuard report schema."
         },
         "tool": {
@@ -96,6 +96,7 @@
           "type": "object",
           "required": [
             "mode",
+            "submission_target",
             "status",
             "blocking_findings",
             "advisory_findings",
@@ -106,7 +107,19 @@
               "type": "string",
               "enum": [
                 "none",
-                "pipeline"
+                "pipeline",
+                "submission"
+              ]
+            },
+            "submission_target": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                null,
+                "generic",
+                "ncbi"
               ]
             },
             "status": {
@@ -213,6 +226,7 @@
           "type": "object",
           "required": [
             "profile",
+            "submission_target",
             "threads",
             "fail_on",
             "thresholds",
@@ -226,6 +240,17 @@
           "properties": {
             "profile": {
               "type": "string"
+            },
+            "submission_target": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                null,
+                "generic",
+                "ncbi"
+              ]
             },
             "threads": {
               "type": "integer",
@@ -506,7 +531,7 @@
       ],
       "properties": {
         "schema_version": {
-          "const": "0.4.0",
+          "const": "0.5.0",
           "description": "Version of the FastaGuard report schema."
         },
         "report_type": {
@@ -572,7 +597,10 @@
         "sample_count",
         "pass_count",
         "warn_count",
-        "fail_count"
+        "fail_count",
+        "submission_ready_count",
+        "submission_warn_count",
+        "submission_fail_count"
       ],
       "properties": {
         "sample_count": {
@@ -590,6 +618,18 @@
         "fail_count": {
           "type": "integer",
           "minimum": 0
+        },
+        "submission_ready_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "submission_warn_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "submission_fail_count": {
+          "type": "integer",
+          "minimum": 0
         }
       },
       "additionalProperties": false
@@ -602,6 +642,8 @@
         "verdict",
         "gate_status",
         "readiness_status",
+        "submission_target",
+        "submission_status",
         "readiness_categories",
         "sequence_count",
         "total_length",
@@ -646,6 +688,20 @@
           ]
         },
         "readiness_status": {
+          "$ref": "#/$defs/readiness_status"
+        },
+        "submission_target": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "generic",
+            "ncbi"
+          ]
+        },
+        "submission_status": {
           "$ref": "#/$defs/readiness_status"
         },
         "readiness_categories": {
@@ -867,6 +923,7 @@
       "required": [
         "id",
         "label",
+        "target",
         "status",
         "findings"
       ],
@@ -876,6 +933,17 @@
         },
         "label": {
           "type": "string"
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "generic",
+            "ncbi"
+          ]
         },
         "status": {
           "$ref": "#/$defs/readiness_status"

@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.4.0",
-  "catalog_version": "0.4.0",
+  "schema_version": "0.5.0",
+  "catalog_version": "0.5.0",
   "tool": {
     "name": "FastaGuard"
   },
@@ -45,7 +45,7 @@
       "default_verdict_effect": "fail",
       "description": "First whitespace-delimited FASTA identifiers collide.",
       "meaning": "First whitespace-delimited FASTA identifiers collide.",
-      "why_it_matters": "Many downstream tools index records by the first header token.",
+      "why_it_matters": "Many downstream tools and submission validators index records by the first header token; collisions can affect submission readiness.",
       "evidence_fields": [
         "summary.duplicate_first_token_id_count",
         "findings[].affected_count"
@@ -63,9 +63,13 @@
         {
           "tool": "seqkit",
           "role": "inspect and rename records with colliding first-token identifiers"
+        },
+        {
+          "tool": "official submission validator",
+          "role": "validate repository-specific rules after FASTA-level identifier collisions are fixed"
         }
       ],
-      "cannot_conclude": ["biological duplication", "assembly correctness"]
+      "cannot_conclude": ["biological duplication", "assembly correctness", "repository acceptance"]
     },
     {
       "id": "unsafe_ids",
@@ -78,7 +82,7 @@
       "default_verdict_effect": "warn",
       "description": "One or more FASTA identifiers contain characters that may be unsafe for downstream tools.",
       "meaning": "One or more FASTA identifiers contain characters that may be unsafe for downstream tools.",
-      "why_it_matters": "Some indexing, database, submission, and workflow tools assume simple portable record identifiers.",
+      "why_it_matters": "Some indexing, database, submission, and workflow tools assume simple portable record identifiers; unsafe characters can affect submission readiness.",
       "evidence_fields": ["summary.unsafe_id_count", "findings[].affected_count"],
       "suggested_actions": [
         {
@@ -93,9 +97,13 @@
         {
           "tool": "seqkit",
           "role": "normalize FASTA identifiers before indexing or submission"
+        },
+        {
+          "tool": "official submission validator",
+          "role": "validate repository-specific rules after FASTA-level identifier issues are fixed"
         }
       ],
-      "cannot_conclude": ["sequence quality", "assembly correctness"]
+      "cannot_conclude": ["sequence quality", "assembly correctness", "repository acceptance"]
     },
     {
       "id": "long_headers",
@@ -108,7 +116,7 @@
       "default_verdict_effect": "warn",
       "description": "One or more FASTA headers exceed the compatibility length limit.",
       "meaning": "One or more FASTA headers exceed the compatibility length limit.",
-      "why_it_matters": "Long headers can be truncated or rejected by some database, indexing, and submission workflows.",
+      "why_it_matters": "Long headers can be truncated or rejected by some database, indexing, and submission workflows, so they can affect submission readiness.",
       "evidence_fields": ["summary.long_header_count", "findings[].affected_count"],
       "suggested_actions": [
         {
@@ -123,9 +131,13 @@
         {
           "tool": "seqkit",
           "role": "shorten headers or move descriptive metadata into sidecar tables"
+        },
+        {
+          "tool": "official submission validator",
+          "role": "validate repository-specific header limits after FASTA-level issues are fixed"
         }
       ],
-      "cannot_conclude": ["sequence quality", "assembly correctness"]
+      "cannot_conclude": ["sequence quality", "assembly correctness", "repository acceptance"]
     },
     {
       "id": "reserved_header_chars",
@@ -138,7 +150,7 @@
       "default_verdict_effect": "warn",
       "description": "One or more FASTA headers contain reserved compatibility characters.",
       "meaning": "One or more FASTA headers contain reserved compatibility characters.",
-      "why_it_matters": "Reserved header characters can confuse parsers, database builders, or submission validators.",
+      "why_it_matters": "Reserved header characters can confuse parsers, database builders, or submission validators and can affect submission readiness.",
       "evidence_fields": [
         "summary.reserved_header_char_count",
         "findings[].affected_count"
@@ -156,9 +168,13 @@
         {
           "tool": "seqkit",
           "role": "normalize headers before database construction or submission"
+        },
+        {
+          "tool": "official submission validator",
+          "role": "validate repository-specific header character rules after FASTA-level issues are fixed"
         }
       ],
-      "cannot_conclude": ["sequence quality", "assembly correctness"]
+      "cannot_conclude": ["sequence quality", "assembly correctness", "repository acceptance"]
     },
     {
       "id": "invalid_chars",
@@ -197,7 +213,7 @@
       "default_severity": "major",
       "default_verdict_effect": "warn",
       "meaning": "Global or per-sequence N content exceeds the assembly profile threshold.",
-      "why_it_matters": "High N content can reduce mapping confidence and fragment annotation or polishing steps.",
+      "why_it_matters": "High N content can reduce mapping confidence, fragment annotation or polishing steps, and trigger submission-oriented ambiguity follow-up.",
       "evidence_fields": [
         "summary.n_percent",
         "summary.high_n_sequence_count",
@@ -228,9 +244,13 @@
         {
           "tool": "BUSCO",
           "role": "biological completeness after structural preflight checks"
+        },
+        {
+          "tool": "NCBI FCS",
+          "role": "database-backed contamination or adaptor screening when submission-oriented ambiguity signals need follow-up"
         }
       ],
-      "cannot_conclude": ["biological completeness", "misassembly status", "taxonomic contamination"]
+      "cannot_conclude": ["biological completeness", "misassembly status", "taxonomic contamination", "repository acceptance"]
     },
     {
       "id": "tiny_contigs",
@@ -269,7 +289,7 @@
       "default_severity": "major",
       "default_verdict_effect": "warn",
       "meaning": "The longest contiguous N gap run exceeds the assembly profile limit.",
-      "why_it_matters": "Long gap runs can indicate unresolved assembly regions and may disrupt mapping or annotation.",
+      "why_it_matters": "Long gap runs can indicate unresolved assembly regions, disrupt mapping or annotation, and trigger submission-oriented gap follow-up.",
       "evidence_fields": ["summary.max_gap_run", "findings[].affected_count"],
       "suggested_actions": [
         {
@@ -284,9 +304,13 @@
         {
           "tool": "QUAST",
           "role": "assembly-level gap and scaffold evaluation"
+        },
+        {
+          "tool": "NCBI FCS",
+          "role": "database-backed contamination or adaptor screening when submission-oriented gap signals need follow-up"
         }
       ],
-      "cannot_conclude": ["gap correctness", "misassembly status without alignment evidence"]
+      "cannot_conclude": ["gap correctness", "misassembly status without alignment evidence", "repository acceptance"]
     },
     {
       "id": "terminal_ns",
@@ -318,9 +342,13 @@
         {
           "tool": "seqkit",
           "role": "inspect records with leading or trailing N bases"
+        },
+        {
+          "tool": "official submission validator",
+          "role": "validate repository-specific rules after terminal N issues are reviewed or fixed"
         }
       ],
-      "cannot_conclude": ["gap correctness", "submission acceptance"]
+      "cannot_conclude": ["gap correctness", "submission acceptance", "repository acceptance"]
     },
     {
       "id": "gap_pattern_warnings",
@@ -352,9 +380,13 @@
         {
           "tool": "QUAST",
           "role": "evaluate scaffold gap patterns after FASTA preflight"
+        },
+        {
+          "tool": "official submission validator",
+          "role": "validate repository-specific gap pattern rules after FASTA-level issues are reviewed or fixed"
         }
       ],
-      "cannot_conclude": ["gap correctness", "misassembly status without alignment evidence"]
+      "cannot_conclude": ["gap correctness", "misassembly status without alignment evidence", "repository acceptance"]
     },
     {
       "id": "expected_size_outlier",

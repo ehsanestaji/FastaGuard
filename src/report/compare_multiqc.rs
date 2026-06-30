@@ -34,6 +34,11 @@ struct MultiqcSummaryRow {
     verdict: &'static str,
     gate_status: &'static str,
     readiness_status: &'static str,
+    submission_target: String,
+    submission_status: &'static str,
+    submission_ready_count: u64,
+    submission_warn_count: u64,
+    submission_fail_count: u64,
     sequence_count: u64,
     total_length: u64,
     n50: u64,
@@ -55,7 +60,7 @@ struct MultiqcSummaryRow {
 pub fn write(report: &CompareReport, path: &Path) -> Result<()> {
     let mut data = BTreeMap::new();
     for sample in &report.samples {
-        data.insert(sample.sample_id.clone(), summary_row(sample));
+        data.insert(sample.sample_id.clone(), summary_row(report, sample));
     }
 
     let wrapper = MultiqcReport {
@@ -78,11 +83,19 @@ pub fn write(report: &CompareReport, path: &Path) -> Result<()> {
     writeln!(file).with_context(|| format!("failed to write MultiQC report {}", path.display()))
 }
 
-fn summary_row(sample: &CompareSample) -> MultiqcSummaryRow {
+fn summary_row(report: &CompareReport, sample: &CompareSample) -> MultiqcSummaryRow {
     MultiqcSummaryRow {
         verdict: verdict_status(sample.verdict),
         gate_status: verdict_status(sample.gate_status),
         readiness_status: readiness_status(sample.readiness_status),
+        submission_target: sample
+            .submission_target
+            .clone()
+            .unwrap_or_else(|| ".".to_string()),
+        submission_status: readiness_status(sample.submission_status),
+        submission_ready_count: report.summary.submission_ready_count,
+        submission_warn_count: report.summary.submission_warn_count,
+        submission_fail_count: report.summary.submission_fail_count,
         sequence_count: sample.sequence_count,
         total_length: sample.total_length,
         n50: sample.n50,
@@ -107,6 +120,11 @@ fn summary_headers() -> BTreeMap<&'static str, MultiqcHeader> {
         ("verdict", "Verdict"),
         ("gate_status", "Gate"),
         ("readiness_status", "Readiness"),
+        ("submission_target", "Submission Target"),
+        ("submission_status", "Submission Status"),
+        ("submission_ready_count", "Submission Ready"),
+        ("submission_warn_count", "Submission Warn"),
+        ("submission_fail_count", "Submission Fail"),
         ("sequence_count", "Sequences"),
         ("total_length", "Total Length"),
         ("n50", "N50"),
@@ -177,10 +195,35 @@ mod tests {
             "Readiness"
         );
         assert_eq!(
+            output["pconfig"]["headers"]["submission_target"]["title"],
+            "Submission Target"
+        );
+        assert_eq!(
+            output["pconfig"]["headers"]["submission_status"]["title"],
+            "Submission Status"
+        );
+        assert_eq!(
+            output["pconfig"]["headers"]["submission_ready_count"]["title"],
+            "Submission Ready"
+        );
+        assert_eq!(
+            output["pconfig"]["headers"]["submission_warn_count"]["title"],
+            "Submission Warn"
+        );
+        assert_eq!(
+            output["pconfig"]["headers"]["submission_fail_count"]["title"],
+            "Submission Fail"
+        );
+        assert_eq!(
             output["pconfig"]["headers"]["duplicate_id_count"]["title"],
             "Duplicate IDs"
         );
         assert_eq!(output["data"]["sample_a"]["verdict"], "PASS");
+        assert_eq!(output["data"]["sample_a"]["submission_target"], "ncbi");
+        assert_eq!(output["data"]["sample_a"]["submission_status"], "WARN");
+        assert_eq!(output["data"]["sample_a"]["submission_ready_count"], 1);
+        assert_eq!(output["data"]["sample_a"]["submission_warn_count"], 1);
+        assert_eq!(output["data"]["sample_a"]["submission_fail_count"], 0);
         assert_eq!(output["data"]["sample_a"]["duplicate_id_count"], 3);
         assert_eq!(output["data"]["sample_a"]["invalid_sequence_count"], 4);
         assert_eq!(output["data"]["sample_a"]["gc_outlier_count"], 8);
@@ -207,6 +250,9 @@ mod tests {
                 pass_count: 1,
                 warn_count: 0,
                 fail_count: 0,
+                submission_ready_count: 1,
+                submission_warn_count: 1,
+                submission_fail_count: 0,
             },
             samples: vec![CompareSample {
                 sample_id: "sample_a".to_string(),
@@ -214,11 +260,14 @@ mod tests {
                 verdict: VerdictStatus::Pass,
                 gate_status: VerdictStatus::Pass,
                 readiness_status: crate::readiness::ReadinessStatus::Pass,
+                submission_target: Some("ncbi".to_string()),
+                submission_status: crate::readiness::ReadinessStatus::Warn,
                 readiness_categories: crate::readiness::build_readiness(
                     VerdictStatus::Pass,
                     &[],
                     &[],
                     crate::readiness::ReadinessScope::Single,
+                    None,
                 )
                 .categories,
                 sequence_count: 2,

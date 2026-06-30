@@ -1,8 +1,8 @@
 {
-  "schema_version": "0.4.0",
+  "schema_version": "0.5.0",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "input": {
     "path": "testdata/invalid_empty_record.fa",
@@ -17,6 +17,7 @@
   },
   "gate": {
     "mode": "none",
+    "submission_target": null,
     "status": "FAIL",
     "blocking_findings": [
       "invalid_fasta_structure"
@@ -29,13 +30,15 @@
       "status": "FAIL",
       "blockers": [
         "file.invalid_fasta_structure",
-        "structure.invalid_fasta_structure"
+        "structure.invalid_fasta_structure",
+        "submission.invalid_fasta_structure"
       ]
     },
     "categories": [
       {
         "id": "file",
         "label": "File readiness",
+        "target": null,
         "status": "FAIL",
         "findings": [
           "invalid_fasta_structure"
@@ -44,6 +47,7 @@
       {
         "id": "structure",
         "label": "Structure readiness",
+        "target": null,
         "status": "FAIL",
         "findings": [
           "invalid_fasta_structure"
@@ -52,30 +56,37 @@
       {
         "id": "alphabet",
         "label": "Alphabet readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "index",
         "label": "Index readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "assembly",
         "label": "Assembly readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "submission",
         "label": "Submission readiness",
-        "status": "PASS",
-        "findings": []
+        "target": null,
+        "status": "FAIL",
+        "findings": [
+          "invalid_fasta_structure"
+        ]
       },
       {
         "id": "machine",
         "label": "Machine readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       }
@@ -108,17 +119,22 @@
       "duplicate identifiers",
       "invalid sequence symbols",
       "basic structural statistics",
-      "sequence composition red flags"
+      "sequence composition red flags",
+      "FASTA-level submission readiness"
     ],
     "cannot_conclude": [
       "biological completeness",
       "taxonomic contamination",
       "whole-assembly accuracy",
-      "misassembly status without alignment evidence"
+      "misassembly status without alignment evidence",
+      "repository acceptance",
+      "official validator acceptance",
+      "annotation correctness"
     ]
   },
   "provenance": {
     "profile": "assembly",
+    "submission_target": null,
     "threads": 1,
     "fail_on": [],
     "thresholds": {

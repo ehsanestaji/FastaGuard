@@ -1,8 +1,8 @@
 {
-  "schema_version": "0.4.0",
+  "schema_version": "0.5.0",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "input": {
     "path": "testdata/valid_assembly.fa",
@@ -17,6 +17,7 @@
   },
   "gate": {
     "mode": "none",
+    "submission_target": null,
     "status": "WARN",
     "blocking_findings": [],
     "advisory_findings": [
@@ -33,30 +34,35 @@
       {
         "id": "file",
         "label": "File readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "structure",
         "label": "Structure readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "alphabet",
         "label": "Alphabet readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "index",
         "label": "Index readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "assembly",
         "label": "Assembly readiness",
+        "target": null,
         "status": "WARN",
         "findings": [
           "terminal_ns"
@@ -65,6 +71,7 @@
       {
         "id": "submission",
         "label": "Submission readiness",
+        "target": null,
         "status": "WARN",
         "findings": [
           "terminal_ns"
@@ -73,6 +80,7 @@
       {
         "id": "machine",
         "label": "Machine readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       }
@@ -88,6 +96,10 @@
       {
         "tool": "seqkit",
         "reason": "Terminal Ns can trigger submission warnings and may indicate records that need trimming or scaffold-boundary review."
+      },
+      {
+        "tool": "official submission validator",
+        "reason": "Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator."
       }
     ],
     "routing_hints": [
@@ -105,17 +117,22 @@
       "duplicate identifiers",
       "invalid sequence symbols",
       "basic structural statistics",
-      "sequence composition red flags"
+      "sequence composition red flags",
+      "FASTA-level submission readiness"
     ],
     "cannot_conclude": [
       "biological completeness",
       "taxonomic contamination",
       "whole-assembly accuracy",
-      "misassembly status without alignment evidence"
+      "misassembly status without alignment evidence",
+      "repository acceptance",
+      "official validator acceptance",
+      "annotation correctness"
     ]
   },
   "provenance": {
     "profile": "assembly",
+    "submission_target": null,
     "threads": 1,
     "fail_on": [],
     "thresholds": {

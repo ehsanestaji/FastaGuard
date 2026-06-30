@@ -5,7 +5,7 @@ use std::path::Path;
 
 use crate::models::{CompareReport, CompareSample, VerdictStatus};
 
-const HEADER: &str = "sample_id\tinput_path\tverdict\tgate_status\treadiness_status\tsequence_count\ttotal_length\tn50\tn90\tgc_percent\tn_percent\tduplicate_id_count\tinvalid_sequence_count\thigh_n_sequence_count\ttiny_contig_count\tmax_gap_run\tgc_outlier_count\tlength_outlier_count\tfinding_count\treadiness_blockers\trecommended_next_tools\tinput_sha256";
+const HEADER: &str = "sample_id\tinput_path\tverdict\tgate_status\treadiness_status\tsubmission_target\tsubmission_status\tsubmission_ready_count\tsubmission_warn_count\tsubmission_fail_count\tsequence_count\ttotal_length\tn50\tn90\tgc_percent\tn_percent\tduplicate_id_count\tinvalid_sequence_count\thigh_n_sequence_count\ttiny_contig_count\tmax_gap_run\tgc_outlier_count\tlength_outlier_count\tfinding_count\treadiness_blockers\trecommended_next_tools\tinput_sha256";
 
 pub fn write(report: &CompareReport, path: &Path) -> Result<()> {
     let file =
@@ -15,7 +15,7 @@ pub fn write(report: &CompareReport, path: &Path) -> Result<()> {
     writeln!(writer, "{HEADER}")
         .with_context(|| format!("failed to write TSV report {}", path.display()))?;
     for sample in &report.samples {
-        write_sample(&mut writer, sample)
+        write_sample(&mut writer, report, sample)
             .with_context(|| format!("failed to write TSV report {}", path.display()))?;
     }
 
@@ -24,15 +24,24 @@ pub fn write(report: &CompareReport, path: &Path) -> Result<()> {
         .with_context(|| format!("failed to write TSV report {}", path.display()))
 }
 
-fn write_sample(writer: &mut impl Write, sample: &CompareSample) -> std::io::Result<()> {
+fn write_sample(
+    writer: &mut impl Write,
+    report: &CompareReport,
+    sample: &CompareSample,
+) -> std::io::Result<()> {
     writeln!(
         writer,
-        "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+        "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
         sanitize_tsv_value(&sample.sample_id),
         sanitize_tsv_value(&sample.input_path),
         verdict_status(sample.verdict),
         verdict_status(sample.gate_status),
         readiness_status(sample.readiness_status),
+        sanitize_tsv_value(sample.submission_target.as_deref().unwrap_or(".")),
+        readiness_status(sample.submission_status),
+        report.summary.submission_ready_count,
+        report.summary.submission_warn_count,
+        report.summary.submission_fail_count,
         sample.sequence_count,
         sample.total_length,
         sample.n50,
@@ -96,10 +105,15 @@ mod tests {
 
         let output = fs::read_to_string(file.path()).unwrap();
         assert!(
-            output.starts_with("sample_id\tinput_path\tverdict"),
+            output.starts_with(
+                "sample_id\tinput_path\tverdict\tgate_status\treadiness_status\tsubmission_target\tsubmission_status\tsubmission_ready_count\tsubmission_warn_count\tsubmission_fail_count"
+            ),
             "{output}"
         );
-        assert!(output.contains("sample_a\tsample_a.fa\tPASS"), "{output}");
+        assert!(
+            output.contains("sample_a\tsample_a.fa\tPASS\tPASS\tPASS\tncbi\tWARN\t1\t1\t0"),
+            "{output}"
+        );
         assert!(
             output.contains("\tduplicate_ids\tseqkit,QUAST\t"),
             "{output}"
@@ -113,6 +127,7 @@ mod tests {
         let sample = &mut report.samples[0];
         sample.sample_id = "sample\tone".to_string();
         sample.input_path = "inputs/sample\none\r.fa".to_string();
+        sample.submission_target = Some("ncbi\ttarget".to_string());
         sample.readiness_blockers =
             vec!["duplicate\tids".to_string(), "invalid\nchars".to_string()];
         sample.recommended_next_tools = vec!["seqkit\rstats".to_string(), "QUAST".to_string()];
@@ -129,6 +144,7 @@ mod tests {
         assert_eq!(row_columns, header_columns, "{output}");
         assert!(lines[1].contains("sample one"), "{output}");
         assert!(lines[1].contains("inputs/sample one .fa"), "{output}");
+        assert!(lines[1].contains("ncbi target"), "{output}");
         assert!(lines[1].contains("duplicate ids,invalid chars"), "{output}");
         assert!(lines[1].contains("seqkit stats,QUAST"), "{output}");
         assert!(lines[1].contains("sha with controls"), "{output}");
@@ -151,6 +167,9 @@ mod tests {
                 pass_count: 1,
                 warn_count: 0,
                 fail_count: 0,
+                submission_ready_count: 1,
+                submission_warn_count: 1,
+                submission_fail_count: 0,
             },
             samples: vec![CompareSample {
                 sample_id: "sample_a".to_string(),
@@ -158,11 +177,14 @@ mod tests {
                 verdict: VerdictStatus::Pass,
                 gate_status: VerdictStatus::Pass,
                 readiness_status: crate::readiness::ReadinessStatus::Pass,
+                submission_target: Some("ncbi".to_string()),
+                submission_status: crate::readiness::ReadinessStatus::Warn,
                 readiness_categories: crate::readiness::build_readiness(
                     VerdictStatus::Pass,
                     &[],
                     &[],
                     crate::readiness::ReadinessScope::Single,
+                    None,
                 )
                 .categories,
                 sequence_count: 2,

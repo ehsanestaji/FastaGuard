@@ -29,8 +29,9 @@ preflight contract is trusted. The product should earn adoption in this order:
 1. **Trust:** reproducible evidence, stable schemas, clear exit codes, installable packages.
 2. **Integration:** Bioconda, BioContainers, MultiQC, Nextflow, Snakemake, Galaxy.
 3. **Scale:** compare mode for many FASTA files and batch pipeline reports.
-4. **Breadth:** transcriptome, protein, and reference-panel profiles.
-5. **Intelligence:** optional local-metrics-only summaries, MCP/tool-agent interfaces, and workflow routing.
+4. **Readiness depth:** submission-oriented preflight checks before official validators.
+5. **Breadth:** transcriptome, protein, and reference-panel profiles.
+6. **Intelligence:** optional local-metrics-only summaries, MCP/tool-agent interfaces, and workflow routing.
 
 This keeps the project from becoming a bag of heuristics. Each release should
 make the contract more useful, more trusted, or more integrated.
@@ -80,7 +81,35 @@ Compare mode should support:
 This is more strategically important than adding many profile-specific checks
 too early, because pipeline authors often need to triage batches, not one file.
 
-### v0.5: Transcriptome Profile
+### v0.5: Submission Readiness Gate
+
+Goal:
+
+```text
+Make assembly FASTA files safer to hand to official validators, annotation, and downstream QC.
+```
+
+Submission readiness should stay FASTA-level and database-free:
+
+- explicit `--gate submission` workflow behavior
+- stricter identifier and first-token ID safety checks
+- target-aware advisories with `--submission-target generic|ncbi`
+- gap-like `N` run summaries
+- high ambiguity and tiny-record submission advisories
+- JSON, TSV, HTML, and MultiQC fields that pipelines can route on
+- clear recommendations to continue with official validators, NCBI FCS, QUAST,
+  BUSCO, BlobToolKit, CheckM, or annotation tools when appropriate
+
+FastaGuard should not claim repository acceptance, biological completeness,
+annotation correctness, or contamination confirmation. It should help users fix
+FASTA-level blockers before those later checks.
+
+The v0.5 contract should make workflow routing explicit through `gate.mode`,
+`gate.status`, `gate.blocking_findings`, and the
+`readiness.categories[id=submission]` record, while still pointing users to
+official validators for final repository-specific checks.
+
+### v0.6: Transcriptome Profile
 
 Goal:
 
@@ -100,7 +129,7 @@ FastaGuard should not claim transcriptome biological completeness. It should
 route users to transcriptome-specific completeness and annotation tools when
 needed.
 
-### v0.6: Protein Profile
+### v0.7: Protein Profile
 
 Goal:
 
@@ -119,7 +148,7 @@ Initial protein checks:
 Protein mode should be strict about alphabet validity and careful about biology:
 it should flag preflight problems, not infer functional correctness.
 
-### v0.7: Reference-Panel Profile
+### v0.8: Reference-Panel Profile
 
 Goal:
 
@@ -209,11 +238,13 @@ Recommended sequence:
 ```text
 v0.3: evidence pack + assembly gate + provenance checksums
 v0.4: compare mode for many FASTA files
-v0.5: transcriptome profile
-v0.6: protein profile
-v0.7: reference-panel profile
+v0.5: submission readiness gate
+v0.6: transcriptome profile
+v0.7: protein profile
+v0.8: reference-panel profile
 later: MCP/tool-agent interface and optional local summaries
 ```
 
 This path gives FastaGuard the best chance to become a default tool: prove the
-assembly gate first, then scale to batches, then expand profiles.
+assembly gate first, scale to batches, make submission readiness concrete, then
+expand profiles.

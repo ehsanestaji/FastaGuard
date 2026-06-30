@@ -49,6 +49,20 @@ For v0.4 cohort triage, compare mode is a starter pattern:
 fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
 ```
 
+For v0.5 submission-readiness preflight before official validators, use the
+source/package contract rather than the currently published v0.3 container:
+
+```bash
+fastaguard {input.fasta} --gate submission --submission-target ncbi
+```
+
+Pipeline authors should route on:
+
+- `gate.mode`
+- `gate.status`
+- `gate.blocking_findings`
+- `readiness.categories[id=submission]`
+
 This is local fail-fast starter guidance only. It is not yet an upstream nf-core
 module submission, and the Snakemake example is not yet an official wrapper
 submission.

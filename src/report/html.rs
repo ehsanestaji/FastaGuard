@@ -12,6 +12,7 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
 fn render(report: &FastaguardReport) -> Result<String> {
     let summary = &report.summary;
     let gate = render_gate(report);
+    let submission = render_submission_readiness(report);
     let readiness = render_readiness(report);
     let machine_summary = render_machine_summary(report);
     let scope = render_scope(report);
@@ -69,6 +70,8 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
 <p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
 <h2>Gate Decision</h2>
 {gate}
+<h2>Submission Readiness</h2>
+{submission}
 <section>
 <h2>Readiness</h2>
 {readiness}
@@ -108,6 +111,7 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
         gc_percent = summary.gc_percent,
         n_percent = summary.n_percent,
         gate = gate,
+        submission = submission,
         readiness = readiness,
         scope = scope,
         plots = plots,
@@ -137,6 +141,42 @@ fn render_gate(report: &FastaguardReport) -> String {
         status = escape_html(verdict_status(report.gate.status)),
         blocking = render_string_list_or_none(&report.gate.blocking_findings),
         advisory = render_string_list_or_none(&report.gate.advisory_findings),
+    )
+}
+
+fn render_submission_readiness(report: &FastaguardReport) -> String {
+    let target = report
+        .gate
+        .submission_target
+        .map(crate::submission::SubmissionTarget::as_str)
+        .unwrap_or(".");
+    let category = report.readiness.category("submission");
+    let status = category
+        .map(|category| readiness_status(category.status))
+        .unwrap_or("PASS");
+    let findings = category
+        .map(|category| render_string_list_or_none(&category.findings))
+        .unwrap_or_else(|| "None".to_string());
+
+    format!(
+        r#"<div class="grid">
+<section class="panel">
+<h3>Target</h3>
+<p>{target}</p>
+</section>
+<section class="panel">
+<h3>Status</h3>
+<p>{status}</p>
+</section>
+<section class="panel">
+<h3>Findings</h3>
+{findings}
+</section>
+</div>
+<p class="muted">Official validators are still required. FastaGuard reports FASTA-level preflight risks only.</p>"#,
+        target = escape_html(target),
+        status = escape_html(status),
+        findings = findings,
     )
 }
 
@@ -700,6 +740,47 @@ mod tests {
         assert!(output.contains("seqkit"));
     }
 
+    #[test]
+    fn renders_submission_readiness_section() {
+        let mut report = test_report();
+        report.gate.mode = "submission".to_string();
+        report.gate.submission_target = Some(crate::submission::SubmissionTarget::Ncbi);
+        report.gate.status = VerdictStatus::Fail;
+        report.gate.blocking_findings = vec!["unsafe_ids".to_string()];
+        report.readiness = crate::readiness::build_readiness(
+            VerdictStatus::Fail,
+            &report.gate.blocking_findings,
+            &[Finding {
+                id: "unsafe_ids".to_string(),
+                category: FindingCategory::Validity,
+                severity: Severity::Major,
+                confidence: FindingConfidence::High,
+                requires_followup_tool: false,
+                profile: "assembly".to_string(),
+                affected_count: 1,
+                affected_fraction: 0.5,
+                message: "unsafe identifier".to_string(),
+                why_it_matters: "may fail submission".to_string(),
+                suggested_next_step: "rename identifiers".to_string(),
+                evidence: empty_evidence(),
+                actions: Vec::new(),
+            }],
+            crate::readiness::ReadinessScope::Single,
+            report.gate.submission_target,
+        );
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(output.contains("Submission Readiness"));
+        assert!(output.contains("<h3>Target</h3>"));
+        assert!(output.contains("<p>ncbi</p>"));
+        assert!(output.contains("<p>FAIL</p>"));
+        assert!(output.contains("unsafe_ids"));
+        assert!(output.contains("Official validators are still required"));
+    }
+
     fn test_report() -> FastaguardReport {
         FastaguardReport {
             schema_version: "0.1.0".to_string(),
@@ -718,6 +799,7 @@ mod tests {
             },
             gate: GateDecision {
                 mode: "none".to_string(),
+                submission_target: None,
                 status: VerdictStatus::Pass,
                 blocking_findings: Vec::new(),
                 advisory_findings: Vec::new(),
@@ -728,6 +810,7 @@ mod tests {
                 &[],
                 &[],
                 crate::readiness::ReadinessScope::Single,
+                None,
             ),
             machine_summary: MachineSummary {
                 verdict: VerdictStatus::Pass,
@@ -743,6 +826,7 @@ mod tests {
             },
             provenance: Provenance {
                 profile: "assembly".to_string(),
+                submission_target: None,
                 threads: 1,
                 fail_on: Vec::new(),
                 thresholds: ProvenanceThresholds {

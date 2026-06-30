@@ -104,9 +104,10 @@ The release strategy is evidence before expansion:
 ```text
 v0.3: evidence pack + assembly gate + provenance checksums
 v0.4: compare mode for many FASTA files
-v0.5: transcriptome profile
-v0.6: protein profile
-v0.7: reference-panel profile
+v0.5: submission readiness gate
+v0.6: transcriptome profile
+v0.7: protein profile
+v0.8: reference-panel profile
 later: MCP/tool-agent interface and optional local summaries
 ```
 
@@ -122,8 +123,20 @@ Default product boundaries:
 Recommended next big release:
 
 ```text
-v0.3 should make FastaGuard credible as the default assembly gate before adding broad new biological profiles.
+v0.5 should make submission readiness concrete before adding broad new biological profiles.
 ```
+
+The next planned feature direction is:
+
+```text
+Submission Readiness Gate: --gate submission with --submission-target generic|ncbi.
+```
+
+This should stay FASTA-level and database-free. It should check identifier
+safety, duplicate first-token IDs, unsafe characters, long identifiers, gap-like
+N runs, high ambiguity, and tiny-record advisories. It must not claim repository
+acceptance, biological completeness, annotation correctness, or contamination
+confirmation.
 
 ## Collaboration Preference
 

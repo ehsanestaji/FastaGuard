@@ -36,6 +36,12 @@ struct MultiqcSummaryRow {
     gate_blocking_findings: String,
     readiness_status: String,
     readiness_blockers: String,
+    submission_target: String,
+    submission_status: String,
+    unsafe_identifier_count: u64,
+    long_identifier_count: u64,
+    duplicate_first_token_id_count: u64,
+    gap_like_n_run_count: u64,
     sequence_count: u64,
     total_length: u64,
     n50: u64,
@@ -97,6 +103,17 @@ fn summary_row(report: &FastaguardReport) -> MultiqcSummaryRow {
         gate_blocking_findings: report.gate.blocking_findings.join(","),
         readiness_status: readiness_status(report.readiness.overall.status).to_string(),
         readiness_blockers: report.readiness.overall.blockers.join(","),
+        submission_target: report
+            .gate
+            .submission_target
+            .map(crate::submission::SubmissionTarget::as_str)
+            .unwrap_or(".")
+            .to_string(),
+        submission_status: submission_status(report).to_string(),
+        unsafe_identifier_count: report.summary.unsafe_id_count,
+        long_identifier_count: report.summary.long_header_count,
+        duplicate_first_token_id_count: report.summary.duplicate_first_token_id_count,
+        gap_like_n_run_count: report.summary.repeated_gap_pattern_sequence_count,
         sequence_count: report.summary.sequence_count,
         total_length: report.summary.total_length,
         n50: report.summary.n50,
@@ -119,6 +136,15 @@ fn summary_headers() -> BTreeMap<&'static str, MultiqcHeader> {
     [
         ("readiness_status", "Readiness"),
         ("readiness_blockers", "Readiness blockers"),
+        ("submission_target", "Submission Target"),
+        ("submission_status", "Submission Status"),
+        ("unsafe_identifier_count", "Unsafe IDs"),
+        ("long_identifier_count", "Long Headers"),
+        (
+            "duplicate_first_token_id_count",
+            "Duplicate First-Token IDs",
+        ),
+        ("gap_like_n_run_count", "Gap-Like N Runs"),
     ]
     .into_iter()
     .map(|(id, title)| (id, MultiqcHeader { title }))
@@ -148,6 +174,14 @@ fn readiness_status(status: crate::readiness::ReadinessStatus) -> &'static str {
         crate::readiness::ReadinessStatus::Warn => "WARN",
         crate::readiness::ReadinessStatus::Fail => "FAIL",
     }
+}
+
+fn submission_status(report: &FastaguardReport) -> &'static str {
+    report
+        .readiness
+        .category("submission")
+        .map(|category| readiness_status(category.status))
+        .unwrap_or("PASS")
 }
 
 #[cfg(test)]
@@ -183,12 +217,33 @@ mod tests {
             output["pconfig"]["headers"]["readiness_blockers"]["title"],
             "Readiness blockers"
         );
+        assert_eq!(
+            output["pconfig"]["headers"]["submission_target"]["title"],
+            "Submission Target"
+        );
+        assert_eq!(
+            output["pconfig"]["headers"]["submission_status"]["title"],
+            "Submission Status"
+        );
+        assert_eq!(
+            output["pconfig"]["headers"]["unsafe_identifier_count"]["title"],
+            "Unsafe IDs"
+        );
         assert_eq!(output["data"]["sample"]["verdict"], "PASS");
         assert_eq!(output["data"]["sample"]["gate_mode"], "none");
         assert_eq!(output["data"]["sample"]["gate_status"], "PASS");
         assert_eq!(output["data"]["sample"]["gate_blocking_findings"], "");
         assert_eq!(output["data"]["sample"]["readiness_status"], "PASS");
         assert_eq!(output["data"]["sample"]["readiness_blockers"], "");
+        assert_eq!(output["data"]["sample"]["submission_target"], ".");
+        assert_eq!(output["data"]["sample"]["submission_status"], "PASS");
+        assert_eq!(output["data"]["sample"]["unsafe_identifier_count"], 0);
+        assert_eq!(output["data"]["sample"]["long_identifier_count"], 0);
+        assert_eq!(
+            output["data"]["sample"]["duplicate_first_token_id_count"],
+            0
+        );
+        assert_eq!(output["data"]["sample"]["gap_like_n_run_count"], 0);
         assert_eq!(output["data"]["sample"]["sequence_count"], 2);
         assert_eq!(output["data"]["sample"]["duplicate_id_count"], 0);
         assert_eq!(output["data"]["sample"]["invalid_sequence_count"], 0);
@@ -225,6 +280,7 @@ mod tests {
             },
             gate: GateDecision {
                 mode: "none".to_string(),
+                submission_target: None,
                 status: VerdictStatus::Pass,
                 blocking_findings: Vec::new(),
                 advisory_findings: Vec::new(),
@@ -235,6 +291,7 @@ mod tests {
                 &[],
                 &[],
                 crate::readiness::ReadinessScope::Single,
+                None,
             ),
             machine_summary: MachineSummary {
                 verdict: VerdictStatus::Pass,
@@ -250,6 +307,7 @@ mod tests {
             },
             provenance: Provenance {
                 profile: "assembly".to_string(),
+                submission_target: None,
                 threads: 1,
                 fail_on: Vec::new(),
                 thresholds: ProvenanceThresholds {

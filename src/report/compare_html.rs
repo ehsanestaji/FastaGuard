@@ -73,6 +73,9 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
 <div class="panel"><p class="label">PASS</p><p class="metric">{pass_count}</p></div>
 <div class="panel"><p class="label">WARN</p><p class="metric">{warn_count}</p></div>
 <div class="panel"><p class="label">FAIL</p><p class="metric">{fail_count}</p></div>
+<div class="panel"><p class="label">Submission ready</p><p class="metric">{submission_ready_count}</p></div>
+<div class="panel"><p class="label">Submission warn</p><p class="metric">{submission_warn_count}</p></div>
+<div class="panel"><p class="label">Submission fail</p><p class="metric">{submission_fail_count}</p></div>
 </section>
 <h2>Readiness Matrix</h2>
 {readiness_matrix}
@@ -92,6 +95,9 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
         pass_count = report.summary.pass_count,
         warn_count = report.summary.warn_count,
         fail_count = report.summary.fail_count,
+        submission_ready_count = report.summary.submission_ready_count,
+        submission_warn_count = report.summary.submission_warn_count,
+        submission_fail_count = report.summary.submission_fail_count,
         readiness_matrix = readiness_matrix,
         charts = charts,
         cohort_findings = cohort_findings,
@@ -107,7 +113,9 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
         .map(|sample| {
             let verdict = verdict_status(sample.verdict);
             let gate_status = verdict_status(sample.gate_status);
-            let readiness_status = readiness_status(sample.readiness_status);
+            let overall_readiness_status = readiness_status(sample.readiness_status);
+            let submission_target = sample.submission_target.as_deref().unwrap_or(".");
+            let submission_status = readiness_status(sample.submission_status);
             let category_cells = render_readiness_category_cells(sample);
             format!(
                 r#"<tr>
@@ -116,6 +124,8 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
 <td class="status-{verdict_class}">{verdict}</td>
 <td class="status-{gate_class}">{gate_status}</td>
 <td class="status-{readiness_class}">{readiness_status}</td>
+<td>{submission_target}</td>
+<td class="status-{submission_class}">{submission_status}</td>
 {category_cells}
 <td>{sequence_count}</td>
 <td>{total_length}</td>
@@ -132,8 +142,11 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
                 verdict_class = verdict.to_ascii_lowercase(),
                 gate_status = gate_status,
                 gate_class = gate_status.to_ascii_lowercase(),
-                readiness_status = readiness_status,
-                readiness_class = readiness_status.to_ascii_lowercase(),
+                readiness_status = overall_readiness_status,
+                readiness_class = overall_readiness_status.to_ascii_lowercase(),
+                submission_target = escape_html(submission_target),
+                submission_status = submission_status,
+                submission_class = submission_status.to_ascii_lowercase(),
                 category_cells = category_cells,
                 sequence_count = sample.sequence_count,
                 total_length = sample.total_length,
@@ -156,7 +169,7 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
     format!(
         r#"<div class="table-scroll">
 <table>
-<thead><tr><th>Sample</th><th>Input</th><th>Verdict</th><th>Gate</th><th>Readiness</th>{category_headers}<th>Sequences</th><th>Total length</th><th>N50</th><th>N90</th><th>GC%</th><th>N%</th><th>Findings</th><th>Blockers</th></tr></thead>
+<thead><tr><th>Sample</th><th>Input</th><th>Verdict</th><th>Gate</th><th>Readiness</th><th>Submission target</th><th>Submission status</th>{category_headers}<th>Sequences</th><th>Total length</th><th>N50</th><th>N90</th><th>GC%</th><th>N%</th><th>Findings</th><th>Blockers</th></tr></thead>
 <tbody>{rows}</tbody>
 </table>
 </div>"#
@@ -394,6 +407,12 @@ mod tests {
         assert!(output.contains("<th>File readiness</th>"), "{output}");
         assert!(output.contains("<th>Index readiness</th>"), "{output}");
         assert!(output.contains("<th>Machine readiness</th>"), "{output}");
+        assert!(output.contains("<th>Submission status</th>"), "{output}");
+        assert!(output.contains("Submission warn"), "{output}");
+        assert!(
+            output.contains(r#"<td class="status-warn">WARN</td>"#),
+            "{output}"
+        );
         assert!(output.contains("Cohort Findings"), "{output}");
         assert!(output.contains("Suggested Next Tools"), "{output}");
         assert!(output.matches("<svg").count() >= 5, "{output}");
@@ -404,12 +423,14 @@ mod tests {
         let mut report = test_report();
         report.samples[0].sample_id = "sample_<script>".to_string();
         report.samples[0].input_path = "bad<&>.fa".to_string();
+        report.samples[0].submission_target = Some("ncbi<&>".to_string());
         report.samples[0].recommended_next_tools = vec!["tool<bad>".to_string()];
 
         let output = render(&report).unwrap();
 
         assert!(output.contains("sample_&lt;script&gt;"), "{output}");
         assert!(output.contains("bad&lt;&amp;&gt;.fa"), "{output}");
+        assert!(output.contains("ncbi&lt;&amp;&gt;"), "{output}");
         assert!(output.contains("tool&lt;bad&gt;"), "{output}");
         assert!(!output.contains("sample_<script>"), "{output}");
     }
@@ -431,6 +452,9 @@ mod tests {
                 pass_count: 1,
                 warn_count: 0,
                 fail_count: 0,
+                submission_ready_count: 1,
+                submission_warn_count: 1,
+                submission_fail_count: 0,
             },
             samples: vec![CompareSample {
                 sample_id: "sample_a".to_string(),
@@ -438,11 +462,14 @@ mod tests {
                 verdict: VerdictStatus::Pass,
                 gate_status: VerdictStatus::Pass,
                 readiness_status: crate::readiness::ReadinessStatus::Pass,
+                submission_target: Some("ncbi".to_string()),
+                submission_status: crate::readiness::ReadinessStatus::Warn,
                 readiness_categories: crate::readiness::build_readiness(
                     VerdictStatus::Pass,
                     &[],
                     &[],
                     crate::readiness::ReadinessScope::Single,
+                    None,
                 )
                 .categories,
                 sequence_count: 2,

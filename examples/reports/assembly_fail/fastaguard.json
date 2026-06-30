@@ -1,8 +1,8 @@
 {
-  "schema_version": "0.4.0",
+  "schema_version": "0.5.0",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "input": {
     "path": "testdata/problem_assembly.fa",
@@ -19,6 +19,7 @@
   },
   "gate": {
     "mode": "none",
+    "submission_target": null,
     "status": "FAIL",
     "blocking_findings": [
       "duplicate_ids",
@@ -40,26 +41,32 @@
       "status": "FAIL",
       "blockers": [
         "index.duplicate_ids",
+        "submission.duplicate_ids",
         "index.duplicate_first_token_ids",
-        "alphabet.invalid_chars"
+        "submission.duplicate_first_token_ids",
+        "alphabet.invalid_chars",
+        "submission.invalid_chars"
       ]
     },
     "categories": [
       {
         "id": "file",
         "label": "File readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "structure",
         "label": "Structure readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       },
       {
         "id": "alphabet",
         "label": "Alphabet readiness",
+        "target": null,
         "status": "FAIL",
         "findings": [
           "invalid_chars"
@@ -68,6 +75,7 @@
       {
         "id": "index",
         "label": "Index readiness",
+        "target": null,
         "status": "FAIL",
         "findings": [
           "duplicate_ids",
@@ -77,6 +85,7 @@
       {
         "id": "assembly",
         "label": "Assembly readiness",
+        "target": null,
         "status": "WARN",
         "findings": [
           "high_n_rate",
@@ -90,14 +99,22 @@
       {
         "id": "submission",
         "label": "Submission readiness",
-        "status": "WARN",
+        "target": null,
+        "status": "FAIL",
         "findings": [
+          "duplicate_ids",
+          "duplicate_first_token_ids",
+          "invalid_chars",
+          "high_n_rate",
+          "tiny_contigs",
+          "gap_runs",
           "terminal_ns"
         ]
       },
       {
         "id": "machine",
         "label": "Machine readiness",
+        "target": null,
         "status": "PASS",
         "findings": []
       }
@@ -129,6 +146,14 @@
       {
         "tool": "BlobToolKit",
         "reason": "Records with multiple FASTA-level anomaly signals should be prioritized for composition and coverage review."
+      },
+      {
+        "tool": "official submission validator",
+        "reason": "Use the target repository validator after FASTA-level issues are fixed; FastaGuard is not an official validator."
+      },
+      {
+        "tool": "NCBI FCS",
+        "reason": "Run database-backed contamination/adaptor screening when submission-oriented ambiguity or gap signals need follow-up."
       }
     ],
     "routing_hints": [
@@ -140,6 +165,11 @@
       {
         "condition": "index_readiness_failure",
         "suggested_route": "rename_records_before_indexing",
+        "requires_external_database": false
+      },
+      {
+        "condition": "submission_readiness_failure",
+        "suggested_route": "fix_fasta_before_official_validation",
         "requires_external_database": false
       },
       {
@@ -181,17 +211,22 @@
       "duplicate identifiers",
       "invalid sequence symbols",
       "basic structural statistics",
-      "sequence composition red flags"
+      "sequence composition red flags",
+      "FASTA-level submission readiness"
     ],
     "cannot_conclude": [
       "biological completeness",
       "taxonomic contamination",
       "whole-assembly accuracy",
-      "misassembly status without alignment evidence"
+      "misassembly status without alignment evidence",
+      "repository acceptance",
+      "official validator acceptance",
+      "annotation correctness"
     ]
   },
   "provenance": {
     "profile": "assembly",
+    "submission_target": null,
     "threads": 1,
     "fail_on": [],
     "thresholds": {
