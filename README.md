@@ -7,6 +7,8 @@ CheckM, annotation, or other expensive downstream steps. It validates structure,
 flags obvious FASTA-level problems, and writes stable reports for humans,
 workflow engines, and future tool agents.
 
+Use it to validate first, fix early, and route smarter.
+
 Run it first when you need to know:
 
 - is this FASTA file structurally valid?
@@ -22,6 +24,26 @@ seqkit, or MultiQC. It is the earlier preflight and triage layer.
 Before QUAST. Before BUSCO. Before BlobToolKit. Before annotation.
 Run FastaGuard first.
 ```
+
+## Why FastaGuard?
+
+Most bioinformatics QC tools answer downstream questions: assembly quality,
+biological completeness, contamination evidence, taxonomy, annotation
+readiness, or report aggregation. FastaGuard runs earlier. It answers whether
+the FASTA itself is valid, sane, interpretable, and safe to pass downstream.
+
+Use FastaGuard when you need:
+
+- FASTA preflight before expensive QC, annotation, or submission workflows
+- a deterministic PASS/WARN/FAIL gate for Nextflow, Snakemake, nf-core, Galaxy,
+  or institutional pipelines
+- batch triage across many FASTA files with `fastaguard compare`
+- submission-readiness signals before official validators
+- stable JSON, TSV, HTML, and MultiQC-compatible outputs for humans, workflows,
+  and tool agents
+
+If FastaGuard fails, fix the FASTA first. If it passes, route to the right
+downstream tool.
 
 ## Release Status
 
@@ -267,11 +289,13 @@ v0.5 adds the submission-readiness gate:
 
 FastaGuard should recommend deeper tools when they are appropriate:
 
+- FastQC for raw-read QC
 - QUAST for assembly quality evaluation
 - BUSCO for biological completeness
 - BlobToolKit for contamination and cobiont exploration
 - CheckM for microbial genome completeness and contamination
 - seqkit for ad hoc sequence operations
+- MultiQC for aggregating reports
 
 The strategic wedge is earlier:
 
@@ -282,6 +306,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 ## Documentation
 
 - [Example reports](examples/reports/README.md)
+- [Use cases and positioning](docs/use-cases.md)
 - [Product thesis](docs/product-thesis.md)
 - [Vision plan](docs/vision-plan.md)
 - [MVP spec](docs/mvp-spec.md)
