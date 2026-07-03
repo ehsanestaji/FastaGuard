@@ -2,6 +2,9 @@
 
 This is a local wrapper-style starter for FastaGuard. It assumes `fastaguard` is available on `PATH`.
 
+See `../../../docs/workflow-readiness.md` for the current upstream readiness
+checklist before submitting this starter as an official Snakemake wrapper.
+
 Published Bioconda provides v0.5.0:
 
 ```bash

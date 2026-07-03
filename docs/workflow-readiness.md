@@ -1,0 +1,120 @@
+# Workflow Readiness
+
+## Current State
+
+FastaGuard is ready for local workflow use through the published v0.5.0
+Bioconda package and BioContainers image:
+
+```bash
+mamba install -c conda-forge -c bioconda fastaguard=0.5.0
+docker pull quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
+```
+
+The repository includes local starters for:
+
+- nf-core-style Nextflow modules in `examples/nf-core/`
+- Snakemake wrapper-style usage in `examples/snakemake/wrapper/`
+- MultiQC custom-content aggregation through `fastaguard_mqc.json`
+
+These are workflow adoption starters. They are not yet an upstream nf-core module.
+They are not yet an official Snakemake wrapper.
+
+## Integration Pattern
+
+FastaGuard should run before QUAST, BUSCO, BlobToolKit, CheckM, annotation, or
+official submission validators. The default workflow pattern is:
+
+```text
+collect FASTA-level evidence -> apply stop/go policy -> route downstream tools
+```
+
+For local fail-fast runs, `--gate pipeline` and `--gate submission` write JSON,
+TSV, HTML, and MultiQC-compatible evidence before returning a blocking exit
+code. Some workflow engines remove failed-job outputs by default, so production
+integrations should use a collect-then-gate pattern when evidence preservation
+matters. The important contract fields are:
+
+- `verdict.status`
+- `gate.mode`
+- `gate.status`
+- `gate.blocking_findings`
+- `readiness.categories`
+- `provenance.input_sha256`
+
+## nf-core Readiness
+
+The local module already carries the expected interface shape:
+
+- input channel: `tuple val(meta), path(fasta)`
+- outputs: HTML, JSON, TSV, MultiQC custom-content JSON, and versions metadata
+- runtime: `bioconda::fastaguard=0.5.0`
+- container: `quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0`
+
+Before an upstream nf-core module submission, complete this checklist:
+
+- regenerate or validate the module against the current `nf-core/tools`
+  template
+- run `nf-core modules lint fastaguard`
+- run `nf-core modules test fastaguard`
+- add nf-test cases for PASS, WARN, FAIL, and invalid FASTA inputs
+- assert that `.fastaguard.json`, `.fastaguard.tsv`, `.fastaguard.html`,
+  `.fastaguard_mqc.json`, and version outputs are produced
+- align `meta.yml` with current nf-core channel metadata expectations
+- check current nf-core topic channels guidance for version outputs
+- document that FastaGuard remains a FASTA preflight gate, not a replacement
+  for downstream interpretive QC
+
+The upstream submission should keep the module boring: database-free, pinned to
+Bioconda/BioContainers, and focused on stable machine-readable outputs.
+
+## Snakemake Readiness
+
+The local wrapper starter already provides:
+
+- `wrapper.py`
+- `environment.yaml`
+- `meta.yaml`
+- a copy-pasteable `Snakefile`
+- outputs for HTML, JSON, TSV, and MultiQC custom-content JSON
+
+Before an official Snakemake wrapper submission, complete this checklist:
+
+- generate `environment.linux-64.pin.yaml` from the wrapper environment
+- add `test/Snakefile` with tiny FASTA fixtures
+- update `test_wrappers.py` so wrapper tests run in the upstream repository
+- test PASS, WARN, FAIL, and invalid FASTA behavior
+- ensure the wrapper can handle arbitrary input and output paths
+- preserve evidence on blocking FASTA results, either through workflow-specific
+  output handling or a collect-then-gate wrapper pattern
+
+## Submission Gate Usage
+
+For repository-preflight workflows, use:
+
+```bash
+fastaguard sample.fa \
+  --profile assembly \
+  --gate submission \
+  --submission-target ncbi \
+  --json fastaguard.json \
+  --tsv fastaguard.tsv \
+  --out fastaguard_report.html \
+  --multiqc fastaguard_mqc.json
+```
+
+This is FASTA-level readiness only. It can identify identifier hazards,
+duplicate first-token IDs, high ambiguity, gap-like N runs, and tiny-record
+advisories. It does not guarantee repository acceptance and does not replace
+NCBI, ENA, DDBJ, NCBI FCS, annotation validation, QUAST, BUSCO, BlobToolKit, or
+CheckM.
+
+## References Checked
+
+Current upstream expectations were checked on 2026-07-03 against:
+
+- nf-core modules repository and `nf-core modules lint` workflow:
+  https://github.com/nf-core/modules
+- nf-core topic channels migration guidance:
+  https://nf-co.re/docs/tutorials/migrate_to_topics/update_modules
+- Snakemake wrappers contributing guidance:
+  https://snakemake-wrappers.readthedocs.io/en/stable/contributing.html

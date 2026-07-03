@@ -533,6 +533,46 @@ class AdoptionAssetsTest(unittest.TestCase):
             snakemake_readme,
         )
 
+    def test_workflow_readiness_plan_defines_upstream_submission_path(self):
+        readme = (ROOT / "README.md").read_text()
+        adoption = (ROOT / "docs" / "adoption-plan.md").read_text()
+        readiness = (ROOT / "docs" / "workflow-readiness.md").read_text()
+        nfcore_readme = (ROOT / "examples" / "nf-core" / "README.md").read_text()
+        nfcore_environment = (
+            ROOT
+            / "examples"
+            / "nf-core"
+            / "modules"
+            / "local"
+            / "fastaguard"
+            / "environment.yml"
+        ).read_text()
+        snakemake_readme = (
+            ROOT / "examples" / "snakemake" / "wrapper" / "README.md"
+        ).read_text()
+        snakemake_meta = (
+            ROOT / "examples" / "snakemake" / "wrapper" / "meta.yaml"
+        ).read_text()
+
+        self.assertIn("[Workflow readiness](docs/workflow-readiness.md)", readme)
+        self.assertIn("Phase 5: Upstream workflow readiness", adoption)
+        self.assertIn("not yet an upstream nf-core module", readiness)
+        self.assertIn("not yet an official Snakemake wrapper", readiness)
+        self.assertIn("collect-then-gate", readiness)
+        self.assertIn("nf-core modules lint", readiness)
+        self.assertIn("nf-core modules test", readiness)
+        self.assertIn("topic channels", readiness)
+        self.assertIn("environment.linux-64.pin.yaml", readiness)
+        self.assertIn("test_wrappers.py", readiness)
+        self.assertIn("--gate submission", readiness)
+        self.assertIn("quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0", readiness)
+        self.assertIn("docs/workflow-readiness.md", nfcore_readme)
+        self.assertIn("docs/workflow-readiness.md", snakemake_readme)
+        self.assertIn("fastaguard=0.5.0", nfcore_environment)
+        self.assertIn("name: fastaguard", snakemake_meta)
+        self.assertIn("description:", snakemake_meta)
+        self.assertIn("output:", snakemake_meta)
+
     def test_benchmarking_docs_include_v0_2_evidence_topics(self):
         text = (ROOT / "docs" / "benchmarking.md").read_text()
 

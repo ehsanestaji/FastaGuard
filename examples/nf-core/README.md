@@ -2,6 +2,9 @@
 
 This directory is a starter for a local nf-core-style FastaGuard module. It is not yet an upstream nf-core module.
 
+See `../../docs/workflow-readiness.md` for the current upstream readiness
+checklist before submitting this starter to nf-core.
+
 Expected input channel:
 
 ```nextflow

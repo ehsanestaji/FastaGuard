@@ -8,7 +8,7 @@ adding many new biological heuristics.
 Priority:
 
 ```text
-Bioconda published -> BioContainers available -> MultiQC plugin -> public benchmarks -> upstream workflow examples
+Bioconda published -> BioContainers available -> MultiQC plugin -> public benchmarks -> upstream workflow readiness
 ```
 
 ## Phase 1: Package
@@ -65,7 +65,41 @@ Goal: show why FastaGuard is worth adding before expensive tools.
 
 Done when the README can show real examples rather than only promises.
 
-## Phase 4: Expand
+## Phase 4: Workflow Readiness
+
+Goal: make local workflow starters credible enough to become upstream
+submissions.
+
+Status: local nf-core-style and Snakemake wrapper-style starters are present,
+pinned to the v0.5.0 Bioconda package and BioContainers image, and documented
+as starters rather than official upstream submissions.
+
+Next work:
+
+- complete nf-core lint and test harness requirements
+- complete Snakemake wrapper metadata, pin, and upstream test requirements
+- preserve the collect-then-gate pattern so JSON, TSV, HTML, and MultiQC
+  evidence survives blocking FASTA results
+- keep the workflow examples focused on stable FastaGuard contracts instead of
+  broad biological interpretation
+
+Detailed checklist: `docs/workflow-readiness.md`.
+
+## Phase 5: Upstream workflow readiness
+
+Goal: submit the starter assets upstream once the package, container, examples,
+and tests are aligned with current community expectations.
+
+Done when:
+
+```text
+nf-core module PR ready + Snakemake wrapper PR ready + local evidence-preserving examples verified
+```
+
+This phase should not claim official upstream status until those PRs are
+accepted.
+
+## Phase 6: Expand
 
 Goal: add profiles once the assembly preflight contract is trusted.
 
