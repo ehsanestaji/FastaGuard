@@ -37,5 +37,16 @@ output:
       type: file
       description: Software versions file.
       pattern: "versions.yml"
+topics:
+  versions:
+    - - process:
+          type: string
+          description: The process the versions were collected from.
+      - tool:
+          type: string
+          description: The tool name.
+      - version:
+          type: string
+          description: The version reported by the tool.
 authors:
   - FastaGuard contributors

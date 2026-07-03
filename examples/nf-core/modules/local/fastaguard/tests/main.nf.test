@@ -1,0 +1,93 @@
+nextflow_process {
+
+    name "Test FASTAGUARD"
+    script "../main.nf"
+    process "FASTAGUARD"
+
+    tag "fastaguard"
+    tag "fastaguard_single"
+
+    test("pass FASTA emits all reports") {
+        input[0] = [
+            [id: "pass"],
+            file("data/pass.fa")
+        ]
+
+        when {
+            process {
+                """
+                input[0] = Channel.of(input[0])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.html[0][1].name.endsWith(".fastaguard.html")
+            assert process.out.json[0][1].name.endsWith(".fastaguard.json")
+            assert process.out.tsv[0][1].name.endsWith(".fastaguard.tsv")
+            assert process.out.mqc[0][1].name.endsWith(".fastaguard_mqc.json")
+            assert process.out.versions
+        }
+    }
+
+    test("warn FASTA preserves reports") {
+        input[0] = [
+            [id: "warn"],
+            file("data/warn.fa")
+        ]
+
+        when {
+            process {
+                """
+                input[0] = Channel.of(input[0])
+                """
+            }
+        }
+
+        then {
+            assert process.out.json
+            assert process.out.mqc
+        }
+    }
+
+    test("fail FASTA preserves reports for gate review") {
+        input[0] = [
+            [id: "fail"],
+            file("data/fail.fa")
+        ]
+
+        when {
+            process {
+                """
+                input[0] = Channel.of(input[0])
+                """
+            }
+        }
+
+        then {
+            assert process.out.json
+            assert process.out.mqc
+        }
+    }
+
+    test("invalid FASTA is represented in the evidence path") {
+        input[0] = [
+            [id: "invalid"],
+            file("data/invalid.fa")
+        ]
+
+        when {
+            process {
+                """
+                input[0] = Channel.of(input[0])
+                """
+            }
+        }
+
+        then {
+            assert process.out.json
+            assert process.out.mqc
+        }
+    }
+}

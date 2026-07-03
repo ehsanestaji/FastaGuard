@@ -80,6 +80,8 @@ Next work:
 - complete Snakemake wrapper metadata, pin, and upstream test requirements
 - preserve the collect-then-gate pattern so JSON, TSV, HTML, and MultiQC
   evidence survives blocking FASTA results
+- keep `examples/workflows/check_fastaguard_gate.py` aligned with the JSON gate
+  contract for evidence-preserving workflow examples
 - keep the workflow examples focused on stable FastaGuard contracts instead of
   broad biological interpretation
 

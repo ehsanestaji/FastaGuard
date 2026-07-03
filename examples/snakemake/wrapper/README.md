@@ -53,6 +53,16 @@ For containerized workflow runs, the latest pinned BioContainers image is:
 quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
 ```
 
+Use this safe local order before upstream submission:
+
+1. Run repository Python tests that inspect this wrapper layout.
+2. Install Snakemake in a workflow test environment.
+3. Run `snakemake -s test/Snakefile --cores 1 --use-conda`.
+4. Generate a real upstream `environment.linux-64.pin.yaml` if the upstream
+   wrapper repository requires a solver-produced pin file.
+5. Adapt `test/test_wrappers.py` into the upstream wrapper repository test
+   harness.
+
 The wrapper emits:
 
 - `fastaguard_report.html`
