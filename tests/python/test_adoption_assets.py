@@ -155,6 +155,9 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertEqual(summary["valid_assembly"]["gate_status"], "WARN")
         self.assertEqual(summary["valid_assembly"]["readiness_status"], "WARN")
         self.assertEqual(summary["valid_assembly"]["readiness_blockers"], "")
+        self.assertEqual(summary["valid_assembly"]["submission_target"], ".")
+        self.assertEqual(summary["valid_assembly"]["submission_status"], "WARN")
+        self.assertEqual(summary["valid_assembly"]["duplicate_first_token_id_count"], 0)
         self.assertEqual(summary["valid_assembly"]["sequence_count"], 3)
         self.assertEqual(summary["valid_assembly"]["n50"], 16)
 
@@ -172,6 +175,12 @@ class AdoptionAssetsTest(unittest.TestCase):
                 "gate_blocking_findings": "duplicate_ids,duplicate_first_token_ids,invalid_chars",
                 "readiness_status": "FAIL",
                 "readiness_blockers": "index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars,submission.invalid_chars",
+                "submission_target": ".",
+                "submission_status": "FAIL",
+                "unsafe_identifier_count": 0,
+                "long_identifier_count": 0,
+                "duplicate_first_token_id_count": 1,
+                "gap_like_n_run_count": 0,
                 "sequence_count": 5,
                 "total_length": 145,
                 "n50": 110,
@@ -221,6 +230,12 @@ class AdoptionAssetsTest(unittest.TestCase):
                                 "finding_count": 4,
                                 "readiness_status": "WARN",
                                 "readiness_blockers": "assembly.high_n_rate",
+                                "submission_target": "ncbi",
+                                "submission_status": "WARN",
+                                "unsafe_identifier_count": 1,
+                                "long_identifier_count": 1,
+                                "duplicate_first_token_id_count": 2,
+                                "gap_like_n_run_count": 3,
                             }
                         },
                     }
@@ -240,6 +255,10 @@ class AdoptionAssetsTest(unittest.TestCase):
                     "n_percent": 2.5,
                     "finding_count": 4,
                     "duplicate_id_count": 1,
+                    "unsafe_identifier_count": 1,
+                    "long_identifier_count": 1,
+                    "duplicate_first_token_id_count": 2,
+                    "gap_like_n_run_count": 3,
                     "invalid_sequence_count": 0,
                     "high_n_sequence_count": 2,
                     "tiny_contig_count": 1,
@@ -249,6 +268,8 @@ class AdoptionAssetsTest(unittest.TestCase):
                     "composite_anomaly_count": 1,
                     "readiness_status": "WARN",
                     "readiness_blockers": "assembly.high_n_rate",
+                    "submission_target": "ncbi",
+                    "submission_status": "WARN",
                 },
             )
 
@@ -400,8 +421,23 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn('"gate_blocking_findings"', module_source)
         self.assertIn('"readiness_status"', module_source)
         self.assertIn('"readiness_blockers"', module_source)
+        self.assertIn('"submission_target"', module_source)
+        self.assertIn('"submission_status"', module_source)
+        self.assertIn('"unsafe_identifier_count"', module_source)
+        self.assertIn('"long_identifier_count"', module_source)
+        self.assertIn('"duplicate_first_token_id_count"', module_source)
+        self.assertIn('"gap_like_n_run_count"', module_source)
         self.assertIn("Finding IDs blocking the FastaGuard gate", module_source)
         self.assertIn("FastaGuard readiness status", module_source)
+        self.assertIn("FASTA-level submission readiness status", module_source)
+
+    def test_multiqc_docs_describe_submission_fields(self):
+        readme = (ROOT / "integrations" / "multiqc" / "README.md").read_text()
+
+        self.assertIn("submission readiness", readme)
+        self.assertIn("`submission_target`", readme)
+        self.assertIn("`submission_status`", readme)
+        self.assertIn("duplicate first-token", readme)
 
     def test_multiqc_plugin_registers_filename_first_fastaguard_search_pattern(self):
         patterns = getattr(multiqc_parser, "FASTAGUARD_SEARCH_PATTERN", {})
