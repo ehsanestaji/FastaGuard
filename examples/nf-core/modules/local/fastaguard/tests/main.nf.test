@@ -4,90 +4,92 @@ nextflow_process {
     script "../main.nf"
     process "FASTAGUARD"
 
+    tag "modules"
+    tag "modules_nfcore"
     tag "fastaguard"
     tag "fastaguard_single"
 
     test("pass FASTA emits all reports") {
-        input[0] = [
-            [id: "pass"],
-            file("data/pass.fa")
-        ]
-
         when {
             process {
                 """
-                input[0] = Channel.of(input[0])
+                input[0] = [
+                    [ id:'pass' ],
+                    file("${moduleDir}/tests/data/pass.fa", checkIfExists: true)
+                ]
                 """
             }
         }
 
         then {
             assert process.success
-            assert process.out.html[0][1].name.endsWith(".fastaguard.html")
-            assert process.out.json[0][1].name.endsWith(".fastaguard.json")
-            assert process.out.tsv[0][1].name.endsWith(".fastaguard.tsv")
-            assert process.out.mqc[0][1].name.endsWith(".fastaguard_mqc.json")
-            assert process.out.versions
+            assert file(process.out.html[0][1]).name.endsWith(".fastaguard.html")
+            assert file(process.out.json[0][1]).name.endsWith(".fastaguard.json")
+            assert file(process.out.tsv[0][1]).name.endsWith(".fastaguard.tsv")
+            assert file(process.out.mqc[0][1]).name.endsWith(".fastaguard_mqc.json")
+            assert file(process.out.exit_code[0][1]).name.endsWith(".fastaguard.exit_code")
+            assert file(process.out.exit_code[0][1]).text.trim() == "0"
+            assert process.out.versions_fastaguard
         }
     }
 
     test("warn FASTA preserves reports") {
-        input[0] = [
-            [id: "warn"],
-            file("data/warn.fa")
-        ]
-
         when {
             process {
                 """
-                input[0] = Channel.of(input[0])
+                input[0] = [
+                    [ id:'warn' ],
+                    file("${moduleDir}/tests/data/warn.fa", checkIfExists: true)
+                ]
                 """
             }
         }
 
         then {
+            assert process.success
             assert process.out.json
             assert process.out.mqc
+            assert file(process.out.exit_code[0][1]).text.trim() == "1"
         }
     }
 
     test("fail FASTA preserves reports for gate review") {
-        input[0] = [
-            [id: "fail"],
-            file("data/fail.fa")
-        ]
-
         when {
             process {
                 """
-                input[0] = Channel.of(input[0])
+                input[0] = [
+                    [ id:'fail' ],
+                    file("${moduleDir}/tests/data/fail.fa", checkIfExists: true)
+                ]
                 """
             }
         }
 
         then {
+            assert process.success
             assert process.out.json
             assert process.out.mqc
+            assert file(process.out.exit_code[0][1]).text.trim() == "2"
         }
     }
 
     test("invalid FASTA is represented in the evidence path") {
-        input[0] = [
-            [id: "invalid"],
-            file("data/invalid.fa")
-        ]
-
         when {
             process {
                 """
-                input[0] = Channel.of(input[0])
+                input[0] = [
+                    [ id:'invalid' ],
+                    file("${moduleDir}/tests/data/invalid.fa", checkIfExists: true)
+                ]
                 """
             }
         }
 
         then {
+            assert process.success
             assert process.out.json
             assert process.out.mqc
+            assert file(process.out.exit_code[0][1]).text.trim() == "2"
         }
     }
 }

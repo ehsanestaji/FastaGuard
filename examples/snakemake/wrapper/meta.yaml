@@ -10,6 +10,7 @@ output:
   json: Machine-readable FastaGuard report.
   tsv: Tabular FastaGuard summary.
   multiqc: MultiQC custom-content JSON.
+  exit_code: Captured FastaGuard process status for workflow routing.
 params:
   profile: FastaGuard profile, normally assembly.
   gate: FastaGuard gate mode, normally pipeline or submission.

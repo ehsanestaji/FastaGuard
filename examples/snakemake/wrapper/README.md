@@ -23,9 +23,11 @@ The wrapper command uses the v0.3 assembly gate:
 fastaguard sample.fa --profile assembly --gate pipeline
 ```
 
-That gate blocks downstream workflow steps on duplicate IDs, invalid characters,
-invalid FASTA structure, and high-N content. GC and length outliers remain
-advisory unless explicitly added with `--fail-on`. Gate failures intentionally exit with code `2` after writing reports, so downstream workflow steps stop while the JSON/HTML evidence remains available.
+That gate marks duplicate IDs, invalid characters, invalid FASTA structure, and
+high-N content as blocking findings. GC and length outliers remain advisory
+unless explicitly added with `--fail-on`. The wrapper captures FastaGuard's
+status in `fastaguard.exit_code` so workflows can route on PASS/WARN/FAIL while
+retaining the JSON/HTML evidence. Tool-error status `3` still fails the job.
 
 The wrapper also includes a v0.5 Conda environment:
 
@@ -58,7 +60,7 @@ Use this safe local order before upstream submission:
 1. Run repository Python tests that inspect this wrapper layout.
 2. Install Snakemake in a workflow test environment.
 3. Run `snakemake -s test/Snakefile --cores 1 --use-conda`.
-4. Generate a real upstream `environment.linux-64.pin.yaml` if the upstream
+4. Generate a real upstream `environment.linux-64.pin.txt` if the upstream
    wrapper repository requires a solver-produced pin file.
 5. Adapt `test/test_wrappers.py` into the upstream wrapper repository test
    harness.
@@ -69,3 +71,4 @@ The wrapper emits:
 - `fastaguard.json`
 - `fastaguard.tsv`
 - `fastaguard_mqc.json`
+- `fastaguard.exit_code`
