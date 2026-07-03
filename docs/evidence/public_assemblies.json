@@ -6,14 +6,20 @@
       "accession": "GCF_000005845.2",
       "label": "Escherichia coli K-12 MG1655",
       "category": "bacterial",
-      "source_url": "https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000005845.2/"
+      "source_url": "https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000005845.2/",
+      "evidence_role": "small bacterial reference assembly",
+      "expected_scale": "about 4.6 Mbp",
+      "downstream_route": "If FastaGuard passes, route to QUAST for assembly metrics and BUSCO when biological completeness is in scope."
     },
     {
       "id": "neurospora_crassa_or74a",
       "accession": "GCF_000182925.2",
       "label": "Neurospora crassa OR74A",
       "category": "fungal",
-      "source_url": "https://www.ncbi.nlm.nih.gov/bioproject/132"
+      "source_url": "https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000182925.2/",
+      "evidence_role": "small eukaryotic fungal reference assembly",
+      "expected_scale": "tens of Mbp",
+      "downstream_route": "If FastaGuard passes, route to QUAST, BUSCO, and BlobToolKit-style follow-up when assembly quality or composition signals need deeper review."
     }
   ]
 }

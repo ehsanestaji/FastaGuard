@@ -321,6 +321,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.2 evidence pack](docs/evidence/fastaguard-v0.2-evidence.md)
 - [v0.3 evidence workflow](docs/evidence/fastaguard-v0.3-evidence.md)
 - [v0.5 submission readiness evidence](docs/evidence/fastaguard-v0.5-submission-readiness.md)
+- [v0.5 public evidence workflow](docs/evidence/fastaguard-v0.5-public-evidence.md)
 - [Packaging](docs/packaging.md)
 - [v0.5.0 release notes](docs/releases/v0.5.0.md)
 - [v0.4.0 release notes](docs/releases/v0.4.0.md)

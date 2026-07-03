@@ -562,13 +562,39 @@ class AdoptionAssetsTest(unittest.TestCase):
             with self.subTest(case=case):
                 self.assertEqual(
                     set(case),
-                    {"id", "accession", "label", "category", "source_url"},
+                    {
+                        "id",
+                        "accession",
+                        "label",
+                        "category",
+                        "source_url",
+                        "evidence_role",
+                        "expected_scale",
+                        "downstream_route",
+                    },
                 )
                 self.assertRegex(case["id"], r"^[a-z0-9][a-z0-9_-]+$")
                 self.assertRegex(case["accession"], r"^GC[AF]_[0-9]+\.[0-9]+$")
                 self.assertTrue(case["label"])
                 self.assertIn(case["category"], {"bacterial", "fungal"})
                 self.assertTrue(case["source_url"].startswith("https://"))
+                self.assertTrue(case["evidence_role"])
+                self.assertTrue(case["expected_scale"])
+                self.assertRegex(
+                    case["downstream_route"], r"(QUAST|BUSCO|BlobToolKit|validator)"
+                )
+
+    def test_v0_5_public_evidence_doc_defines_benchmark_table(self):
+        evidence = ROOT / "docs" / "evidence" / "fastaguard-v0.5-public-evidence.md"
+
+        self.assertTrue(evidence.exists())
+        text = evidence.read_text()
+        self.assertIn("docs/evidence/public_assemblies.json", text)
+        self.assertIn("python3 scripts/collect_evidence.py", text)
+        self.assertIn("evidence_summary.tsv", text)
+        self.assertIn("downstream_route", text)
+        self.assertIn("not biological completeness", text)
+        self.assertIn("not contamination confirmation", text)
 
     def test_evidence_docs_reference_local_and_public_workflows(self):
         evidence = (ROOT / "docs" / "evidence" / "fastaguard-v0.2-evidence.md")
@@ -680,12 +706,18 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
                 {"synthetic_valid", "problem_fixture", "gzipped_valid"},
             )
             self.assertTrue((out_dir / "evidence_summary.tsv").exists())
+            tsv_text = (out_dir / "evidence_summary.tsv").read_text()
+            self.assertIn("evidence_role", tsv_text.splitlines()[0])
+            self.assertIn("downstream_route", tsv_text.splitlines()[0])
             for case in summary["cases"]:
                 self.assertEqual(case["verdict"], "PASS")
                 self.assertEqual(case["gate_mode"], "pipeline")
                 self.assertEqual(case["gate_status"], "PASS")
                 self.assertEqual(case["gate_blocking_findings"], "")
                 self.assertEqual(case["input_sha256"], "0" * 64)
+                self.assertIn("evidence_role", case)
+                self.assertIn("expected_scale", case)
+                self.assertIn("downstream_route", case)
                 self.assertIn("--gate pipeline", case["command"])
                 self.assertGreater(case["elapsed_seconds"], 0)
                 self.assertIn("command", case)

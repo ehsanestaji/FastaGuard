@@ -26,6 +26,10 @@ SUMMARY_COLUMNS = [
     "category",
     "source",
     "accession",
+    "source_url",
+    "evidence_role",
+    "expected_scale",
+    "downstream_route",
     "input_bytes",
     "elapsed_seconds",
     "exit_code",
@@ -133,6 +137,13 @@ def local_cases(out_dir: Path) -> list[dict[str, Any]]:
             "category": "synthetic",
             "source": "local",
             "accession": None,
+            "source_url": None,
+            "evidence_role": "offline valid FASTA smoke case",
+            "expected_scale": "tiny synthetic fixture",
+            "downstream_route": (
+                "If this fails, fix the FastaGuard run before comparing with "
+                "QUAST, BUSCO, or other downstream tools."
+            ),
             "input_path": synthetic_path,
             "case_dir": synthetic_dir,
         },
@@ -142,6 +153,16 @@ def local_cases(out_dir: Path) -> list[dict[str, Any]]:
             "category": "fixture",
             "source": "local",
             "accession": None,
+            "source_url": None,
+            "evidence_role": (
+                "local blocker case for duplicate IDs, invalid characters, "
+                "high-N records, and tiny contigs"
+            ),
+            "expected_scale": "tiny intentionally problematic fixture",
+            "downstream_route": (
+                "Fix FASTA-level blockers before QUAST, BUSCO, BlobToolKit, "
+                "CheckM, annotation, or submission validators."
+            ),
             "input_path": ROOT / "testdata" / "problem_assembly.fa",
             "case_dir": out_dir / "problem_fixture",
         },
@@ -151,6 +172,13 @@ def local_cases(out_dir: Path) -> list[dict[str, Any]]:
             "category": "fixture",
             "source": "local",
             "accession": None,
+            "source_url": None,
+            "evidence_role": "offline gzipped FASTA input smoke case",
+            "expected_scale": "tiny gzipped fixture",
+            "downstream_route": (
+                "If this passes, the pipeline can accept compressed FASTA "
+                "before heavier QC tools."
+            ),
             "input_path": gzip_path,
             "case_dir": gzip_dir,
         },
@@ -309,6 +337,10 @@ def run_case(binary: Path, case: dict[str, Any]) -> dict[str, Any]:
         "category": case["category"],
         "source": case["source"],
         "accession": case.get("accession"),
+        "source_url": case.get("source_url"),
+        "evidence_role": case.get("evidence_role"),
+        "expected_scale": case.get("expected_scale"),
+        "downstream_route": case.get("downstream_route"),
         "input_path": str(case["input_path"]),
         "input_bytes": case["input_path"].stat().st_size,
         "elapsed_seconds": round(elapsed, 4),
