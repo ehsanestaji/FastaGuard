@@ -153,6 +153,12 @@ For each run, record:
 
 This evidence matters more than synthetic speed alone because it shows the wedge: cheap FASTA preflight before expensive downstream QC.
 
+The v0.5 public evidence workflow is documented in
+`docs/evidence/fastaguard-v0.5-public-evidence.md`. It extends the compact
+summary with manifest fields such as `evidence_role`, `expected_scale`, and
+`downstream_route` so benchmark tables explain why each case was selected and
+what FastaGuard should route toward after preflight.
+
 ## Evidence Pack Workflow
 
 The original v0.2 evidence workflow is documented in

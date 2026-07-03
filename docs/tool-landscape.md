@@ -103,6 +103,8 @@ Current product evidence:
   benchmark framing for adoption discussions.
 - v0.5 documentation defines the submission-readiness gate, local evidence
   commands, and the boundary before official validators.
+- v0.5 public evidence workflow defines manifest roles, expected scales, and
+  downstream routes for compact benchmark summaries.
 
 Evidence still needed:
 
