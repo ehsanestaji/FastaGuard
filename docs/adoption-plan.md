@@ -42,6 +42,8 @@ Goal: make FastaGuard visible in standard pipeline reports.
 - Continue emitting `fastaguard_mqc.json` custom content.
 - Develop `integrations/multiqc/` into a packaged MultiQC plugin.
 - Test the plugin against multiple sample reports.
+- Keep v0.5 gate, readiness, and submission fields visible in the native
+  MultiQC summary table.
 - Decide whether to submit upstream to MultiQC once public adoption begins.
 
 Done when:

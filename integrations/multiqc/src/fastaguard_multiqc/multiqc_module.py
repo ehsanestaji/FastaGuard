@@ -204,6 +204,38 @@ class MultiqcModule(BaseMultiqcModule):
                 "title": "Readiness blockers",
                 "description": "Readiness categories and finding IDs blocking downstream use",
             },
+            "submission_target": {
+                "title": "Submission target",
+                "description": "Submission target profile used by FastaGuard",
+            },
+            "submission_status": {
+                "title": "Submission status",
+                "description": "FASTA-level submission readiness status",
+            },
+            "unsafe_identifier_count": {
+                "title": "Unsafe IDs",
+                "description": "Number of identifiers with submission-unsafe characters",
+                "min": 0,
+                "scale": "OrRd",
+            },
+            "long_identifier_count": {
+                "title": "Long IDs",
+                "description": "Number of identifiers longer than the submission advisory threshold",
+                "min": 0,
+                "scale": "YlOrBr",
+            },
+            "duplicate_first_token_id_count": {
+                "title": "Duplicate first-token IDs",
+                "description": "Number of duplicate first-token FASTA identifiers",
+                "min": 0,
+                "scale": "OrRd",
+            },
+            "gap_like_n_run_count": {
+                "title": "Gap-like N runs",
+                "description": "Number of records with gap-like N runs worth submission review",
+                "min": 0,
+                "scale": "YlOrBr",
+            },
             "duplicate_id_count": {
                 "title": "Duplicate IDs",
                 "description": "Number of duplicate FASTA record IDs",

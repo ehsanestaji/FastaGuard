@@ -183,4 +183,4 @@ cd ../../examples/reports
 multiqc .
 ```
 
-This is intentionally compact: it parses `fastaguard_mqc.json`, adds key metrics to MultiQC general stats, and adds a FastaGuard summary section. The full evidence remains in FastaGuard's own HTML and JSON reports.
+This is intentionally compact: it parses `fastaguard_mqc.json`, adds key metrics to MultiQC general stats, and adds a FastaGuard summary section with gate, readiness, and submission-readiness fields. The full evidence remains in FastaGuard's own HTML and JSON reports.

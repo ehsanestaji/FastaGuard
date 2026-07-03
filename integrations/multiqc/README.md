@@ -3,8 +3,9 @@
 This directory contains a dedicated MultiQC plugin starter for FastaGuard.
 
 FastaGuard already emits MultiQC custom-content JSON as `fastaguard_mqc.json`.
-This plugin is the next step: a native module that can add FastaGuard verdicts
-and key assembly preflight metrics directly to MultiQC reports.
+This plugin is the next step: a native module that can add FastaGuard verdicts,
+gate status, readiness status, submission readiness, and key assembly preflight
+metrics directly to MultiQC reports.
 
 ## Local Install
 
@@ -42,7 +43,10 @@ multiqc --strict --module fastaguard examples/reports
 
 - Parse FastaGuard custom-content JSON.
 - Add verdict and summary metrics to the MultiQC general stats table.
-- Add one FastaGuard summary table section.
+- Add one FastaGuard summary table section with gate, readiness, and v0.5
+  submission fields including `submission_target`, `submission_status`,
+  unsafe identifier counts, long identifier counts, duplicate first-token ID
+  counts, and gap-like N-run counts.
 
 Keep the module compact. MultiQC should summarize many FastaGuard reports, not
 replicate every field from the full FastaGuard HTML report.
