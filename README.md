@@ -316,6 +316,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [Output contract](docs/output-contract.md)
 - [Tool landscape](docs/tool-landscape.md)
 - [Adoption plan](docs/adoption-plan.md)
+- [Workflow readiness](docs/workflow-readiness.md)
 - [LLM and tooling vision](docs/llm-tooling-vision.md)
 - [Benchmarking](docs/benchmarking.md)
 - [v0.2 evidence pack](docs/evidence/fastaguard-v0.2-evidence.md)
