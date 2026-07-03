@@ -71,13 +71,15 @@ Goal: make local workflow starters credible enough to become upstream
 submissions.
 
 Status: local nf-core-style and Snakemake wrapper-style starters are present,
-pinned to the v0.5.0 Bioconda package and BioContainers image, and documented
-as starters rather than official upstream submissions.
+pinned to the v0.5.0 Bioconda package and BioContainers image, documented as
+starters rather than official upstream submissions, and validated in dedicated
+upstream-style checkouts on 2026-07-03.
 
 Next work:
 
-- complete nf-core lint and test harness requirements
-- complete Snakemake wrapper metadata, pin, and upstream test requirements
+- prepare external PR branches for nf-core/modules and snakemake-wrappers
+- repeat nf-core lint/test and Snakemake formatting/lint/pytest immediately
+  before opening upstream PRs
 - preserve the collect-then-gate pattern so JSON, TSV, HTML, and MultiQC
   evidence survives blocking FASTA results
 - keep `examples/workflows/check_fastaguard_gate.py` aligned with the JSON gate

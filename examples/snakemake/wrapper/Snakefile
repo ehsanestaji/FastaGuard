@@ -1,15 +1,19 @@
 rule fastaguard_wrapped:
     input:
-        fasta="sample.fa"
+        fasta="sample.fa",
     output:
         html="fastaguard_report.html",
         json="fastaguard.json",
         tsv="fastaguard.tsv",
-        multiqc="fastaguard_mqc.json"
+        multiqc="fastaguard_mqc.json",
+        exit_code="fastaguard.exit_code",
+    log:
+        "fastaguard.log",
+    conda:
+        "environment.yaml"
     params:
         profile="assembly",
         gate="pipeline",
-        extra=""
-    conda: "environment.yaml"
+        extra="",
     wrapper:
-        "file:wrapper/fastaguard"
+        "file:."

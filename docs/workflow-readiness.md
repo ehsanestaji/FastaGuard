@@ -21,6 +21,17 @@ The repository includes local starters for:
 These are workflow adoption starters. They are not yet an upstream nf-core module.
 They are not yet an official Snakemake wrapper.
 
+External upstream-style validation was run on 2026-07-03 in dedicated checkouts:
+
+- `nf-core modules lint fastaguard`: 47 tests passed, 0 warnings, 0 failures.
+- `nf-core modules test fastaguard --profile conda --once --no-prompts`: all
+  nf-test cases passed against Bioconda v0.5.0.
+- Snakemake wrapper formatting: `black --check` and `snakefmt --check` passed.
+- Snakemake wrapper lint: `snakemake --lint --snakefile test/Snakefile` passed.
+- Snakemake wrapper pytest: `test_wrappers.py::test_fastaguard` passed with
+  PASS, WARN, FAIL, and invalid FASTA fixtures plus captured `exit_code`
+  outputs.
+
 ## Safe Order
 
 1. Run local repository tests first.
@@ -60,18 +71,20 @@ matters. The important contract fields are:
 The local module already carries the expected interface shape:
 
 - input channel: `tuple val(meta), path(fasta)`
-- outputs: HTML, JSON, TSV, MultiQC custom-content JSON, and versions metadata
+- outputs: HTML, JSON, TSV, MultiQC custom-content JSON, captured exit code,
+  and versions metadata
 - runtime: `bioconda::fastaguard=0.5.0`
 - container: `quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0`
 - starter nf-test fixture layout for PASS, WARN, FAIL, and invalid FASTA cases
 - topic-aware `versions.yml` output for current nf-core version collection
 
-Before an upstream nf-core module submission, complete this checklist:
+Before an upstream nf-core module submission, repeat this checklist in a fresh
+upstream checkout:
 
 - regenerate or validate the module against the current `nf-core/tools`
   template
 - run `nf-core modules lint fastaguard`
-- run `nf-core modules test fastaguard`
+- run `nf-core modules test fastaguard --profile conda --once --no-prompts`
 - adapt the local nf-test starter into the upstream repository layout
 - assert that `.fastaguard.json`, `.fastaguard.tsv`, `.fastaguard.html`,
   `.fastaguard_mqc.json`, and version outputs are produced
@@ -90,14 +103,15 @@ The local wrapper starter already provides:
 - `wrapper.py`
 - `environment.yaml`
 - `meta.yaml`
-- `environment.linux-64.pin.yaml` as a local starter pin file
+- `environment.linux-64.pin.txt` as a local starter pin file
 - a copy-pasteable `Snakefile`
 - a `test/Snakefile` starter with PASS, WARN, FAIL, and invalid FASTA fixtures
-- outputs for HTML, JSON, TSV, and MultiQC custom-content JSON
+- outputs for HTML, JSON, TSV, MultiQC custom-content JSON, and captured exit
+  code
 
 Before an official Snakemake wrapper submission, complete this checklist:
 
-- regenerate `environment.linux-64.pin.yaml` from the wrapper environment if
+- regenerate `environment.linux-64.pin.txt` from the wrapper environment if
   the upstream repository requires a solver-produced pin file
 - adapt the local `test/Snakefile` and tiny FASTA fixtures
 - update `test_wrappers.py` so wrapper tests run in the upstream repository

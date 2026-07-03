@@ -1,7 +1,11 @@
 process FASTAGUARD {
     tag "$meta.id"
     label 'process_low'
-    container 'quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0'
+
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/fastaguard:0.5.0--hfa8f182_0':
+        'quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0' }"
 
     input:
     tuple val(meta), path(fasta)
@@ -11,22 +15,30 @@ process FASTAGUARD {
     tuple val(meta), path("*.fastaguard.json"), emit: json
     tuple val(meta), path("*.fastaguard.tsv"), emit: tsv
     tuple val(meta), path("*.fastaguard_mqc.json"), emit: mqc
-    path "versions.yml", emit: versions, topic: versions
+    tuple val(meta), path("*.fastaguard.exit_code"), emit: exit_code
+    tuple val("${task.process}"), val('fastaguard'), eval('fastaguard --version | cut -d " " -f 2'), emit: versions_fastaguard, topic: versions
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: meta.id
+    def args = task.ext.args ?: '--profile assembly --gate pipeline'
     """
+    set +e
     fastaguard ${fasta} \
-      --profile assembly \
-      --gate pipeline \
+      ${args} \
       --out ${prefix}.fastaguard.html \
       --json ${prefix}.fastaguard.json \
       --tsv ${prefix}.fastaguard.tsv \
       --multiqc ${prefix}.fastaguard_mqc.json
+    status=\$?
+    set -e
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        fastaguard: \$(fastaguard --version | awk '{print \$2}')
-    END_VERSIONS
+    printf "%s\\n" "\${status}" > ${prefix}.fastaguard.exit_code
+
+    if [ "\${status}" -eq 3 ]; then
+      exit "\${status}"
+    fi
     """
 }

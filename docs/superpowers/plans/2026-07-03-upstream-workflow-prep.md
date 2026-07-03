@@ -38,7 +38,7 @@
   - Read FastaGuard JSON and return 0 for PASS, 1 for WARN, 2 for FAIL, 3 for malformed tool input.
 - Create: `tests/python/test_workflow_gate_helper.py`
   - Verify the gate helper exits correctly from small JSON fixtures.
-- Create: `examples/snakemake/wrapper/environment.linux-64.pin.yaml`
+- Create: `examples/snakemake/wrapper/environment.linux-64.pin.txt`
   - Local starter pin file for upstream wrapper preparation.
 - Create: `examples/snakemake/wrapper/test/Snakefile`
   - Official-wrapper-style local test Snakefile.
@@ -90,7 +90,7 @@ Append these methods inside `AdoptionAssetsTest` before `test_benchmarking_docs_
         readme = (wrapper / "README.md").read_text()
         test_snakefile = (wrapper / "test" / "Snakefile").read_text()
         test_py = (wrapper / "test" / "test_wrappers.py").read_text()
-        pin = (wrapper / "environment.linux-64.pin.yaml").read_text()
+        pin = (wrapper / "environment.linux-64.pin.txt").read_text()
 
         self.assertIn("safe local order", readme)
         self.assertIn("fastaguard=0.5.0", pin)
@@ -454,7 +454,7 @@ Expected: PASS.
 ### Task 4: Harden Snakemake Wrapper Starter
 
 **Files:**
-- Create: `examples/snakemake/wrapper/environment.linux-64.pin.yaml`
+- Create: `examples/snakemake/wrapper/environment.linux-64.pin.txt`
 - Create: `examples/snakemake/wrapper/test/Snakefile`
 - Create: `examples/snakemake/wrapper/test/test_wrappers.py`
 - Create data fixtures under `examples/snakemake/wrapper/test/data/`
@@ -462,7 +462,7 @@ Expected: PASS.
 
 - [ ] **Step 1: Add starter pin file**
 
-Create `examples/snakemake/wrapper/environment.linux-64.pin.yaml`:
+Create `examples/snakemake/wrapper/environment.linux-64.pin.txt`:
 
 ```yaml
 channels:
@@ -490,7 +490,7 @@ rule fastaguard_pass:
         gate="pipeline",
         extra=""
     wrapper:
-        "file:../wrapper/fastaguard"
+        "master/bio/fastaguard"
 
 
 rule fastaguard_warn:
@@ -506,7 +506,7 @@ rule fastaguard_warn:
         gate="none",
         extra=""
     wrapper:
-        "file:../wrapper/fastaguard"
+        "master/bio/fastaguard"
 
 
 rule fastaguard_fail:
@@ -522,7 +522,7 @@ rule fastaguard_fail:
         gate="none",
         extra=""
     wrapper:
-        "file:../wrapper/fastaguard"
+        "master/bio/fastaguard"
 
 
 rule fastaguard_invalid:
@@ -538,7 +538,7 @@ rule fastaguard_invalid:
         gate="none",
         extra=""
     wrapper:
-        "file:../wrapper/fastaguard"
+        "master/bio/fastaguard"
 ```
 
 - [ ] **Step 3: Add copy-pasteable test runner snippet**
@@ -609,7 +609,7 @@ Safe local order before upstream submission:
 1. Run repository Python tests that inspect this wrapper layout.
 2. Install Snakemake in a workflow test environment.
 3. Run `snakemake -s test/Snakefile --cores 1 --use-conda`.
-4. Generate a real upstream `environment.linux-64.pin.yaml` if the upstream
+4. Generate a real upstream `environment.linux-64.pin.txt` if the upstream
    wrapper repository requires a solver-produced pin file.
 5. Adapt `test/test_wrappers.py` into the upstream wrapper repository test
    harness.
@@ -743,7 +743,7 @@ Run:
 
 ```bash
 git status --short
-git add tests/python/test_adoption_assets.py tests/python/test_workflow_gate_helper.py docs/workflow-readiness.md docs/adoption-plan.md examples/nf-core/README.md examples/nf-core/modules/local/fastaguard/main.nf examples/nf-core/modules/local/fastaguard/meta.yml examples/nf-core/modules/local/fastaguard/tests examples/workflows/check_fastaguard_gate.py examples/snakemake/wrapper/README.md examples/snakemake/wrapper/environment.linux-64.pin.yaml examples/snakemake/wrapper/test docs/superpowers/plans/2026-07-03-upstream-workflow-prep.md
+git add tests/python/test_adoption_assets.py tests/python/test_workflow_gate_helper.py docs/workflow-readiness.md docs/adoption-plan.md examples/nf-core/README.md examples/nf-core/modules/local/fastaguard/main.nf examples/nf-core/modules/local/fastaguard/meta.yml examples/nf-core/modules/local/fastaguard/tests examples/workflows/check_fastaguard_gate.py examples/snakemake/wrapper/README.md examples/snakemake/wrapper/environment.linux-64.pin.txt examples/snakemake/wrapper/test docs/superpowers/plans/2026-07-03-upstream-workflow-prep.md
 git commit -m "docs: prepare upstream workflow starters"
 git push -u origin feature/upstream-workflow-prep
 ```

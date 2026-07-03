@@ -1,12 +1,18 @@
-"""Run this snippet with pytest in an upstream wrapper checkout."""
-
-import subprocess
-from pathlib import Path
+"""Add this pytest test to an upstream snakemake-wrappers checkout."""
 
 
-def test_fastaguard_wrapper():
-    snakefile = Path(__file__).with_name("Snakefile")
-    subprocess.run(
-        ["snakemake", "-s", str(snakefile), "--cores", "1", "--use-conda"],
-        check=True,
+def test_fastaguard(run):
+    run(
+        "bio/fastaguard",
+        [
+            "snakemake",
+            "pass/fastaguard.json",
+            "warn/fastaguard.json",
+            "fail/fastaguard.json",
+            "invalid/fastaguard.json",
+            "pass/fastaguard.exit_code",
+            "warn/fastaguard.exit_code",
+            "fail/fastaguard.exit_code",
+            "invalid/fastaguard.exit_code",
+        ],
     )

@@ -78,7 +78,8 @@ class ReleaseMetadataTest(unittest.TestCase):
         placeholders = [
             path
             for path in tracked_paths
-            if marker in (ROOT / path).read_text(errors="ignore")
+            if (ROOT / path).exists()
+            and marker in (ROOT / path).read_text(errors="ignore")
         ]
         self.assertEqual(placeholders, [])
 
