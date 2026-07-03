@@ -79,7 +79,7 @@ class AdoptionAssetsTest(unittest.TestCase):
 
         self.assertNotIn("0.2.0--", nf_core_module)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0",
             nf_core_module,
         )
         self.assertNotIn("fastaguard=0.2.0", wrapper_env)
@@ -488,12 +488,12 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn(install, nfcore_readme)
         self.assertIn(install, snakemake_readme)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0",
             nfcore_readme,
         )
         self.assertNotIn("0.2.0--", nfcore_module)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0",
             snakemake_readme,
         )
 
@@ -825,7 +825,7 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
                 "  - conda-forge",
                 "  - bioconda",
                 "dependencies:",
-                "  - fastaguard=0.3.0",
+                "  - fastaguard=0.5.0",
             ],
         )
         self.assertIn('conda: "environment.yaml"', snakefile.read_text())
