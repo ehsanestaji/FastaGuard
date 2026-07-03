@@ -11,7 +11,7 @@ process FASTAGUARD {
     tuple val(meta), path("*.fastaguard.json"), emit: json
     tuple val(meta), path("*.fastaguard.tsv"), emit: tsv
     tuple val(meta), path("*.fastaguard_mqc.json"), emit: mqc
-    path "versions.yml", emit: versions
+    path "versions.yml", emit: versions, topic: versions
 
     script:
     def prefix = task.ext.prefix ?: meta.id

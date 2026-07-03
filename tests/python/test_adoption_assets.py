@@ -573,6 +573,53 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("description:", snakemake_meta)
         self.assertIn("output:", snakemake_meta)
 
+    def test_nf_core_starter_has_upstream_prep_test_layout(self):
+        module = ROOT / "examples" / "nf-core" / "modules" / "local" / "fastaguard"
+        main_nf = (module / "main.nf").read_text()
+        meta_yml = (module / "meta.yml").read_text()
+        nf_test = (module / "tests" / "main.nf.test").read_text()
+
+        self.assertIn('path "versions.yml", emit: versions, topic: versions', main_nf)
+        self.assertIn("versions:", meta_yml)
+        self.assertIn("topic", meta_yml)
+        self.assertIn('process "FASTAGUARD"', nf_test)
+        self.assertIn("pass.fa", nf_test)
+        self.assertIn("warn.fa", nf_test)
+        self.assertIn("fail.fa", nf_test)
+        self.assertIn("invalid.fa", nf_test)
+        self.assertIn("fastaguard_mqc.json", nf_test)
+        for name in ("pass.fa", "warn.fa", "fail.fa", "invalid.fa"):
+            self.assertTrue((module / "tests" / "data" / name).exists(), name)
+
+    def test_snakemake_wrapper_has_upstream_prep_test_layout(self):
+        wrapper = ROOT / "examples" / "snakemake" / "wrapper"
+        readme = (wrapper / "README.md").read_text()
+        test_snakefile = (wrapper / "test" / "Snakefile").read_text()
+        test_py = (wrapper / "test" / "test_wrappers.py").read_text()
+        pin = (wrapper / "environment.linux-64.pin.yaml").read_text()
+
+        self.assertIn("safe local order", readme)
+        self.assertIn("fastaguard=0.5.0", pin)
+        self.assertIn("rule fastaguard_pass", test_snakefile)
+        self.assertIn("rule fastaguard_warn", test_snakefile)
+        self.assertIn("rule fastaguard_fail", test_snakefile)
+        self.assertIn("rule fastaguard_invalid", test_snakefile)
+        self.assertIn("pytest", test_py)
+        self.assertIn("snakemake", test_py)
+        for name in ("pass.fa", "warn.fa", "fail.fa", "invalid.fa"):
+            self.assertTrue((wrapper / "test" / "data" / name).exists(), name)
+
+    def test_workflow_readiness_safe_order_is_explicit(self):
+        readiness = (ROOT / "docs" / "workflow-readiness.md").read_text()
+        adoption = (ROOT / "docs" / "adoption-plan.md").read_text()
+
+        self.assertIn("Safe Order", readiness)
+        self.assertIn("local repository tests first", readiness)
+        self.assertIn("external upstream PRs last", readiness)
+        self.assertIn("check_fastaguard_gate.py", readiness)
+        self.assertIn("nf-core module PR ready", adoption)
+        self.assertIn("Snakemake wrapper PR ready", adoption)
+
     def test_benchmarking_docs_include_v0_2_evidence_topics(self):
         text = (ROOT / "docs" / "benchmarking.md").read_text()
 

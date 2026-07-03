@@ -15,9 +15,23 @@ The repository includes local starters for:
 - nf-core-style Nextflow modules in `examples/nf-core/`
 - Snakemake wrapper-style usage in `examples/snakemake/wrapper/`
 - MultiQC custom-content aggregation through `fastaguard_mqc.json`
+- evidence-preserving gate checks through
+  `examples/workflows/check_fastaguard_gate.py`
 
 These are workflow adoption starters. They are not yet an upstream nf-core module.
 They are not yet an official Snakemake wrapper.
+
+## Safe Order
+
+1. Run local repository tests first.
+2. Harden the nf-core starter with topic-aware versions, fixtures, and nf-test
+   starter coverage.
+3. Add collect-then-gate examples with `examples/workflows/check_fastaguard_gate.py`.
+4. Harden the Snakemake wrapper starter with metadata, fixture tests, and a
+   starter pin file.
+5. Run external `nf-core modules lint`, `nf-core modules test`, and Snakemake
+   wrapper tests in dedicated upstream checkouts.
+6. Open external upstream PRs last.
 
 ## Integration Pattern
 
@@ -49,6 +63,8 @@ The local module already carries the expected interface shape:
 - outputs: HTML, JSON, TSV, MultiQC custom-content JSON, and versions metadata
 - runtime: `bioconda::fastaguard=0.5.0`
 - container: `quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0`
+- starter nf-test fixture layout for PASS, WARN, FAIL, and invalid FASTA cases
+- topic-aware `versions.yml` output for current nf-core version collection
 
 Before an upstream nf-core module submission, complete this checklist:
 
@@ -56,7 +72,7 @@ Before an upstream nf-core module submission, complete this checklist:
   template
 - run `nf-core modules lint fastaguard`
 - run `nf-core modules test fastaguard`
-- add nf-test cases for PASS, WARN, FAIL, and invalid FASTA inputs
+- adapt the local nf-test starter into the upstream repository layout
 - assert that `.fastaguard.json`, `.fastaguard.tsv`, `.fastaguard.html`,
   `.fastaguard_mqc.json`, and version outputs are produced
 - align `meta.yml` with current nf-core channel metadata expectations
@@ -74,13 +90,16 @@ The local wrapper starter already provides:
 - `wrapper.py`
 - `environment.yaml`
 - `meta.yaml`
+- `environment.linux-64.pin.yaml` as a local starter pin file
 - a copy-pasteable `Snakefile`
+- a `test/Snakefile` starter with PASS, WARN, FAIL, and invalid FASTA fixtures
 - outputs for HTML, JSON, TSV, and MultiQC custom-content JSON
 
 Before an official Snakemake wrapper submission, complete this checklist:
 
-- generate `environment.linux-64.pin.yaml` from the wrapper environment
-- add `test/Snakefile` with tiny FASTA fixtures
+- regenerate `environment.linux-64.pin.yaml` from the wrapper environment if
+  the upstream repository requires a solver-produced pin file
+- adapt the local `test/Snakefile` and tiny FASTA fixtures
 - update `test_wrappers.py` so wrapper tests run in the upstream repository
 - test PASS, WARN, FAIL, and invalid FASTA behavior
 - ensure the wrapper can handle arbitrary input and output paths

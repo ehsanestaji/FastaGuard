@@ -5,6 +5,15 @@ This directory is a starter for a local nf-core-style FastaGuard module. It is n
 See `../../docs/workflow-readiness.md` for the current upstream readiness
 checklist before submitting this starter to nf-core.
 
+Safe local order before upstream submission:
+
+1. Run repository Python tests that inspect this module layout.
+2. Install nf-core/tools, Nextflow, and nf-test in a workflow test environment.
+3. Run `nf-core modules lint fastaguard`.
+4. Run `nf-core modules test fastaguard`.
+5. Port the local starter into an upstream nf-core/modules checkout only after
+   those checks pass.
+
 Expected input channel:
 
 ```nextflow
