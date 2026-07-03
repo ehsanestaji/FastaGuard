@@ -20,13 +20,13 @@ The module assumes `fastaguard` is available on `PATH` when run without a
 container. The recommended install is:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.3.0
+mamba install -c conda-forge -c bioconda fastaguard=0.5.0
 ```
 
-Published BioContainers provides the pinned v0.3 image:
+Published BioContainers provides the pinned v0.5 image:
 
 ```text
-quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0
+quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
 ```
 
 The command block is written for the v0.3 assembly gate and runs:
@@ -50,7 +50,7 @@ fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
 ```
 
 For v0.5 submission-readiness preflight before official validators, use the
-source/package contract rather than the currently published v0.3 container:
+published v0.5 package or container:
 
 ```bash
 fastaguard {input.fasta} --gate submission --submission-target ncbi

@@ -15,10 +15,10 @@ class ReleaseMetadataTest(unittest.TestCase):
 
         self.assertEqual(cargo["package"]["version"], "0.5.0")
 
-    def test_bioconda_recipe_tracks_published_v0_3_0_archive(self):
+    def test_bioconda_recipe_tracks_published_v0_5_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
 
-        self.assertIn('{% set version = "0.3.0" %}', recipe)
+        self.assertIn('{% set version = "0.5.0" %}', recipe)
         self.assertIn("fastaguard --version | grep {{ version }}", recipe)
 
     def test_v0_2_0_release_notes_exist(self):
@@ -43,19 +43,29 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn("--gate pipeline", text)
         self.assertIn("input_sha256", text)
 
-    def test_bioconda_recipe_has_publishable_v0_3_0_source_sha(self):
+    def test_v0_5_0_release_notes_exist(self):
+        notes = ROOT / "docs" / "releases" / "v0.5.0.md"
+
+        self.assertTrue(notes.exists())
+        text = notes.read_text()
+        self.assertIn("FastaGuard v0.5.0", text)
+        self.assertIn("Submission Readiness Gate", text)
+        self.assertIn("--gate submission", text)
+        self.assertIn("--submission-target generic|ncbi", text)
+
+    def test_bioconda_recipe_has_publishable_v0_5_0_source_sha(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         marker = "REPLACE" + "_WITH_"
 
-        self.assertTrue((ROOT / "docs" / "releases" / "v0.3.0.md").exists())
-        self.assertIn('{% set version = "0.3.0" %}', recipe)
+        self.assertTrue((ROOT / "docs" / "releases" / "v0.5.0.md").exists())
+        self.assertIn('{% set version = "0.5.0" %}', recipe)
         self.assertNotIn(marker, recipe)
 
         match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
         self.assertIsNotNone(match, recipe)
         self.assertEqual(
             match.group(1),
-            "643d5d0107b6dc237f3be782a8463414880b95c45964397b773dac7e794e4fde",
+            "b3de60c83cb570bb90e894c262effe4092101b1655e5c64023445078ee2c5971",
         )
 
     def test_release_ready_bioconda_recipe_requires_real_sha(self):
@@ -77,7 +87,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIsNotNone(match, recipe)
         self.assertEqual(
             match.group(1),
-            "643d5d0107b6dc237f3be782a8463414880b95c45964397b773dac7e794e4fde",
+            "b3de60c83cb570bb90e894c262effe4092101b1655e5c64023445078ee2c5971",
         )
         self.assertNotIn(marker + "PUBLIC_SOURCE_ARCHIVE_SHA256", recipe)
 
@@ -114,8 +124,8 @@ class ReleaseMetadataTest(unittest.TestCase):
 
     def test_docs_reference_published_bioconda_install(self):
         install_command = "mamba install -c conda-forge -c bioconda fastaguard"
-        pinned_install = install_command + "=0.3.0"
-        container = "quay.io/biocontainers/fastaguard:0.3.0--hfa8f182_0"
+        pinned_install = install_command + "=0.5.0"
+        container = "quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0"
         docs = [
             ROOT / "README.md",
             ROOT / "docs" / "packaging.md",
