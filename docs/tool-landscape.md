@@ -56,7 +56,7 @@ Without FastaGuard, users typically combine several partial checks:
 - run QUAST for assembly metrics
 - run BUSCO for biological completeness
 - run BlobToolKit or taxonomy tooling for contamination exploration
-- rely on pipeline-specific assumptions for exit codes and report parsing
+- rely on pipeline-specific assumptions for report parsing and stop/go policy
 
 That works, but it is fragmented. The missing layer is a default, explainable,
 machine-readable FASTA preflight contract.

@@ -27,7 +27,7 @@ Capabilities:
 - GC-vs-length plot data and HTML plot
 - PASS / WARN / FAIL verdict
 - JSON, TSV, HTML, and MultiQC-compatible outputs
-- deterministic exit codes
+- deterministic report status fields
 
 ## v0.2: Assembly Trust + Pipeline Adoption
 

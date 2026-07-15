@@ -151,11 +151,14 @@ Default WARN conditions:
 ## Exit Codes
 
 ```text
-0 = pass
-1 = warnings above configured threshold
-2 = hard QC failure
-3 = invalid input / tool error
+0 = command completed and requested outputs were written
+2 = CLI usage error
+3 = tool/runtime error before outputs could be written
 ```
+
+QC PASS/WARN/FAIL decisions are report fields, not process-failure signals.
+Pipelines should read `verdict.status`, `gate.status`, and
+`gate.blocking_findings` from JSON/TSV outputs.
 
 ## Success Criteria
 
@@ -164,7 +167,7 @@ The first release is successful if:
 - it validates huge FASTA files without loading full sequences into memory
 - it produces useful HTML, JSON, TSV, and MultiQC-compatible outputs
 - it catches invalid FASTA structure, duplicate IDs, invalid characters, and high-N content
-- it has deterministic, documented exit codes
+- it has deterministic, documented status fields and tool-error exit codes
 - it can be added to a Nextflow or Snakemake pipeline in under 5 minutes
 
 ## Implementation Status
@@ -174,5 +177,5 @@ The v0.1 assembly MVP is implemented as a Rust CLI with:
 - streaming FASTA parsing for plain and gzipped files
 - assembly metrics
 - explainable findings
-- deterministic verdict exit codes
+- deterministic verdict status fields
 - JSON, TSV, HTML, and MultiQC-compatible outputs

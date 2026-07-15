@@ -26,7 +26,7 @@ The release strategy is evidence before expansion.
 FastaGuard should not rush into many biological profiles until the assembly
 preflight contract is trusted. The product should earn adoption in this order:
 
-1. **Trust:** reproducible evidence, stable schemas, clear exit codes, installable packages.
+1. **Trust:** reproducible evidence, stable schemas, clear status fields, installable packages.
 2. **Integration:** Bioconda, BioContainers, MultiQC, Nextflow, Snakemake, Galaxy.
 3. **Scale:** compare mode for many FASTA files and batch pipeline reports.
 4. **Readiness depth:** submission-oriented preflight checks before official validators.
@@ -219,7 +219,7 @@ Required adoption qualities:
 - generated BioContainers image
 - stable JSON schema
 - deterministic outputs
-- clear exit codes
+- clear tool-error exit codes
 - MultiQC compatibility
 - Nextflow, nf-core, Snakemake, and Galaxy examples
 - small public evidence pack

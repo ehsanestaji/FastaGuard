@@ -27,8 +27,6 @@ nextflow_process {
             assert file(process.out.json[0][1]).name.endsWith(".fastaguard.json")
             assert file(process.out.tsv[0][1]).name.endsWith(".fastaguard.tsv")
             assert file(process.out.mqc[0][1]).name.endsWith(".fastaguard_mqc.json")
-            assert file(process.out.exit_code[0][1]).name.endsWith(".fastaguard.exit_code")
-            assert file(process.out.exit_code[0][1]).text.trim() == "0"
             assert process.out.versions_fastaguard
         }
     }
@@ -49,7 +47,6 @@ nextflow_process {
             assert process.success
             assert process.out.json
             assert process.out.mqc
-            assert file(process.out.exit_code[0][1]).text.trim() == "1"
         }
     }
 
@@ -69,7 +66,6 @@ nextflow_process {
             assert process.success
             assert process.out.json
             assert process.out.mqc
-            assert file(process.out.exit_code[0][1]).text.trim() == "2"
         }
     }
 
@@ -89,7 +85,6 @@ nextflow_process {
             assert process.success
             assert process.out.json
             assert process.out.mqc
-            assert file(process.out.exit_code[0][1]).text.trim() == "2"
         }
     }
 }

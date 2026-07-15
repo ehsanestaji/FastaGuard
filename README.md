@@ -200,11 +200,15 @@ docker pull quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
 Exit codes:
 
 ```text
-0 = pass
-1 = warnings above configured threshold
-2 = hard QC failure
-3 = invalid input / tool error
+0 = command completed and requested outputs were written
+2 = CLI usage error
+3 = tool/runtime error before outputs could be written
 ```
+
+QC PASS/WARN/FAIL decisions are recorded in the machine-readable outputs,
+especially `verdict.status`, `gate.status`, and `gate.blocking_findings`.
+Workflow engines should route on those fields instead of interpreting QC
+findings from the process exit code.
 
 ## Product Thesis
 

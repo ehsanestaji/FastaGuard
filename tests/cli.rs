@@ -155,7 +155,7 @@ fn compare_writes_json_with_mixed_status_samples() {
     .arg("--multiqc")
     .arg(&multiqc)
     .assert()
-    .code(2)
+    .success()
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
@@ -219,7 +219,7 @@ fn compare_golden_mixed_status_matches() {
     .arg("--multiqc")
     .arg(&paths.multiqc)
     .assert()
-    .code(2)
+    .success()
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     assert_json_matches_golden(&paths.json, "tests/golden/compare_mixed_status.json");
@@ -324,7 +324,7 @@ fn compare_includes_structurally_invalid_fasta_sample() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(2)
+    .success()
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
@@ -361,7 +361,7 @@ fn valid_assembly_writes_all_outputs_and_warns_for_terminal_ns() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(1)
+    .success()
     .stderr(predicate::str::is_empty());
 
     assert_all_outputs_exist(&outputs);
@@ -390,7 +390,7 @@ fn valid_report_includes_machine_summary_scope_and_provenance() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(1)
+    .success()
     .stderr(predicate::str::is_empty());
 
     let report = read_json(&outputs.json);
@@ -448,7 +448,7 @@ fn report_includes_v0_4_provenance_and_routing_hints() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(1);
+    .success();
 
     let report = read_json(&outputs.json);
     assert_eq!(report["schema_version"], json!("0.5.0"));
@@ -500,7 +500,7 @@ fn valid_report_includes_plot_contract() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(1)
+    .success()
     .stderr(predicate::str::is_empty());
 
     let report = read_json(&outputs.json);
@@ -557,7 +557,7 @@ fn gc_outlier_plot_flags_are_backed_by_warning_finding() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(1)
+        .success()
         .stderr(predicate::str::is_empty());
 
     let report = read_json(&outputs.json);
@@ -610,7 +610,7 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(1)
+        .success()
         .stderr(predicate::str::is_empty());
 
     let report = read_json(&outputs.json);
@@ -705,7 +705,7 @@ fn valid_assembly_json_matches_golden_contract() {
     .arg("--multiqc")
     .arg(&paths.multiqc)
     .assert()
-    .code(1)
+    .success()
     .stderr(predicate::str::is_empty());
 
     assert_json_matches_golden(&paths.json, "tests/golden/valid_assembly.json");
@@ -726,7 +726,7 @@ fn problem_assembly_returns_failure_for_default_critical_findings() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(2)
+        .success()
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     assert_all_outputs_exist(&outputs);
@@ -752,7 +752,7 @@ fn pipeline_gate_report_lists_blocking_and_advisory_findings() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(2)
+    .success()
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
@@ -809,7 +809,7 @@ fn report_includes_readiness_matrix() {
             multiqc.to_str().unwrap(),
         ])
         .assert()
-        .code(2);
+        .success();
 
     let report: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(json).unwrap()).unwrap();
@@ -845,7 +845,7 @@ fn html_report_shows_gate_decision() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(2)
+    .success()
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     let html = std::fs::read_to_string(&outputs.html).unwrap();
@@ -876,7 +876,7 @@ fn gate_none_report_preserves_warning_behavior_and_checksum() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(2)
+    .success()
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
@@ -920,7 +920,7 @@ fn problem_assembly_json_matches_golden_contract() {
         .arg("--multiqc")
         .arg(&paths.multiqc)
         .assert()
-        .code(2)
+        .success()
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     assert_json_matches_golden(&paths.json, "tests/golden/problem_assembly.json");
@@ -941,7 +941,7 @@ fn problem_report_includes_structured_finding_actions() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(2)
+        .success()
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
@@ -985,7 +985,7 @@ fn problem_report_includes_v0_2_finding_taxonomy() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(2)
+        .success()
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
@@ -1011,7 +1011,7 @@ fn problem_report_includes_per_record_evidence() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(2)
+        .success()
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
@@ -1068,7 +1068,7 @@ fn invalid_fasta_json_matches_golden_contract() {
         .arg("--multiqc")
         .arg(&paths.multiqc)
         .assert()
-        .code(2)
+        .success()
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     assert_json_matches_golden(&paths.json, "tests/golden/invalid_empty_record.json");
@@ -1092,7 +1092,7 @@ fn structurally_invalid_fasta_returns_failure_report() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(2)
+        .success()
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     assert_all_outputs_exist(&outputs);
@@ -1119,7 +1119,7 @@ fn invalid_fasta_report_includes_machine_contract_fields() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(2)
+        .success()
         .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
@@ -1209,7 +1209,7 @@ fn submission_gate_defaults_to_generic_target() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(1)
+    .success()
     .stderr(predicate::str::is_empty());
 
     let report = read_json(&outputs.json);
@@ -1242,7 +1242,7 @@ fn submission_target_ncbi_is_serialized_when_requested() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(1)
+    .success()
     .stderr(predicate::str::is_empty());
 
     let report = read_json(&outputs.json);
@@ -1280,7 +1280,7 @@ fn submission_gate_fails_identifier_hazards() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(2)
+    .success()
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
@@ -1336,7 +1336,7 @@ fn submission_gate_invalid_chars_fail_submission_readiness() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(2);
+        .success();
 
     let report = read_json(&outputs.json);
     let submission_readiness = report["readiness"]["categories"]
@@ -1378,7 +1378,7 @@ fn submission_identifier_hazards_route_to_official_validators_without_claiming_r
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(2);
+    .success();
 
     let report = read_json(&outputs.json);
     assert_routing_hint(
@@ -1415,7 +1415,7 @@ fn submission_gate_outputs_tsv_multiqc_and_html_fields() {
     .arg("--multiqc")
     .arg(&outputs.multiqc)
     .assert()
-    .code(2);
+    .success();
 
     let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
     assert!(tsv.contains("submission_target\tncbi\n"), "{tsv}");
@@ -1466,7 +1466,7 @@ fn compare_submission_gate_aggregates_submission_status() {
         .arg("--multiqc")
         .arg(&outputs.multiqc)
         .assert()
-        .code(2);
+        .success();
 
     let report = read_json(&outputs.json);
     assert_eq!(report["summary"]["submission_fail_count"], json!(1));

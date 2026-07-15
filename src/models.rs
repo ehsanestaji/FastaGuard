@@ -521,14 +521,6 @@ impl FastaguardReport {
             },
         })
     }
-
-    pub fn exit_code(&self) -> i32 {
-        match self.verdict.status {
-            VerdictStatus::Pass => 0,
-            VerdictStatus::Warn => 1,
-            VerdictStatus::Fail => 2,
-        }
-    }
 }
 
 pub fn finding_actions(id: &str) -> Vec<FindingAction> {

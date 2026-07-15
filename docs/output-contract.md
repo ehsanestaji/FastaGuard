@@ -4,7 +4,7 @@
 
 FastaGuard should be pipeline-native from the first release.
 
-The output contract is as important as the HTML report. Pipeline authors need stable field names, deterministic behavior, documented exit codes, and versioned schemas.
+The output contract is as important as the HTML report. Pipeline authors need stable field names, deterministic behavior, documented tool-error exit codes, and versioned schemas.
 
 ## Artifacts
 

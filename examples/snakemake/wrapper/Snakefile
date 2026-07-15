@@ -6,7 +6,6 @@ rule fastaguard_wrapped:
         json="fastaguard.json",
         tsv="fastaguard.tsv",
         multiqc="fastaguard_mqc.json",
-        exit_code="fastaguard.exit_code",
     log:
         "fastaguard.log",
     conda:

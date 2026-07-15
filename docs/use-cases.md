@@ -56,11 +56,12 @@ spend time on bad input.
 ### Pipeline Gate For Workflow Engines
 
 FastaGuard gives Nextflow, Snakemake, nf-core, Galaxy, and institutional
-pipelines a simple PASS/WARN/FAIL decision with deterministic exit codes and
-structured evidence.
+pipelines a simple PASS/WARN/FAIL decision with structured evidence in JSON,
+TSV, HTML, and MultiQC-compatible outputs.
 
 Pipelines can stop early on hard FASTA failures, continue with warnings, or
-route samples to follow-up tools based on machine-readable findings.
+route samples to follow-up tools based on machine-readable fields such as
+`gate.status` and `gate.blocking_findings`.
 
 ### Batch Triage With Compare Mode
 

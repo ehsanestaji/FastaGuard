@@ -271,7 +271,7 @@ fn freshly_generated_outlier_report_validates_against_json_schema() {
         .arg("--multiqc")
         .arg(&multiqc)
         .assert()
-        .code(1);
+        .success();
 
     let schema = read_json(Path::new("schema/fastaguard.schema.json"));
     let report = read_json(&json);

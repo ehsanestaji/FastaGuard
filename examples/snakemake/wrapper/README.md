@@ -25,9 +25,9 @@ fastaguard sample.fa --profile assembly --gate pipeline
 
 That gate marks duplicate IDs, invalid characters, invalid FASTA structure, and
 high-N content as blocking findings. GC and length outliers remain advisory
-unless explicitly added with `--fail-on`. The wrapper captures FastaGuard's
-status in `fastaguard.exit_code` so workflows can route on PASS/WARN/FAIL while
-retaining the JSON/HTML evidence. Tool-error status `3` still fails the job.
+unless explicitly added with `--fail-on`. FastaGuard exits 0 when reports are
+written successfully; workflows should route on PASS/WARN/FAIL by reading
+`gate.status` and `gate.blocking_findings` from JSON.
 
 The wrapper also includes a v0.5 Conda environment:
 
@@ -71,4 +71,3 @@ The wrapper emits:
 - `fastaguard.json`
 - `fastaguard.tsv`
 - `fastaguard_mqc.json`
-- `fastaguard.exit_code`
