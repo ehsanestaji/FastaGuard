@@ -150,15 +150,18 @@ Default WARN conditions:
 
 ## Exit Codes
 
+Starting with FastaGuard v0.6.0:
+
 ```text
 0 = command completed and requested outputs were written
-2 = CLI usage error
-3 = tool/runtime error before outputs could be written
+2 = argument parsing error
+3 = configuration, input-access, or runtime error
 ```
 
 QC PASS/WARN/FAIL decisions are report fields, not process-failure signals.
 Pipelines should read `verdict.status`, `gate.status`, and
-`gate.blocking_findings` from JSON/TSV outputs.
+`gate.blocking_findings` from JSON/TSV outputs. Single-file TSV reports include
+`input_path`, `verdict`, and `gate_status` for downstream routing.
 
 ## Success Criteria
 

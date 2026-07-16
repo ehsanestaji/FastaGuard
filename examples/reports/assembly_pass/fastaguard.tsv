@@ -1,5 +1,6 @@
 metric	value
 schema_version	0.5.0
+input_path	testdata/valid_assembly.fa
 profile	assembly
 verdict	WARN
 gate_mode	none

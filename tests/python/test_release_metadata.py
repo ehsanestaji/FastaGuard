@@ -10,10 +10,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ReleaseMetadataTest(unittest.TestCase):
-    def test_package_targets_v0_5_0(self):
+    def test_package_targets_v0_6_0(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
 
-        self.assertEqual(cargo["package"]["version"], "0.5.0")
+        self.assertEqual(cargo["package"]["version"], "0.6.0")
 
     def test_bioconda_recipe_tracks_published_v0_5_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
@@ -52,6 +52,16 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn("Submission Readiness Gate", text)
         self.assertIn("--gate submission", text)
         self.assertIn("--submission-target generic|ncbi", text)
+
+    def test_v0_6_0_release_notes_define_conventional_exit_contract(self):
+        notes = ROOT / "docs" / "releases" / "v0.6.0.md"
+
+        self.assertTrue(notes.exists())
+        text = notes.read_text()
+        self.assertIn("FastaGuard v0.6.0", text)
+        self.assertIn("Successful report generation exits with code `0`", text)
+        self.assertIn("`input_path`", text)
+        self.assertIn("`gate.status`", text)
 
     def test_bioconda_recipe_has_publishable_v0_5_0_source_sha(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()

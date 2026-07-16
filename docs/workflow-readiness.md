@@ -29,7 +29,14 @@ External upstream-style validation was run on 2026-07-03 in dedicated checkouts:
 - Snakemake wrapper formatting: `black --check` and `snakefmt --check` passed.
 - Snakemake wrapper lint: `snakemake --lint --snakefile test/Snakefile` passed.
 - Snakemake wrapper pytest: `test_wrappers.py::test_fastaguard` passed with
-  PASS, WARN, FAIL, and invalid FASTA fixtures.
+  PASS, WARN, FAIL, and invalid FASTA fixtures plus captured `exit_code`
+  outputs.
+
+The v0.6 source contract removes QC-derived process failures: successfully
+written PASS, WARN, and FAIL reports all return exit code `0`. The pinned v0.5
+starters keep their compatibility capture until v0.6 packages and containers
+are published. After publication, upstream wrappers can remove that workaround
+and route directly from JSON or TSV status fields.
 
 ## Safe Order
 
@@ -52,10 +59,11 @@ official submission validators. The default workflow pattern is:
 collect FASTA-level evidence -> apply stop/go policy -> route downstream tools
 ```
 
-`--gate pipeline` and `--gate submission` write JSON, TSV, HTML, and
-MultiQC-compatible evidence. Successful report generation exits 0; workflow
-stop/go policy should be applied from the report fields. The important contract
-fields are:
+With the published v0.5 runtime, `--gate pipeline` and `--gate submission` write
+JSON, TSV, HTML, and MultiQC-compatible evidence before returning a QC-derived
+exit code. The pinned local starters capture that code so the evidence remains
+available, then leave stop/go enforcement to a downstream gate step. The
+important contract fields are:
 
 - `verdict.status`
 - `gate.mode`
@@ -69,7 +77,8 @@ fields are:
 The local module already carries the expected interface shape:
 
 - input channel: `tuple val(meta), path(fasta)`
-- outputs: HTML, JSON, TSV, MultiQC custom-content JSON, and versions metadata
+- outputs: HTML, JSON, TSV, MultiQC custom-content JSON, captured exit code,
+  and versions metadata
 - runtime: `bioconda::fastaguard=0.5.0`
 - container: `quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0`
 - starter nf-test fixture layout for PASS, WARN, FAIL, and invalid FASTA cases
@@ -103,7 +112,8 @@ The local wrapper starter already provides:
 - `environment.linux-64.pin.txt` as a local starter pin file
 - a copy-pasteable `Snakefile`
 - a `test/Snakefile` starter with PASS, WARN, FAIL, and invalid FASTA fixtures
-- outputs for HTML, JSON, TSV, and MultiQC custom-content JSON
+- outputs for HTML, JSON, TSV, MultiQC custom-content JSON, and captured exit
+  code
 
 Before an official Snakemake wrapper submission, complete this checklist:
 
@@ -113,8 +123,8 @@ Before an official Snakemake wrapper submission, complete this checklist:
 - update `test_wrappers.py` so wrapper tests run in the upstream repository
 - test PASS, WARN, FAIL, and invalid FASTA behavior
 - ensure the wrapper can handle arbitrary input and output paths
-- apply downstream stop/go behavior by reading `gate.status` and
-  `gate.blocking_findings` from JSON
+- preserve evidence on blocking FASTA results, either through workflow-specific
+  output handling or a collect-then-gate wrapper pattern
 
 ## Submission Gate Usage
 

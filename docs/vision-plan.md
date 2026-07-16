@@ -109,7 +109,25 @@ The v0.5 contract should make workflow routing explicit through `gate.mode`,
 `readiness.categories[id=submission]` record, while still pointing users to
 official validators for final repository-specific checks.
 
-### v0.6: Transcriptome Profile
+### v0.6: Workflow-Compatible Exit Contract
+
+Goal:
+
+```text
+Let workflows collect complete QC reports before applying their own stop/go policy.
+```
+
+Successful report generation should exit with code `0` for PASS, WARN, and FAIL
+reports. Argument parsing errors should use code `2`; configuration,
+input-access, and runtime errors should use code `3`. JSON and TSV remain the
+source of truth for `verdict.status`, `gate.status`, and blocking findings.
+
+Single-file TSV reports should include `input_path` alongside status fields so
+workflow engines can route samples without scraping logs or HTML. Existing
+workflow examples pinned to v0.5 should retain compatibility handling until a
+v0.6 package and container are published.
+
+### v0.7: Transcriptome Profile
 
 Goal:
 
@@ -129,7 +147,7 @@ FastaGuard should not claim transcriptome biological completeness. It should
 route users to transcriptome-specific completeness and annotation tools when
 needed.
 
-### v0.7: Protein Profile
+### v0.8: Protein Profile
 
 Goal:
 
@@ -148,7 +166,7 @@ Initial protein checks:
 Protein mode should be strict about alphabet validity and careful about biology:
 it should flag preflight problems, not infer functional correctness.
 
-### v0.8: Reference-Panel Profile
+### v0.9: Reference-Panel Profile
 
 Goal:
 
@@ -239,12 +257,13 @@ Recommended sequence:
 v0.3: evidence pack + assembly gate + provenance checksums
 v0.4: compare mode for many FASTA files
 v0.5: submission readiness gate
-v0.6: transcriptome profile
-v0.7: protein profile
-v0.8: reference-panel profile
+v0.6: workflow-compatible exit contract
+v0.7: transcriptome profile
+v0.8: protein profile
+v0.9: reference-panel profile
 later: MCP/tool-agent interface and optional local summaries
 ```
 
 This path gives FastaGuard the best chance to become a default tool: prove the
-assembly gate first, scale to batches, make submission readiness concrete, then
-expand profiles.
+assembly gate first, scale to batches, make submission readiness concrete,
+simplify workflow integration, then expand profiles.

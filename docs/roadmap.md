@@ -118,7 +118,25 @@ Development scope:
 - FastaGuard does not replace NCBI, ENA, DDBJ official validators or guarantee
   repository acceptance
 
-## v0.6: Transcriptome Profile
+## v0.6: Workflow-Compatible Exit Contract
+
+Goal:
+
+```text
+Separate command execution from FASTA quality decisions in workflow engines.
+```
+
+Development scope:
+
+- return exit code `0` whenever requested reports are written successfully,
+  including WARN and FAIL reports
+- reserve exit code `2` for argument parsing errors
+- reserve exit code `3` for configuration, input-access, and runtime errors
+- keep PASS/WARN/FAIL decisions in stable JSON and TSV report fields
+- include `input_path` in single-file TSV reports for downstream routing
+- document migration from legacy QC-derived process exit codes
+
+## v0.7: Transcriptome Profile
 
 Potential additions:
 
@@ -128,7 +146,7 @@ Potential additions:
 - extreme GC outliers
 - isoform-heavy warning heuristics
 
-## v0.7: Protein Profile
+## v0.8: Protein Profile
 
 Potential additions:
 
@@ -138,7 +156,7 @@ Potential additions:
 - low-complexity regions
 - suspicious nucleotide-looking proteins
 
-## v0.8: Reference Panel Profile
+## v0.9: Reference Panel Profile
 
 Potential additions:
 

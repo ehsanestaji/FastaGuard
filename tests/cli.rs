@@ -18,6 +18,20 @@ fn help_mentions_preflight_positioning() {
 }
 
 #[test]
+fn help_describes_gate_options_as_report_policy() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "Gate preset for report blocking policy",
+        ))
+        .stdout(predicate::str::contains("mark the report as FAIL"))
+        .stdout(predicate::str::contains("failure behavior").not())
+        .stdout(predicate::str::contains("fail the run").not());
+}
+
+#[test]
 fn help_does_not_advertise_removed_warning_flag() {
     let removed_flag = ["--warn", "-on"].concat();
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
@@ -712,7 +726,7 @@ fn valid_assembly_json_matches_golden_contract() {
 }
 
 #[test]
-fn problem_assembly_returns_failure_for_default_critical_findings() {
+fn problem_assembly_writes_failure_report_with_successful_process() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "problem");
 
@@ -1075,7 +1089,7 @@ fn invalid_fasta_json_matches_golden_contract() {
 }
 
 #[test]
-fn structurally_invalid_fasta_returns_failure_report() {
+fn structurally_invalid_fasta_writes_failure_report_with_successful_process() {
     let temp_dir = TempDir::new().unwrap();
     let input = temp_dir.path().join("invalid.fa");
     std::fs::write(&input, ">empty\n").unwrap();
@@ -1171,7 +1185,7 @@ fn unknown_gate_value_is_cli_error() {
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     cmd.args(["testdata/valid_assembly.fa", "--gate", "strict"])
         .assert()
-        .failure()
+        .code(2)
         .stderr(predicate::str::contains("invalid value 'strict'"));
 }
 

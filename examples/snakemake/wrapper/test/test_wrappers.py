@@ -10,5 +10,9 @@ def test_fastaguard(run):
             "warn/fastaguard.json",
             "fail/fastaguard.json",
             "invalid/fastaguard.json",
+            "pass/fastaguard.exit_code",
+            "warn/fastaguard.exit_code",
+            "fail/fastaguard.exit_code",
+            "invalid/fastaguard.exit_code",
         ],
     )

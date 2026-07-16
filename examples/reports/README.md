@@ -1,6 +1,6 @@
 # Example Reports
 
-These tiny examples show the current v0.5 output contract without requiring large datasets.
+These tiny examples show the current v0.6 output contract without requiring large datasets.
 
 ## Assembly Pass
 
@@ -41,4 +41,6 @@ cargo run -- testdata/problem_assembly.fa \
   --multiqc examples/reports/assembly_fail/fastaguard_mqc.json
 ```
 
-The command exits with code `2` because this example contains critical FASTA-level blockers. Inspect the JSON `gate` object and readiness categories to separate blocking findings from advisory findings.
+The command exits with code `0` after writing the FAIL report. Inspect the JSON
+`gate` object and readiness categories to separate blocking findings from
+advisory findings.

@@ -49,7 +49,7 @@ downstream tool.
 
 | Channel | Status |
 | --- | --- |
-| Source/package metadata | `v0.5.0` is the latest tagged source release |
+| Source/package metadata | This branch prepares `v0.6.0`; `v0.5.0` remains the latest tag |
 | GitHub release | v0.5 GitHub release binaries are built from the `v0.5.0` tag |
 | Bioconda | `v0.5.0` is live for Linux and macOS x86_64/ARM64 |
 | BioContainers | `v0.5.0` is live as a pinned workflow image |
@@ -123,6 +123,7 @@ fastaguard --version
 The `--gate pipeline` examples below require FastaGuard `v0.3.0` or newer.
 The `fastaguard compare` example requires FastaGuard `v0.4.0` or newer.
 The `--gate submission` example requires FastaGuard `v0.5.0` or newer.
+The conventional exit contract below starts with FastaGuard `v0.6.0`.
 
 Run the assembly preflight check:
 
@@ -142,10 +143,10 @@ fastaguard sample.fa --profile assembly --gate pipeline
 ```
 
 The `pipeline` gate is the v0.3 assembly preset for workflow stop/go decisions.
-It fails on duplicate IDs, invalid characters, invalid FASTA structure, and
-high-N content. GC and length outliers remain advisory by default because they
-are routing signals, not proof of contamination or misassembly. To make an
-advisory finding block a pipeline, add it explicitly with `--fail-on`.
+It marks duplicate IDs, invalid characters, invalid FASTA structure, and high-N
+content as blocking findings. GC and length outliers remain advisory by default
+because they are routing signals, not proof of contamination or misassembly. To
+mark an advisory finding as blocking, add it explicitly with `--fail-on`.
 
 v0.4 compare starter example:
 
@@ -197,18 +198,20 @@ Published BioContainers provides the v0.5 image for workflow engines:
 docker pull quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
 ```
 
-Exit codes:
+Starting with FastaGuard v0.6.0, exit codes are:
 
 ```text
 0 = command completed and requested outputs were written
-2 = CLI usage error
-3 = tool/runtime error before outputs could be written
+2 = argument parsing error
+3 = configuration, input-access, or runtime error
 ```
 
 QC PASS/WARN/FAIL decisions are recorded in the machine-readable outputs,
 especially `verdict.status`, `gate.status`, and `gate.blocking_findings`.
 Workflow engines should route on those fields instead of interpreting QC
-findings from the process exit code.
+findings from the process exit code. Single-file TSV reports include
+`input_path`, `verdict`, and `gate_status`; compare TSV reports retain one row
+per input with its path and status fields.
 
 ## Product Thesis
 
@@ -265,7 +268,7 @@ v0.2 expands the assembly preflight layer with:
 
 v0.3 adds the assembly gate contract:
 
-- `--gate pipeline` for default workflow blocking behavior
+- `--gate pipeline` for the default workflow gate policy
 - `gate.blocking_findings` for machine stop/go decisions
 - checksum provenance with `provenance.input_sha256`
 - explicit advisory findings for evidence that should route follow-up QC rather
@@ -288,6 +291,15 @@ v0.5 adds the submission-readiness gate:
 - submission-readiness fields in JSON, TSV, HTML, MultiQC, and compare outputs
 - boundaries that keep FastaGuard upstream of official validators, NCBI FCS,
   annotation validation, QUAST, BUSCO, BlobToolKit, and CheckM
+
+v0.6 makes report generation workflow-compatible:
+
+- successful report generation exits `0` for PASS, WARN, and FAIL reports
+- argument parsing errors exit `2`; configuration, input-access, and runtime
+  errors exit `3`
+- single-file TSV reports include `input_path` for downstream routing
+- workflows enforce QC policy from stable report fields instead of process
+  status
 
 ## Positioning
 
@@ -328,6 +340,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.5 submission readiness evidence](docs/evidence/fastaguard-v0.5-submission-readiness.md)
 - [v0.5 public evidence workflow](docs/evidence/fastaguard-v0.5-public-evidence.md)
 - [Packaging](docs/packaging.md)
+- [v0.6.0 release notes](docs/releases/v0.6.0.md)
 - [v0.5.0 release notes](docs/releases/v0.5.0.md)
 - [v0.4.0 release notes](docs/releases/v0.4.0.md)
 - [v0.3.0 release notes](docs/releases/v0.3.0.md)

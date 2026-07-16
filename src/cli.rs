@@ -83,7 +83,7 @@ pub struct AnalysisArgs {
     #[arg(long, default_value = "assembly")]
     pub profile: String,
 
-    /// Gate preset for pipeline-friendly failure behavior.
+    /// Gate preset for report blocking policy.
     #[arg(long, value_enum, default_value_t = GateMode::None)]
     pub gate: GateMode,
 
@@ -91,7 +91,7 @@ pub struct AnalysisArgs {
     #[arg(long, value_enum)]
     pub submission_target: Option<SubmissionTarget>,
 
-    /// Comma-separated rule IDs that should fail the run when triggered.
+    /// Comma-separated rule IDs that mark the report as FAIL when triggered.
     #[arg(long, value_delimiter = ',')]
     pub fail_on: Vec<String>,
 

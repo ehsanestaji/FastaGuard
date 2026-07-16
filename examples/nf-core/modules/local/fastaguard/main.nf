@@ -15,6 +15,7 @@ process FASTAGUARD {
     tuple val(meta), path("*.fastaguard.json"), emit: json
     tuple val(meta), path("*.fastaguard.tsv"), emit: tsv
     tuple val(meta), path("*.fastaguard_mqc.json"), emit: mqc
+    tuple val(meta), path("*.fastaguard.exit_code"), emit: exit_code
     tuple val("${task.process}"), val('fastaguard'), eval('fastaguard --version | cut -d " " -f 2'), emit: versions_fastaguard, topic: versions
 
     when:
@@ -24,11 +25,20 @@ process FASTAGUARD {
     def prefix = task.ext.prefix ?: meta.id
     def args = task.ext.args ?: '--profile assembly --gate pipeline'
     """
+    set +e
     fastaguard ${fasta} \
       ${args} \
       --out ${prefix}.fastaguard.html \
       --json ${prefix}.fastaguard.json \
       --tsv ${prefix}.fastaguard.tsv \
       --multiqc ${prefix}.fastaguard_mqc.json
+    status=\$?
+    set -e
+
+    printf "%s\\n" "\${status}" > ${prefix}.fastaguard.exit_code
+
+    if [ "\${status}" -eq 3 ]; then
+      exit "\${status}"
+    fi
     """
 }
