@@ -150,12 +150,18 @@ Default WARN conditions:
 
 ## Exit Codes
 
+Starting with FastaGuard v0.6.0:
+
 ```text
-0 = pass
-1 = warnings above configured threshold
-2 = hard QC failure
-3 = invalid input / tool error
+0 = command completed and requested outputs were written
+2 = argument parsing error
+3 = configuration, input-access, or runtime error
 ```
+
+QC PASS/WARN/FAIL decisions are report fields, not process-failure signals.
+Pipelines should read `verdict.status`, `gate.status`, and
+`gate.blocking_findings` from JSON/TSV outputs. Single-file TSV reports include
+`input_path`, `verdict`, and `gate_status` for downstream routing.
 
 ## Success Criteria
 
@@ -164,7 +170,7 @@ The first release is successful if:
 - it validates huge FASTA files without loading full sequences into memory
 - it produces useful HTML, JSON, TSV, and MultiQC-compatible outputs
 - it catches invalid FASTA structure, duplicate IDs, invalid characters, and high-N content
-- it has deterministic, documented exit codes
+- it has deterministic, documented status fields and tool-error exit codes
 - it can be added to a Nextflow or Snakemake pipeline in under 5 minutes
 
 ## Implementation Status
@@ -174,5 +180,5 @@ The v0.1 assembly MVP is implemented as a Rust CLI with:
 - streaming FASTA parsing for plain and gzipped files
 - assembly metrics
 - explainable findings
-- deterministic verdict exit codes
+- deterministic verdict status fields
 - JSON, TSV, HTML, and MultiQC-compatible outputs

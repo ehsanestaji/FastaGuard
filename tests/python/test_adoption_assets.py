@@ -84,7 +84,8 @@ class AdoptionAssetsTest(unittest.TestCase):
         )
         self.assertNotIn("fastaguard=0.2.0", wrapper_env)
         self.assertIn("--gate {gate}", wrapper_py)
-        self.assertIn("Gate failures intentionally exit with code `2`", nf_core_readme)
+        self.assertIn("published v0.5.0", nf_core_readme)
+        self.assertIn("captures that legacy", nf_core_readme)
         self.assertIn("fastaguard.exit_code", snakemake_readme)
 
     def test_v0_4_docs_explain_preflight_readiness_and_compare_mode(self):
@@ -125,9 +126,7 @@ class AdoptionAssetsTest(unittest.TestCase):
                 self.assertIn("fastaguard compare", text)
                 self.assertIn("starter", lower)
                 self.assertIn("local", lower)
-                self.assertIn("WARN exits 1", text)
-                self.assertIn("FAIL exits 2", text)
-                self.assertIn("fail-fast starter", lower)
+                self.assertIn("gate.status", text)
 
     def test_v0_5_submission_readiness_docs_are_present(self):
         readme = self.read("README.md")

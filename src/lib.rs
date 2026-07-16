@@ -43,7 +43,7 @@ fn run_single(config: cli::RunConfig) -> Result<i32> {
     let outputs = config.outputs.clone();
     let output = build_single_report(config, run_started)?;
     report::write_all(&output, &outputs)?;
-    Ok(output.exit_code())
+    Ok(0)
 }
 
 pub(crate) fn build_single_report(

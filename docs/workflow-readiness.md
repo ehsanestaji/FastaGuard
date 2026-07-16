@@ -32,6 +32,12 @@ External upstream-style validation was run on 2026-07-03 in dedicated checkouts:
   PASS, WARN, FAIL, and invalid FASTA fixtures plus captured `exit_code`
   outputs.
 
+The v0.6 source contract removes QC-derived process failures: successfully
+written PASS, WARN, and FAIL reports all return exit code `0`. The pinned v0.5
+starters keep their compatibility capture until v0.6 packages and containers
+are published. After publication, upstream wrappers can remove that workaround
+and route directly from JSON or TSV status fields.
+
 ## Safe Order
 
 1. Run local repository tests first.
@@ -53,11 +59,11 @@ official submission validators. The default workflow pattern is:
 collect FASTA-level evidence -> apply stop/go policy -> route downstream tools
 ```
 
-For local fail-fast runs, `--gate pipeline` and `--gate submission` write JSON,
-TSV, HTML, and MultiQC-compatible evidence before returning a blocking exit
-code. Some workflow engines remove failed-job outputs by default, so production
-integrations should use a collect-then-gate pattern when evidence preservation
-matters. The important contract fields are:
+With the published v0.5 runtime, `--gate pipeline` and `--gate submission` write
+JSON, TSV, HTML, and MultiQC-compatible evidence before returning a QC-derived
+exit code. The pinned local starters capture that code so the evidence remains
+available, then leave stop/go enforcement to a downstream gate step. The
+important contract fields are:
 
 - `verdict.status`
 - `gate.mode`

@@ -20,7 +20,6 @@ pub fn run_compare(config: CompareConfig) -> Result<i32> {
     }
 
     let summary = compare_summary(&samples);
-    let worst = worst_status(samples.iter().map(|sample| sample.gate_status));
     let cohort_findings = cohort_findings(&samples);
     let report = CompareReport {
         schema_version: SCHEMA_VERSION.to_string(),
@@ -39,7 +38,7 @@ pub fn run_compare(config: CompareConfig) -> Result<i32> {
     };
 
     crate::report::write_compare_all(&report, &config.outputs)?;
-    Ok(exit_code(worst))
+    Ok(0)
 }
 
 fn validate_unique_sample_ids(inputs: &[std::path::PathBuf]) -> Result<()> {
@@ -244,27 +243,6 @@ pub(crate) fn sample_id(path: &Path) -> String {
         .to_string()
 }
 
-pub(crate) fn worst_status<I>(statuses: I) -> VerdictStatus
-where
-    I: IntoIterator<Item = VerdictStatus>,
-{
-    statuses
-        .into_iter()
-        .fold(VerdictStatus::Pass, |worst, status| match (worst, status) {
-            (VerdictStatus::Fail, _) | (_, VerdictStatus::Fail) => VerdictStatus::Fail,
-            (VerdictStatus::Warn, _) | (_, VerdictStatus::Warn) => VerdictStatus::Warn,
-            _ => VerdictStatus::Pass,
-        })
-}
-
-fn exit_code(status: VerdictStatus) -> i32 {
-    match status {
-        VerdictStatus::Pass => 0,
-        VerdictStatus::Warn => 1,
-        VerdictStatus::Fail => 2,
-    }
-}
-
 fn usize_to_u64(value: usize) -> u64 {
     value.try_into().unwrap_or(u64::MAX)
 }
@@ -274,23 +252,6 @@ mod tests {
     use std::path::Path;
 
     use super::*;
-
-    #[test]
-    fn worst_status_prefers_fail_over_warn_over_pass() {
-        assert_eq!(
-            worst_status([
-                VerdictStatus::Pass,
-                VerdictStatus::Fail,
-                VerdictStatus::Warn
-            ]),
-            VerdictStatus::Fail
-        );
-        assert_eq!(
-            worst_status([VerdictStatus::Pass, VerdictStatus::Warn]),
-            VerdictStatus::Warn
-        );
-        assert_eq!(worst_status([VerdictStatus::Pass]), VerdictStatus::Pass);
-    }
 
     #[test]
     fn sample_id_uses_file_stem_without_compression_suffix() {

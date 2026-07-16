@@ -26,6 +26,7 @@ Emitted outputs:
 - `json`
 - `tsv`
 - `mqc`
+- `exit_code`
 - `versions`
 
 The module assumes `fastaguard` is available on `PATH` when run without a
@@ -47,13 +48,12 @@ The command block is written for the v0.3 assembly gate and runs:
 fastaguard sample.fa --profile assembly --gate pipeline
 ```
 
-That gate contract blocks downstream workflow steps on duplicate IDs, invalid
-characters, invalid FASTA structure, and high-N content. Gate failures intentionally exit with code `2` after writing reports, so downstream workflow steps stop while the JSON/HTML evidence remains available.
-
-This is a local fail-fast starter example: FastaGuard WARN exits 1 and FAIL exits 2.
-Depending on workflow engine behavior, naive fail-fast runs may leave evidence
-only in the work directory. A production wrapper can use a collect-then-gate
-pattern to publish JSON/HTML/TSV/MultiQC evidence before applying stop/go logic.
+That gate contract marks duplicate IDs, invalid characters, invalid FASTA
+structure, and high-N content as blocking findings. The published v0.5.0
+runtime returns `1` for WARN and `2` for FAIL. This module captures that legacy
+status so JSON, HTML, TSV, and MultiQC evidence can be published; a downstream
+gate step should then enforce stop/go policy from `gate.status` or the captured
+exit code. Runtime errors with status `3` still fail the process.
 
 For v0.4 cohort triage, compare mode is a starter pattern:
 
@@ -75,9 +75,9 @@ Pipeline authors should route on:
 - `gate.blocking_findings`
 - `readiness.categories[id=submission]`
 
-This is local fail-fast starter guidance only. It is not yet an upstream nf-core
-module submission, and the Snakemake example is not yet an official wrapper
-submission.
+This is local collect-then-gate starter guidance only. It is not yet an
+upstream nf-core module submission, and the Snakemake example is not yet an
+official wrapper submission.
 
 Example include:
 

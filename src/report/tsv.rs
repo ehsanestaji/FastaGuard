@@ -12,6 +12,11 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
 
     writeln!(writer, "metric\tvalue")?;
     write_metric(&mut writer, "schema_version", &report.schema_version)?;
+    write_metric(
+        &mut writer,
+        "input_path",
+        sanitize_tsv_value(&report.input.path),
+    )?;
     write_metric(&mut writer, "profile", &report.input.profile)?;
     write_metric(
         &mut writer,
@@ -210,6 +215,16 @@ fn write_metric(
     }
 }
 
+fn sanitize_tsv_value(value: &str) -> String {
+    value
+        .chars()
+        .map(|character| match character {
+            '\t' | '\r' | '\n' => ' ',
+            _ => character,
+        })
+        .collect()
+}
+
 fn affected_record_count(report: &FastaguardReport, finding_id: &str) -> u64 {
     report
         .findings
@@ -290,6 +305,40 @@ mod tests {
 
         let output = fs::read_to_string(file.path()).unwrap();
         assert!(output.contains("verdict\tWARN\n"), "{output}");
+    }
+
+    #[test]
+    fn writes_input_path_for_downstream_routing() {
+        let report = test_report(VerdictStatus::Warn);
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(output.contains("input_path\tinput.fa\n"), "{output}");
+    }
+
+    #[test]
+    fn sanitizes_input_path_without_adding_tsv_rows() {
+        let mut report = test_report(VerdictStatus::Warn);
+        report.input.path = "inputs/sample\tone\n.fa".to_string();
+        let file = NamedTempFile::new().unwrap();
+
+        write(&report, file.path()).unwrap();
+
+        let output = fs::read_to_string(file.path()).unwrap();
+        assert!(
+            output.contains("input_path\tinputs/sample one .fa\n"),
+            "{output}"
+        );
+        assert_eq!(
+            output
+                .lines()
+                .filter(|line| line.starts_with("input_path\t"))
+                .count(),
+            1,
+            "{output}"
+        );
     }
 
     #[test]

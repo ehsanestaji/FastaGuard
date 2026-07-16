@@ -4,7 +4,7 @@
 
 FastaGuard should be pipeline-native from the first release.
 
-The output contract is as important as the HTML report. Pipeline authors need stable field names, deterministic behavior, documented exit codes, and versioned schemas.
+The output contract is as important as the HTML report. Pipeline authors need stable field names, deterministic behavior, documented tool-error exit codes, and versioned schemas.
 
 ## Artifacts
 
@@ -28,6 +28,23 @@ fastaguard_compare_mqc.json
 
 v0.5 adds submission-readiness gate fields to the same JSON, TSV, HTML,
 MultiQC, and compare artifacts. JSON remains the source of truth.
+
+v0.6 separates process execution from QC status. Successful report generation
+returns exit code `0` for PASS, WARN, and FAIL reports.
+
+## Process Exit Contract
+
+Starting with FastaGuard v0.6.0:
+
+```text
+0 = command completed and requested outputs were written
+2 = argument parsing error
+3 = configuration, input-access, or runtime error
+```
+
+Workflow engines should apply stop/go policy from `gate.status`,
+`gate.blocking_findings`, or `verdict.status`. Process status only indicates
+whether FastaGuard completed the requested command and reports.
 
 ## JSON Contract
 
@@ -416,7 +433,8 @@ Recommended first rows:
 
 ```text
 metric	value
-schema_version	0.3.0
+schema_version	0.5.0
+input_path	sample.fa
 profile	assembly
 verdict	FAIL
 gate_mode	pipeline

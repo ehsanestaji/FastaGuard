@@ -135,7 +135,7 @@ Keep future releases compatible with Bioconda expectations:
 - keep a single static-ish CLI binary target
 - keep deterministic tests and tiny fixtures
 - avoid runtime databases for early releases
-- maintain stable exit codes
+- keep process exit codes reserved for CLI/tool execution errors
 - maintain a versioned JSON Schema
 
 Bioconda recipe guidance checked for this setup:
