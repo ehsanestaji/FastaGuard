@@ -4,11 +4,13 @@
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from urllib.parse import urlsplit
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -26,6 +28,15 @@ SOURCE_CASE_KEYS = {
 RESULT_CLASSES = {"accepted", "rejected"}
 REQUIRED_EXCLUSIONS = {"annotation", "contamination", "submission_metadata"}
 FASTAGUARD_TIMEOUT_SECONDS = 30.0
+VALIDATION_COUNT_PATTERN = re.compile(
+    r"(?i)\b(?:errors?|reject(?:ions?)?)\s*[:=]\s*(\d+)\b"
+)
+VALIDATION_ERROR_PATTERN = re.compile(
+    r"(?i)(?:^|[\s\[])ERROR(?:\]|\s*:)|(?:^|[\s\[])REJECT(?:ED|ION)?(?:\]|\s*:)"
+)
+VALIDATION_MESSAGE_PATTERN = re.compile(
+    r"(?i)(?:^|[\s\[])(?:INFO|WARNING|ERROR|REJECT(?:ED|ION)?)(?:\]|\s*:)"
+)
 
 
 class VerificationError(Exception):
@@ -41,6 +52,8 @@ def parse_args():
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--require-table2asn", action="store_true")
+    parser.add_argument("--table2asn-source-url")
+    parser.add_argument("--table2asn-source-sha256")
     parser.add_argument(
         "--timeout",
         type=float,
@@ -50,6 +63,26 @@ def parse_args():
     args = parser.parse_args()
     if args.timeout <= 0:
         parser.error("--timeout must be greater than zero")
+    if bool(args.table2asn_source_url) != bool(args.table2asn_source_sha256):
+        parser.error(
+            "--table2asn-source-url and --table2asn-source-sha256 must be supplied together"
+        )
+    if args.table2asn_source_url:
+        source = urlsplit(args.table2asn_source_url)
+        if (
+            source.scheme != "https"
+            or source.hostname != "ftp.ncbi.nlm.nih.gov"
+            or source.username is not None
+            or source.password is not None
+            or source.query
+            or source.fragment
+        ):
+            parser.error(
+                "--table2asn-source-url must be an unadorned HTTPS URL on ftp.ncbi.nlm.nih.gov"
+            )
+        if not re.fullmatch(r"[0-9a-fA-F]{64}", args.table2asn_source_sha256):
+            parser.error("--table2asn-source-sha256 must be 64 hexadecimal characters")
+        args.table2asn_source_sha256 = args.table2asn_source_sha256.lower()
     return args
 
 
@@ -220,12 +253,22 @@ def write_result(path, payload):
     temporary.replace(path)
 
 
-def unavailable_result(manifest):
+def source_provenance(args):
+    if args.table2asn_source_url is None:
+        return None
+    return {
+        "url": args.table2asn_source_url,
+        "sha256": args.table2asn_source_sha256,
+    }
+
+
+def unavailable_result(manifest, args):
     return {
         "schema_version": "1.0.0",
         "policy_scope": manifest["policy_scope"],
         "table2asn_available": False,
         "table2asn_version": None,
+        "table2asn_source": source_provenance(args),
         "comparison_performed": False,
         "cases": [],
     }
@@ -296,7 +339,50 @@ def run_fastaguard(fastaguard, input_path, output_dir, timeout, replacements):
         not isinstance(finding, str) for finding in findings
     ):
         raise VerificationError("FastaGuard report contains invalid policy fields")
-    return findings, can_continue, normalized_command(command, replacements)
+    return findings, can_continue, result.returncode, normalized_command(
+        command, replacements
+    )
+
+
+def read_validation_artifact(path):
+    try:
+        return path.read_text()
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def classify_validation_artifact(input_path):
+    validation_path = input_path.with_suffix(".val")
+    stats_path = input_path.with_suffix(".stats")
+
+    if validation_path.is_file():
+        text = read_validation_artifact(validation_path)
+        if text is None:
+            return "tool_error", "unparseable_artifact", None
+        counts = [int(value) for value in VALIDATION_COUNT_PATTERN.findall(text)]
+        if text.strip() and not counts and VALIDATION_MESSAGE_PATTERN.search(text) is None:
+            return "tool_error", "unparseable_artifact", None
+        has_error = VALIDATION_ERROR_PATTERN.search(text) is not None
+        result_class = "rejected" if has_error or any(counts) else "accepted"
+        return result_class, None, {
+            "type": "val",
+            "path": validation_path.name,
+        }
+
+    if stats_path.is_file():
+        text = read_validation_artifact(stats_path)
+        if text is None:
+            return "tool_error", "unparseable_artifact", None
+        counts = [int(value) for value in VALIDATION_COUNT_PATTERN.findall(text)]
+        if not counts:
+            return "tool_error", "unparseable_artifact", None
+        result_class = "rejected" if any(counts) else "accepted"
+        return result_class, None, {
+            "type": "stats",
+            "path": stats_path.name,
+        }
+
+    return "tool_error", "missing_artifact", None
 
 
 def run_table2asn(table2asn, input_path, output_dir, timeout, replacements):
@@ -324,16 +410,26 @@ def run_table2asn(table2asn, input_path, output_dir, timeout, replacements):
             check=False,
         )
     except subprocess.TimeoutExpired:
-        return "tool_error", None, "timeout", normalized_command(command, replacements)
+        return (
+            "tool_error",
+            None,
+            "timeout",
+            normalized_command(command, replacements),
+            None,
+        )
     except OSError:
         return (
             "tool_error",
             None,
             "execution_error",
             normalized_command(command, replacements),
+            None,
         )
-    result_class = "accepted" if result.returncode == 0 else "rejected"
-    return result_class, result.returncode, None, normalized_command(command, replacements)
+    normalized = normalized_command(command, replacements)
+    if result.returncode != 0:
+        return "tool_error", result.returncode, "nonzero_exit", normalized, None
+    result_class, error_kind, artifact = classify_validation_artifact(input_path)
+    return result_class, result.returncode, error_kind, normalized, artifact
 
 
 def run_comparison(args, manifest, source_path, source_by_id, table2asn):
@@ -363,7 +459,7 @@ def run_comparison(args, manifest, source_path, source_by_id, table2asn):
             controlled_input = case_dir / case["fixture"]
             shutil.copyfile(fixture_path, controlled_input)
 
-            findings, can_continue, fastaguard_command = run_fastaguard(
+            findings, can_continue, fastaguard_exit_code, fastaguard_command = run_fastaguard(
                 fastaguard,
                 controlled_input,
                 case_dir,
@@ -380,7 +476,13 @@ def run_comparison(args, manifest, source_path, source_by_id, table2asn):
                     f"{case['id']} FastaGuard continuation differs from source manifest"
                 )
 
-            result_class, exit_code, error_kind, table2asn_command = run_table2asn(
+            (
+                result_class,
+                exit_code,
+                error_kind,
+                table2asn_command,
+                validation_artifact,
+            ) = run_table2asn(
                 table2asn,
                 controlled_input,
                 case_dir,
@@ -397,10 +499,12 @@ def run_comparison(args, manifest, source_path, source_by_id, table2asn):
                     "fixture": case["fixture"],
                     "fastaguard_findings": findings,
                     "fastaguard_can_continue": can_continue,
+                    "fastaguard_exit_code": fastaguard_exit_code,
                     "expected_table2asn_result": expected,
                     "table2asn_result": result_class,
                     "table2asn_exit_code": exit_code,
                     "tool_error_kind": error_kind,
+                    "validation_artifact": validation_artifact,
                     "matches_expected": matches_expected,
                     "commands": {
                         "fastaguard": fastaguard_command,
@@ -423,6 +527,7 @@ def run_comparison(args, manifest, source_path, source_by_id, table2asn):
         "policy_scope": manifest["policy_scope"],
         "table2asn_available": True,
         "table2asn_version": version,
+        "table2asn_source": source_provenance(args),
         "comparison_performed": True,
         "version_command": version_command,
         "comparison_summary": {
@@ -443,7 +548,7 @@ def main():
         manifest, source_path, source_by_id = validate_manifest(args.manifest)
         table2asn = resolve_executable(args.table2asn)
         if table2asn is None:
-            write_result(args.out, unavailable_result(manifest))
+            write_result(args.out, unavailable_result(manifest, args))
             if args.require_table2asn:
                 raise VerificationError("required table2asn executable is unavailable")
             return 0

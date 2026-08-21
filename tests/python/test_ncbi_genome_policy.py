@@ -27,6 +27,8 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
         table2asn=None,
         required=False,
         timeout=None,
+        source_url=None,
+        source_sha256=None,
     ):
         command = [
             sys.executable,
@@ -44,6 +46,10 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
             command.append("--require-table2asn")
         if timeout is not None:
             command.extend(["--timeout", str(timeout)])
+        if source_url is not None:
+            command.extend(["--table2asn-source-url", source_url])
+        if source_sha256 is not None:
+            command.extend(["--table2asn-source-sha256", source_sha256])
         return subprocess.run(
             command,
             cwd=ROOT,
@@ -61,7 +67,13 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
         path.write_text(source)
         path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
-    def make_fake_tools(self, directory, *, slow_table2asn=False):
+    def make_fake_tools(
+        self,
+        directory,
+        *,
+        table2asn_behavior="artifacts",
+        fastaguard_exit_code=0,
+    ):
         tool_dir = Path(directory) / "tools with spaces;literal"
         tool_dir.mkdir()
         fastaguard = tool_dir / "fastaguard fake"
@@ -85,7 +97,8 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
             "out.write_text(json.dumps({\n"
             "    'findings': [{'id': item} for item in findings[fixture]],\n"
             "    'gate': {'can_continue': continuation[fixture]},\n"
-            "}))\n",
+            "}))\n"
+            f"raise SystemExit({fastaguard_exit_code})\n",
         )
         table_source = (
             "#!/usr/bin/env python3\n"
@@ -94,9 +107,9 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
             "    print('table2asn fake 99.1')\n"
             "    raise SystemExit(0)\n"
         )
-        if slow_table2asn:
+        if table2asn_behavior == "slow":
             table_source += "time.sleep(0.3)\nraise SystemExit(0)\n"
-        else:
+        elif table2asn_behavior == "artifacts":
             rejected = sorted(
                 case["fixture"]
                 for case in self.load_manifest()["cases"]
@@ -104,10 +117,31 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
             )
             table_source += (
                 f"rejected = {rejected!r}\n"
-                "fixture = pathlib.Path(sys.argv[sys.argv.index('-i') + 1]).name\n"
+                "input_path = pathlib.Path(sys.argv[sys.argv.index('-i') + 1])\n"
+                "fixture = input_path.name\n"
                 "print('controlled temp path:', pathlib.Path.cwd(), file=sys.stderr)\n"
-                "raise SystemExit(1 if fixture in rejected else 0)\n"
+                "if fixture in rejected:\n"
+                "    input_path.with_suffix('.val').write_text('ERROR: rejected fixture\\n')\n"
+                "else:\n"
+                "    input_path.with_suffix('.stats').write_text('ERRORS: 0\\n')\n"
+                "raise SystemExit(0)\n"
             )
+        elif table2asn_behavior == "nonzero_with_reject_artifact":
+            table_source += (
+                "input_path = pathlib.Path(sys.argv[sys.argv.index('-i') + 1])\n"
+                "input_path.with_suffix('.val').write_text('ERROR: rejected fixture\\n')\n"
+                "raise SystemExit(9)\n"
+            )
+        elif table2asn_behavior == "missing_artifact":
+            table_source += "raise SystemExit(0)\n"
+        elif table2asn_behavior == "unparseable_artifact":
+            table_source += (
+                "input_path = pathlib.Path(sys.argv[sys.argv.index('-i') + 1])\n"
+                "input_path.with_suffix('.stats').write_text('not validation data\\n')\n"
+                "raise SystemExit(0)\n"
+            )
+        else:
+            self.fail(f"unknown table2asn behavior {table2asn_behavior}")
         self.make_executable(table2asn, table_source)
         return fastaguard, table2asn
 
@@ -215,6 +249,11 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
                 fastaguard=fastaguard,
                 table2asn=table2asn,
                 required=True,
+                source_url=(
+                    "https://ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools/"
+                    "converters/by_program/table2asn/linux64.table2asn.gz"
+                ),
+                source_sha256="AB" * 32,
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -222,6 +261,16 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
             self.assertIs(payload["table2asn_available"], True)
             self.assertIs(payload["comparison_performed"], True)
             self.assertEqual(payload["table2asn_version"], "table2asn fake 99.1")
+            self.assertEqual(
+                payload["table2asn_source"],
+                {
+                    "url": (
+                        "https://ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools/"
+                        "converters/by_program/table2asn/linux64.table2asn.gz"
+                    ),
+                    "sha256": "ab" * 32,
+                },
+            )
             self.assertEqual(len(payload["cases"]), len(self.load_manifest()["cases"]))
             self.assertEqual(payload["comparison_summary"]["mismatched_cases"], 0)
             for case in payload["cases"]:
@@ -240,12 +289,98 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
                     )
                     self.assertEqual(case["commands"]["fastaguard"][0], "$FASTAGUARD")
                     self.assertEqual(case["commands"]["table2asn"][0], "$TABLE2ASN")
+                    self.assertEqual(case["fastaguard_exit_code"], 0)
+            blocking = next(case for case in payload["cases"] if case["id"] == "contig_199")
+            self.assertIs(blocking["fastaguard_can_continue"], False)
+            self.assertEqual(blocking["table2asn_result"], "rejected")
+            accepted = next(case for case in payload["cases"] if case["id"] == "contig_200")
+            self.assertIs(accepted["fastaguard_can_continue"], True)
+            self.assertEqual(accepted["table2asn_result"], "accepted")
             self.assert_output_is_normalized(payload, temp_dir, fastaguard, table2asn)
+
+    def test_nonzero_table2asn_is_tool_error_even_with_reject_artifact(self):
+        with TemporaryDirectory() as temp_dir:
+            fastaguard, table2asn = self.make_fake_tools(
+                temp_dir,
+                table2asn_behavior="nonzero_with_reject_artifact",
+            )
+            optional_output = Path(temp_dir) / "optional.json"
+            optional = self.run_verifier(
+                optional_output,
+                fastaguard=fastaguard,
+                table2asn=table2asn,
+            )
+            required_output = Path(temp_dir) / "required.json"
+            required = self.run_verifier(
+                required_output,
+                fastaguard=fastaguard,
+                table2asn=table2asn,
+                required=True,
+            )
+
+            self.assertEqual(optional.returncode, 0, optional.stderr)
+            self.assertEqual(required.returncode, 2, required.stderr)
+            for output in (optional_output, required_output):
+                payload = json.loads(output.read_text())
+                self.assertTrue(
+                    all(
+                        case["table2asn_result"] == "tool_error"
+                        and case["table2asn_exit_code"] == 9
+                        and case["tool_error_kind"] == "nonzero_exit"
+                        and case["matches_expected"] is None
+                        for case in payload["cases"]
+                    )
+                )
+                self.assertEqual(payload["comparison_summary"]["mismatched_cases"], 0)
+
+    def test_missing_or_unparseable_validation_artifact_is_tool_error(self):
+        for behavior in ("missing_artifact", "unparseable_artifact"):
+            with self.subTest(behavior=behavior), TemporaryDirectory() as temp_dir:
+                fastaguard, table2asn = self.make_fake_tools(
+                    temp_dir,
+                    table2asn_behavior=behavior,
+                )
+                output = Path(temp_dir) / "result.json"
+                result = self.run_verifier(
+                    output,
+                    fastaguard=fastaguard,
+                    table2asn=table2asn,
+                )
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                payload = json.loads(output.read_text())
+                self.assertTrue(
+                    all(
+                        case["table2asn_result"] == "tool_error"
+                        and case["tool_error_kind"] == behavior
+                        for case in payload["cases"]
+                    )
+                )
+
+    def test_nonzero_fastaguard_is_invocation_failure_even_with_report(self):
+        with TemporaryDirectory() as temp_dir:
+            fastaguard, table2asn = self.make_fake_tools(
+                temp_dir,
+                fastaguard_exit_code=7,
+            )
+            output = Path(temp_dir) / "result.json"
+            result = self.run_verifier(
+                output,
+                fastaguard=fastaguard,
+                table2asn=table2asn,
+            )
+
+            self.assertEqual(result.returncode, 2)
+            self.assertIn(
+                "FastaGuard invocation returned exit code 7",
+                result.stderr,
+            )
+            self.assertFalse(output.exists())
 
     def test_table2asn_timeout_is_categorical_and_required_mode_fails(self):
         with TemporaryDirectory() as temp_dir:
             fastaguard, table2asn = self.make_fake_tools(
-                temp_dir, slow_table2asn=True
+                temp_dir, table2asn_behavior="slow"
             )
             optional_output = Path(temp_dir) / "optional.json"
             optional = self.run_verifier(

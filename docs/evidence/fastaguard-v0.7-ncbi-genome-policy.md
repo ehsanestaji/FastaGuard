@@ -49,14 +49,31 @@ python3 scripts/verify_ncbi_genome_policy.py \
 ```
 
 The manual CI dispatch requires an official NCBI download URL and its SHA-256
-digest. The digest pins the exact downloaded binary for that run. Normal push
-and pull-request jobs only exercise the offline manifest and fake-tool tests.
+digest. The workflow verifies the compressed download before installation and
+passes both values into the normalized result as `table2asn_source` provenance.
+Normal push and pull-request jobs only exercise the offline manifest and
+fake-tool tests.
 
 ## Result Interpretation
 
-Each completed case records FastaGuard findings and one table2asn process
-category: `accepted` for exit code zero, `rejected` for a nonzero exit code, or
-`tool_error` when the executable cannot complete before the timeout. These are
+Each completed case records the FastaGuard report exit code, findings, and gate
+continuation decision. A completed FastaGuard report must exit zero; a policy
+blocker is represented by `fastaguard_can_continue: false`, not a process
+failure. A nonzero FastaGuard exit is a verifier error even if a report file was
+written.
+
+The table2asn category is derived conservatively from both the process result
+and its documented `.val` or `.stats` validation artifact:
+
+- `accepted` requires exit code zero and a readable artifact with no validation
+  error or rejection;
+- `rejected` requires exit code zero and a readable artifact that records a
+  validation error or rejection; and
+- `tool_error` covers every nonzero exit, timeout, execution failure, missing
+  artifact, or unparseable artifact.
+
+Optional runs preserve `tool_error` evidence without failing the verifier.
+`--require-table2asn` turns any such tool error into a verifier error. These are
 local differential categories, not repository decisions. Every table2asn run
 uses the same synthetic-organism and genomic-DNA source modifiers so that the
 comparison isolates the listed FASTA boundaries; those fixed modifiers do not
