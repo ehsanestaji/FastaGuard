@@ -83,12 +83,18 @@ fn compare_sample(input: &Path, report: &FastaguardReport) -> CompareSample {
         input_path: report.input.path.clone(),
         verdict: report.verdict.status,
         gate_status: report.gate.status,
+        gate_can_continue: report.gate.can_continue,
         readiness_status: report.readiness.overall.status,
         submission_target: report
             .gate
             .submission_target
             .map(crate::submission::SubmissionTarget::as_str)
             .map(ToOwned::to_owned),
+        submission_policy_id: report
+            .gate
+            .submission_policy
+            .as_ref()
+            .map(|policy| policy.id.clone()),
         submission_status,
         readiness_categories: report.readiness.categories.clone(),
         sequence_count: report.summary.sequence_count,
@@ -303,8 +309,10 @@ mod tests {
             input_path: format!("{sample_id}.fa"),
             verdict: VerdictStatus::Pass,
             gate_status: VerdictStatus::Pass,
+            gate_can_continue: true,
             readiness_status: crate::readiness::ReadinessStatus::Pass,
             submission_target: None,
+            submission_policy_id: None,
             submission_status: crate::readiness::ReadinessStatus::Pass,
             readiness_categories: crate::readiness::build_readiness(
                 VerdictStatus::Pass,

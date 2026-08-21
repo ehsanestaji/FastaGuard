@@ -34,10 +34,12 @@ fn write_sample(
         sanitize_tsv_value(&sample.input_path),
         verdict_status(sample.verdict).to_string(),
         verdict_status(sample.gate_status).to_string(),
-        crate::report::json::compare_gate_can_continue(sample).to_string(),
+        sample.gate_can_continue.to_string(),
         readiness_status(sample.readiness_status).to_string(),
         sanitize_tsv_value(sample.submission_target.as_deref().unwrap_or(".")),
-        crate::report::json::compare_submission_policy_id(sample.submission_target.as_deref())
+        sample
+            .submission_policy_id
+            .as_deref()
             .unwrap_or(".")
             .to_string(),
         readiness_status(sample.submission_status).to_string(),
@@ -116,7 +118,7 @@ mod tests {
         );
         assert!(
             output.contains(
-                "sample_a\tsample_a.fa\tPASS\tPASS\tfalse\tPASS\tncbi\tncbi_genome\tWARN\t1\t1\t0"
+                "sample_a\tsample_a.fa\tPASS\tPASS\ttrue\tPASS\tncbi\tncbi_genome\tWARN\t1\t1\t0"
             ),
             "{output}"
         );
@@ -182,8 +184,10 @@ mod tests {
                 input_path: "sample_a.fa".to_string(),
                 verdict: VerdictStatus::Pass,
                 gate_status: VerdictStatus::Pass,
+                gate_can_continue: true,
                 readiness_status: crate::readiness::ReadinessStatus::Pass,
                 submission_target: Some("ncbi".to_string()),
+                submission_policy_id: Some("ncbi_genome".to_string()),
                 submission_status: crate::readiness::ReadinessStatus::Warn,
                 readiness_categories: crate::readiness::build_readiness(
                     VerdictStatus::Pass,

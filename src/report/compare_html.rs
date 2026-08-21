@@ -26,6 +26,7 @@ fn render(report: &CompareReport) -> Result<String> {
     let suggested_tools = render_suggested_tools(&report.samples);
     let json = crate::report::json::compare_to_string_pretty(report)
         .context("failed to serialize report JSON")?;
+    let escaped_json = escape_html(&json);
 
     Ok(format!(
         r#"<!doctype html>
@@ -104,7 +105,7 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
         charts = charts,
         cohort_findings = cohort_findings,
         suggested_tools = suggested_tools,
-        json = escape_html(&json),
+        json = escaped_json,
     ))
 }
 
@@ -115,17 +116,14 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
         .map(|sample| {
             let verdict = verdict_status(sample.verdict);
             let gate_status = verdict_status(sample.gate_status);
-            let gate_can_continue = if crate::report::json::compare_gate_can_continue(sample) {
+            let gate_can_continue = if sample.gate_can_continue {
                 "Yes"
             } else {
                 "No"
             };
             let overall_readiness_status = readiness_status(sample.readiness_status);
             let submission_target = sample.submission_target.as_deref().unwrap_or(".");
-            let submission_policy_id = crate::report::json::compare_submission_policy_id(
-                sample.submission_target.as_deref(),
-            )
-            .unwrap_or(".");
+            let submission_policy_id = sample.submission_policy_id.as_deref().unwrap_or(".");
             let submission_status = readiness_status(sample.submission_status);
             let category_cells = render_readiness_category_cells(sample);
             format!(
@@ -448,18 +446,28 @@ mod tests {
     #[test]
     fn escapes_compare_html_content() {
         let mut report = test_report();
-        report.samples[0].sample_id = "sample_<script>".to_string();
+        report.samples[0].sample_id = "</pre><script>alert(1)</script><pre>".to_string();
         report.samples[0].input_path = "bad<&>.fa".to_string();
         report.samples[0].submission_target = Some("ncbi<&>".to_string());
         report.samples[0].recommended_next_tools = vec!["tool<bad>".to_string()];
 
         let output = render(&report).unwrap();
 
-        assert!(output.contains("sample_&lt;script&gt;"), "{output}");
+        assert!(
+            output.contains("&lt;/pre&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;pre&gt;"),
+            "{output}"
+        );
         assert!(output.contains("bad&lt;&amp;&gt;.fa"), "{output}");
         assert!(output.contains("ncbi&lt;&amp;&gt;"), "{output}");
         assert!(output.contains("tool&lt;bad&gt;"), "{output}");
-        assert!(!output.contains("sample_<script>"), "{output}");
+        let embedded_json = output.split_once("<h2>JSON</h2>").unwrap().1;
+        assert!(
+            embedded_json.contains(
+                "&quot;sample_id&quot;: &quot;&lt;/pre&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;pre&gt;&quot;"
+            ),
+            "{embedded_json}"
+        );
+        assert!(!embedded_json.contains("</pre><script>"), "{embedded_json}");
     }
 
     fn test_report() -> CompareReport {
@@ -488,8 +496,10 @@ mod tests {
                 input_path: "sample_a.fa".to_string(),
                 verdict: VerdictStatus::Pass,
                 gate_status: VerdictStatus::Pass,
+                gate_can_continue: true,
                 readiness_status: crate::readiness::ReadinessStatus::Pass,
                 submission_target: Some("ncbi".to_string()),
+                submission_policy_id: Some("ncbi_genome".to_string()),
                 submission_status: crate::readiness::ReadinessStatus::Warn,
                 readiness_categories: crate::readiness::build_readiness(
                     VerdictStatus::Pass,

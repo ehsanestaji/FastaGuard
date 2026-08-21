@@ -90,17 +90,16 @@ fn summary_row(report: &CompareReport, sample: &CompareSample) -> MultiqcSummary
     MultiqcSummaryRow {
         verdict: verdict_status(sample.verdict),
         gate_status: verdict_status(sample.gate_status),
-        gate_can_continue: crate::report::json::compare_gate_can_continue(sample),
+        gate_can_continue: sample.gate_can_continue,
         readiness_status: readiness_status(sample.readiness_status),
         submission_target: sample
             .submission_target
             .clone()
             .unwrap_or_else(|| ".".to_string()),
-        submission_policy_id: crate::report::json::compare_submission_policy_id(
-            sample.submission_target.as_deref(),
-        )
-        .unwrap_or(".")
-        .to_string(),
+        submission_policy_id: sample
+            .submission_policy_id
+            .clone()
+            .unwrap_or_else(|| ".".to_string()),
         submission_status: readiness_status(sample.submission_status),
         submission_ready_count: report.summary.submission_ready_count,
         submission_warn_count: report.summary.submission_warn_count,
@@ -232,11 +231,11 @@ mod tests {
             "Duplicate IDs"
         );
         assert_eq!(output["data"]["sample_a"]["verdict"], "PASS");
-        assert_eq!(output["data"]["sample_a"]["gate_can_continue"], false);
+        assert_eq!(output["data"]["sample_a"]["gate_can_continue"], true);
         assert_eq!(output["data"]["sample_a"]["submission_target"], "ncbi");
         assert_eq!(
             output["data"]["sample_a"]["submission_policy_id"],
-            "ncbi_genome"
+            "selected_policy_snapshot"
         );
         assert_eq!(output["data"]["sample_a"]["submission_status"], "WARN");
         assert_eq!(output["data"]["sample_a"]["submission_ready_count"], 1);
@@ -278,8 +277,10 @@ mod tests {
                 input_path: "sample_a.fa".to_string(),
                 verdict: VerdictStatus::Pass,
                 gate_status: VerdictStatus::Pass,
+                gate_can_continue: true,
                 readiness_status: crate::readiness::ReadinessStatus::Pass,
                 submission_target: Some("ncbi".to_string()),
+                submission_policy_id: Some("selected_policy_snapshot".to_string()),
                 submission_status: crate::readiness::ReadinessStatus::Warn,
                 readiness_categories: crate::readiness::build_readiness(
                     VerdictStatus::Pass,
