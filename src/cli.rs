@@ -423,6 +423,7 @@ impl AnalysisArgs {
                 "--expected-size-tolerance must be finite and non-negative"
             ));
         }
+        gate::validate_explicit_findings(&self.fail_on)?;
         let expected_size_bases = self
             .expected_size
             .as_deref()

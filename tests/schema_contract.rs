@@ -215,6 +215,34 @@ fn schema_requires_submission_policy_and_continuation_fields() {
 }
 
 #[test]
+fn schema_defines_expected_size_thresholds_and_finding_evidence() {
+    let schema: serde_json::Value =
+        serde_json::from_str(fastaguard::contract::schema_json()).unwrap();
+    let thresholds = &schema["$defs"]["single_report"]["properties"]["provenance"]["properties"]
+        ["thresholds"]["properties"];
+    let evidence = &schema["$defs"]["finding_evidence"]["properties"];
+
+    assert_eq!(
+        thresholds["expected_size_bases"]["type"],
+        serde_json::json!(["integer", "null"])
+    );
+    assert_eq!(
+        thresholds["expected_size_tolerance"]["type"],
+        serde_json::json!(["number", "null"])
+    );
+    for field in [
+        "observed_ungapped_length",
+        "expected_size_bases",
+        "expected_size_tolerance",
+        "expected_size_lower_bound",
+        "expected_size_upper_bound",
+        "expected_size_deviation_bases",
+    ] {
+        assert!(evidence[field].is_object(), "schema is missing {field}");
+    }
+}
+
+#[test]
 fn schema_validates_no_target_and_ncbi_submission_policy_reports() {
     let temp_dir = TempDir::new().unwrap();
     let schema = read_json(Path::new("schema/fastaguard.schema.json"));

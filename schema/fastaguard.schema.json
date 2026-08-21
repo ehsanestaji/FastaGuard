@@ -320,6 +320,20 @@
                 "gc_outlier_zscore": {
                   "type": "number",
                   "minimum": 0
+                },
+                "expected_size_bases": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "expected_size_tolerance": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
                 }
               }
             },
@@ -1250,6 +1264,47 @@
           "items": {
             "$ref": "#/$defs/evidence_record"
           }
+        },
+        "observed_ungapped_length": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "expected_size_bases": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "expected_size_tolerance": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "expected_size_lower_bound": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "expected_size_upper_bound": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "expected_size_deviation_bases": {
+          "type": [
+            "integer",
+            "null"
+          ]
         }
       }
     },

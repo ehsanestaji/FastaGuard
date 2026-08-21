@@ -33,11 +33,13 @@ struct MultiqcSummaryRow {
     verdict: &'static str,
     gate_mode: String,
     gate_status: &'static str,
+    gate_can_continue: bool,
     gate_blocking_findings: String,
     readiness_status: String,
     readiness_blockers: String,
     submission_target: String,
     submission_status: String,
+    submission_policy_id: String,
     unsafe_identifier_count: u64,
     long_identifier_count: u64,
     duplicate_first_token_id_count: u64,
@@ -100,6 +102,7 @@ fn summary_row(report: &FastaguardReport) -> MultiqcSummaryRow {
         verdict: verdict_status(report.verdict.status),
         gate_mode: report.gate.mode.clone(),
         gate_status: verdict_status(report.gate.status),
+        gate_can_continue: report.gate.can_continue,
         gate_blocking_findings: report.gate.blocking_findings.join(","),
         readiness_status: readiness_status(report.readiness.overall.status).to_string(),
         readiness_blockers: report.readiness.overall.blockers.join(","),
@@ -110,6 +113,12 @@ fn summary_row(report: &FastaguardReport) -> MultiqcSummaryRow {
             .unwrap_or(".")
             .to_string(),
         submission_status: submission_status(report).to_string(),
+        submission_policy_id: report
+            .gate
+            .submission_policy
+            .as_ref()
+            .map(|policy| policy.id.clone())
+            .unwrap_or_else(|| ".".to_string()),
         unsafe_identifier_count: report.summary.unsafe_id_count,
         long_identifier_count: report.summary.long_header_count,
         duplicate_first_token_id_count: report.summary.duplicate_first_token_id_count,
@@ -138,6 +147,8 @@ fn summary_headers() -> BTreeMap<&'static str, MultiqcHeader> {
         ("readiness_blockers", "Readiness blockers"),
         ("submission_target", "Submission Target"),
         ("submission_status", "Submission Status"),
+        ("gate_can_continue", "Gate Can Continue"),
+        ("submission_policy_id", "Submission Policy ID"),
         ("unsafe_identifier_count", "Unsafe IDs"),
         ("long_identifier_count", "Long Headers"),
         (
@@ -319,6 +330,8 @@ mod tests {
                     min_contig_length: 200,
                     max_gap_run: 100,
                     gc_outlier_zscore: 3.0,
+                    expected_size_bases: None,
+                    expected_size_tolerance: None,
                 },
                 command: "fastaguard input.fa".to_string(),
                 started_at: "2026-05-23T00:00:00Z".to_string(),

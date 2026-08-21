@@ -29,6 +29,7 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
         "gate_status",
         verdict_status(report.gate.status),
     )?;
+    write_metric(&mut writer, "gate_can_continue", report.gate.can_continue)?;
     write_metric(
         &mut writer,
         "gate_blocking_findings",
@@ -66,6 +67,16 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
             .unwrap_or("."),
     )?;
     write_metric(&mut writer, "submission_status", submission_status(report))?;
+    write_metric(
+        &mut writer,
+        "submission_policy_id",
+        report
+            .gate
+            .submission_policy
+            .as_ref()
+            .map(|policy| policy.id.as_str())
+            .unwrap_or("."),
+    )?;
     let (submission_blocking_findings, submission_advisory_findings) =
         submission_finding_partitions(report);
     write_metric(
@@ -99,6 +110,31 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
         report.summary.repeated_gap_pattern_sequence_count,
     )?;
     write_metric(&mut writer, "input_sha256", &report.provenance.input_sha256)?;
+    if let Some(value) = report.provenance.thresholds.expected_size_bases {
+        write_metric(&mut writer, "expected_size_bases", value)?;
+    }
+    if let Some(value) = report.provenance.thresholds.expected_size_tolerance {
+        write_metric(&mut writer, "expected_size_tolerance", value)?;
+    }
+    if let Some(evidence) = report
+        .findings
+        .iter()
+        .find(|finding| finding.id == "expected_size_outlier")
+        .map(|finding| &finding.evidence)
+    {
+        if let Some(value) = evidence.observed_ungapped_length {
+            write_metric(&mut writer, "expected_size_observed_ungapped_length", value)?;
+        }
+        if let Some(value) = evidence.expected_size_lower_bound {
+            write_metric(&mut writer, "expected_size_lower_bound", value)?;
+        }
+        if let Some(value) = evidence.expected_size_upper_bound {
+            write_metric(&mut writer, "expected_size_upper_bound", value)?;
+        }
+        if let Some(value) = evidence.expected_size_deviation_bases {
+            write_metric(&mut writer, "expected_size_deviation_bases", value)?;
+        }
+    }
 
     write_metric(&mut writer, "sequence_count", report.summary.sequence_count)?;
     write_metric(&mut writer, "total_length", report.summary.total_length)?;
@@ -615,6 +651,8 @@ mod tests {
                     min_contig_length: 200,
                     max_gap_run: 100,
                     gc_outlier_zscore: 3.0,
+                    expected_size_bases: None,
+                    expected_size_tolerance: None,
                 },
                 command: "fastaguard input.fa".to_string(),
                 started_at: "2026-05-23T00:00:00Z".to_string(),

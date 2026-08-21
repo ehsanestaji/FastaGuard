@@ -919,6 +919,153 @@ fn gate_none_report_preserves_warning_behavior_and_checksum() {
 }
 
 #[test]
+fn fail_on_rejects_unknown_finding_ids_before_writing_reports() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "unknown_fail_on");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--fail-on",
+        "not_a_rule",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(3)
+    .stderr(predicate::str::contains("unknown finding id 'not_a_rule'"));
+
+    assert!(!outputs.json.exists());
+    assert!(!outputs.html.exists());
+    assert!(!outputs.tsv.exists());
+    assert!(!outputs.multiqc.exists());
+}
+
+#[test]
+fn fail_on_warn_report_distinguishes_pass_only_safety_from_gate_continuation() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "warn_continuation");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--min-contig-length",
+        "1",
+        "--gate",
+        "pipeline",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .success()
+    .stderr(predicate::str::is_empty());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert_eq!(
+        report["machine_summary"]["safe_for_downstream"],
+        json!(false)
+    );
+    assert_eq!(report["gate"]["can_continue"], json!(true));
+
+    let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
+    assert!(tsv.contains("gate_can_continue\ttrue\n"), "{tsv}");
+    assert!(tsv.contains("submission_policy_id\t.\n"), "{tsv}");
+
+    let multiqc = read_json(&outputs.multiqc);
+    assert_eq!(
+        multiqc["data"]["valid_assembly"]["gate_can_continue"],
+        json!(true)
+    );
+    assert_eq!(
+        multiqc["data"]["valid_assembly"]["submission_policy_id"],
+        json!(".")
+    );
+
+    let html = std::fs::read_to_string(&outputs.html).unwrap();
+    assert!(html.contains("PASS-only downstream safety"), "{html}");
+    assert!(html.contains("Gate can continue"), "{html}");
+}
+
+#[test]
+fn expected_size_serializes_thresholds_evidence_and_tsv_metrics() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "expected_size");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--expected-size",
+        "5mb",
+        "--expected-size-tolerance",
+        "0.1",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .success()
+    .stderr(predicate::str::is_empty());
+
+    let report = read_json(&outputs.json);
+    assert_eq!(
+        report["provenance"]["thresholds"]["expected_size_bases"],
+        json!(5_000_000)
+    );
+    assert_eq!(
+        report["provenance"]["thresholds"]["expected_size_tolerance"],
+        json!(0.1)
+    );
+
+    let evidence = &finding_by_id(&report, "expected_size_outlier")["evidence"];
+    assert_eq!(evidence["observed_ungapped_length"], json!(46));
+    assert_eq!(evidence["expected_size_bases"], json!(5_000_000));
+    assert_eq!(evidence["expected_size_tolerance"], json!(0.1));
+    assert_eq!(evidence["expected_size_lower_bound"], json!(4_500_000));
+    assert_eq!(evidence["expected_size_upper_bound"], json!(5_500_000));
+    assert_eq!(
+        evidence["expected_size_deviation_bases"],
+        json!(-4_999_954_i64)
+    );
+
+    let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
+    for metric in [
+        "expected_size_bases\t5000000\n",
+        "expected_size_tolerance\t0.1\n",
+        "expected_size_observed_ungapped_length\t46\n",
+        "expected_size_lower_bound\t4500000\n",
+        "expected_size_upper_bound\t5500000\n",
+        "expected_size_deviation_bases\t-4999954\n",
+    ] {
+        assert!(tsv.contains(metric), "missing {metric:?} in {tsv}");
+    }
+
+    let html = std::fs::read_to_string(&outputs.html).unwrap();
+    assert!(
+        html.contains("Observed ungapped length:</span> 46"),
+        "{html}"
+    );
+    assert!(html.contains("Expected size:</span> 5000000"), "{html}");
+}
+
+#[test]
 fn problem_assembly_json_matches_golden_contract() {
     let paths = golden_output_paths("problem_assembly");
     let provenance_command = golden_provenance_command("problem_assembly");

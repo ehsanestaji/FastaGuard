@@ -127,6 +127,7 @@ fn render_gate(report: &FastaguardReport) -> String {
 <h3>Gate</h3>
 <p><span class="label">Mode:</span> {mode}</p>
 <p><span class="label">Status:</span> {status}</p>
+<p><span class="label">Gate can continue:</span> {can_continue}</p>
 </section>
 <section class="panel">
 <h3>Blocking</h3>
@@ -139,6 +140,11 @@ fn render_gate(report: &FastaguardReport) -> String {
 </div>"#,
         mode = escape_html(&report.gate.mode),
         status = escape_html(verdict_status(report.gate.status)),
+        can_continue = if report.gate.can_continue {
+            "Yes"
+        } else {
+            "No"
+        },
         blocking = render_string_list_or_none(&report.gate.blocking_findings),
         advisory = render_string_list_or_none(&report.gate.advisory_findings),
     )
@@ -228,7 +234,7 @@ fn render_machine_summary(report: &FastaguardReport) -> String {
 <section class="panel">
 <h3>Verdict</h3>
 <p><span class="label">Machine verdict:</span> {verdict}</p>
-<p><span class="label">Safe for downstream:</span> {safe}</p>
+<p><span class="label">PASS-only downstream safety:</span> {safe}</p>
 <p><span class="label">Top findings:</span> {top_findings}</p>
 </section>
 <section class="panel">
@@ -448,6 +454,26 @@ fn render_findings(report: &FastaguardReport) -> String {
 }
 
 fn render_evidence(finding: &crate::models::Finding) -> String {
+    if let Some(observed) = finding.evidence.observed_ungapped_length {
+        return format!(
+            r#"<h4>Finding Evidence</h4>
+<p><span class="label">Observed ungapped length:</span> {observed}</p>
+<p><span class="label">Expected size:</span> {expected}</p>
+<p><span class="label">Tolerance:</span> {tolerance}</p>
+<p><span class="label">Expected range:</span> {lower}–{upper}</p>
+<p><span class="label">Signed deviation:</span> {deviation}</p>"#,
+            expected = render_optional_u64(finding.evidence.expected_size_bases),
+            tolerance = render_optional_f64(finding.evidence.expected_size_tolerance),
+            lower = render_optional_u64(finding.evidence.expected_size_lower_bound),
+            upper = render_optional_u64(finding.evidence.expected_size_upper_bound),
+            deviation = finding
+                .evidence
+                .expected_size_deviation_bases
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "-".to_string()),
+        );
+    }
+
     if finding.evidence.total_records == 0 && finding.evidence.records.is_empty() {
         return r#"<h4>Finding Evidence</h4><p class="muted">No record-level evidence captured.</p>"#
             .to_string();
@@ -712,6 +738,12 @@ mod tests {
                     gc_zscore: None,
                     signals: Vec::new(),
                 }],
+                observed_ungapped_length: None,
+                expected_size_bases: None,
+                expected_size_tolerance: None,
+                expected_size_lower_bound: None,
+                expected_size_upper_bound: None,
+                expected_size_deviation_bases: None,
             },
             actions: vec![FindingAction {
                 action_type: "inspect_records".to_string(),
@@ -727,7 +759,7 @@ mod tests {
 
         let output = fs::read_to_string(file.path()).unwrap();
         assert!(output.contains("Machine Summary"));
-        assert!(output.contains("Safe for downstream"));
+        assert!(output.contains("PASS-only downstream safety"));
         assert!(output.contains("Recommended Next Tools"));
         assert!(output.contains("QUAST"));
         assert!(output.contains("Scope"));
@@ -838,6 +870,8 @@ mod tests {
                     min_contig_length: 200,
                     max_gap_run: 100,
                     gc_outlier_zscore: 3.0,
+                    expected_size_bases: None,
+                    expected_size_tolerance: None,
                 },
                 command: "fastaguard input.fa".to_string(),
                 started_at: "2026-05-23T00:00:00Z".to_string(),

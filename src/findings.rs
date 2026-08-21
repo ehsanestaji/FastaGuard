@@ -453,7 +453,7 @@ fn build_findings(
             profile,
             1,
             1.0,
-            empty_evidence(),
+            expected_size_evidence(metrics.ungapped_total_length, expected_size, tolerance),
             FindingText {
                 message: format!(
                     "Assembly ungapped total length is {} bp, outside expected size {} bp with {:.2}% tolerance.",
@@ -786,6 +786,7 @@ fn evidence_for_sequences<'a>(
         total_records,
         truncated: total_records > records.len() as u64,
         records,
+        ..empty_evidence()
     }
 }
 
@@ -814,6 +815,28 @@ fn composite_anomaly_evidence(
         total_records,
         truncated: total_records > records.len() as u64,
         records,
+        ..empty_evidence()
+    }
+}
+
+fn expected_size_evidence(
+    observed_ungapped_length: u64,
+    expected_size_bases: u64,
+    expected_size_tolerance: f64,
+) -> FindingEvidence {
+    let (expected_size_lower_bound, expected_size_upper_bound) =
+        expected_size_bounds(expected_size_bases, expected_size_tolerance);
+
+    FindingEvidence {
+        observed_ungapped_length: Some(observed_ungapped_length),
+        expected_size_bases: Some(expected_size_bases),
+        expected_size_tolerance: Some(expected_size_tolerance),
+        expected_size_lower_bound: Some(expected_size_lower_bound),
+        expected_size_upper_bound: Some(expected_size_upper_bound),
+        expected_size_deviation_bases: Some(
+            observed_ungapped_length as i128 - expected_size_bases as i128,
+        ),
+        ..empty_evidence()
     }
 }
 
@@ -898,6 +921,13 @@ fn expected_size_outlier(ungapped_total_length: u64, profile: &ProfileConfig) ->
     let observed = ungapped_total_length as f64;
 
     observed < lower_bound || observed > upper_bound
+}
+
+fn expected_size_bounds(expected_size: u64, tolerance: f64) -> (u64, u64) {
+    let lower_bound = (expected_size as f64 * (1.0 - tolerance)).max(0.0);
+    let upper_bound = expected_size as f64 * (1.0 + tolerance);
+
+    (lower_bound.ceil() as u64, upper_bound.floor() as u64)
 }
 
 fn composite_signals(sequence: &SequenceSummary, profile: &ProfileConfig) -> Vec<String> {

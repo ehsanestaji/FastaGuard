@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use serde_json::Value;
+use std::collections::BTreeSet;
 
 pub const FASTAGUARD_SCHEMA_JSON: &str = include_str!("../schema/fastaguard.schema.json");
 pub const FINDING_CATALOG_JSON: &str = include_str!("../schema/finding-catalog.json");
@@ -10,6 +11,26 @@ pub fn schema_json() -> &'static str {
 
 pub fn finding_catalog_json() -> &'static str {
     FINDING_CATALOG_JSON
+}
+
+pub fn known_finding_ids() -> Result<BTreeSet<String>> {
+    let catalog: Value =
+        serde_json::from_str(FINDING_CATALOG_JSON).context("failed to parse finding catalog")?;
+    let findings = catalog
+        .get("findings")
+        .and_then(Value::as_array)
+        .context("finding catalog is missing findings array")?;
+
+    findings
+        .iter()
+        .map(|finding| {
+            finding
+                .get("id")
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned)
+                .context("finding catalog entry is missing string id")
+        })
+        .collect()
 }
 
 pub fn explain_finding_json(id: &str) -> Result<String> {

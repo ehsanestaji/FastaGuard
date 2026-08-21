@@ -326,6 +326,8 @@ mod tests {
                     min_contig_length: 200,
                     max_gap_run: 100,
                     gc_outlier_zscore: 3.0,
+                    expected_size_bases: None,
+                    expected_size_tolerance: None,
                 },
                 command: "fastaguard input.fa".to_string(),
                 started_at: "2026-05-23T00:00:00Z".to_string(),

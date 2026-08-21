@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -76,6 +77,29 @@ pub fn final_fail_on(
     }
 
     fail_on
+}
+
+pub fn validate_explicit_findings(explicit_rules: &[String]) -> Result<()> {
+    let known_ids = crate::contract::known_finding_ids()?;
+    let unknown_ids = explicit_rules
+        .iter()
+        .flat_map(|value| value.split(','))
+        .map(str::trim)
+        .filter(|value| !value.is_empty() && !known_ids.contains(*value))
+        .collect::<BTreeSet<_>>();
+
+    if unknown_ids.is_empty() {
+        return Ok(());
+    }
+
+    Err(anyhow!(
+        "{}",
+        unknown_ids
+            .iter()
+            .map(|id| format!("unknown finding id '{id}'"))
+            .collect::<Vec<_>>()
+            .join("; ")
+    ))
 }
 
 pub fn decision(

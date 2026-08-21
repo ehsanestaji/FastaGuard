@@ -188,6 +188,10 @@ pub struct ProvenanceThresholds {
     pub min_contig_length: u64,
     pub max_gap_run: u64,
     pub gc_outlier_zscore: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_size_bases: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_size_tolerance: Option<f64>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -246,6 +250,18 @@ pub struct FindingEvidence {
     pub total_records: u64,
     pub truncated: bool,
     pub records: Vec<EvidenceRecord>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub observed_ungapped_length: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_size_bases: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_size_tolerance: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_size_lower_bound: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_size_upper_bound: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_size_deviation_bases: Option<i128>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -688,6 +704,12 @@ pub fn empty_evidence() -> FindingEvidence {
         total_records: 0,
         truncated: false,
         records: Vec::new(),
+        observed_ungapped_length: None,
+        expected_size_bases: None,
+        expected_size_tolerance: None,
+        expected_size_lower_bound: None,
+        expected_size_upper_bound: None,
+        expected_size_deviation_bases: None,
     }
 }
 
@@ -956,6 +978,8 @@ fn build_provenance(
             min_contig_length: profile.min_contig_length,
             max_gap_run: profile.max_gap_run,
             gc_outlier_zscore: profile.gc_outlier_zscore,
+            expected_size_bases: profile.expected_size_bases,
+            expected_size_tolerance: profile.expected_size_tolerance,
         },
         command: config.command.clone(),
         started_at: config.started_at.clone(),
