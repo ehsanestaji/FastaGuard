@@ -41,7 +41,6 @@ class MultiqcModule(BaseMultiqcModule):
                     "title": "FastaGuard FASTA preflight summary",
                 },
             ),
-            statuses=self._statuses(data_by_sample),
         )
         self.write_data_file(data_by_sample, "multiqc_fastaguard")
 
@@ -54,15 +53,6 @@ class MultiqcModule(BaseMultiqcModule):
             for sample_name in file_data:
                 self.add_data_source(file_match, sample_name)
         return data_by_sample
-
-    @staticmethod
-    def _statuses(data_by_sample: dict[str, dict]) -> dict[str, list[str]]:
-        statuses = {"pass": [], "warn": [], "fail": []}
-        for sample_name, row in data_by_sample.items():
-            verdict = str(row.get("verdict", "")).lower()
-            if verdict in statuses:
-                statuses[verdict].append(sample_name)
-        return statuses
 
     @staticmethod
     def _general_stats_data(data_by_sample: dict[str, dict]) -> dict[str, dict]:

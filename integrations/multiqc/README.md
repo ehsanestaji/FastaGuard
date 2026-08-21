@@ -50,6 +50,22 @@ committed pass and fail examples. It includes `verdict`, `gate_mode`,
 unsafe and long identifier counts, duplicate first-token ID counts, and
 gap-like N-run counts.
 
+The release test builds the distributions, installs that exact wheel into its
+own disposable environment, and runs the same strict command. Set
+`FASTAGUARD_MULTIQC_VERSION` to exercise a specific supported MultiQC version:
+
+```bash
+FASTAGUARD_MULTIQC_VERSION=1.28 python3 -m pytest -q \
+  tests/python/test_multiqc_plugin.py
+FASTAGUARD_MULTIQC_VERSION=1.35 python3 -m pytest -q \
+  tests/python/test_multiqc_plugin.py
+```
+
+The compatibility gate covers the declared Python 3.10 floor and the current
+Python 3.14 release against both MultiQC 1.28 and 1.35. The wheel also installs
+this README under `share/doc/multiqc-fastaguard/README.md`; the source
+distribution includes it at the archive root.
+
 After reviewing the output, remove the exact temporary directory and the
 untracked local build artifacts:
 

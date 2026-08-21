@@ -7,6 +7,32 @@ on:
   pull_request:
 
 jobs:
+  multiqc-plugin:
+    name: MultiQC plugin (Python ${{ matrix.python }}, MultiQC ${{ matrix.multiqc }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.14"]
+        multiqc: ["1.28", "1.35"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install Python test dependencies
+        run: python3 -m pip install --requirement requirements-test.txt
+
+      - name: Test built MultiQC plugin
+        env:
+          FASTAGUARD_MULTIQC_VERSION: ${{ matrix.multiqc }}
+        run: python3 -m pytest -q tests/python/test_multiqc_plugin.py
+
   rust:
     name: Rust quality gate
     runs-on: ubuntu-latest

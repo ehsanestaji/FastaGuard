@@ -26,3 +26,6 @@ before_config = "fastaguard_multiqc.parser:register_search_patterns"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fastaguard_multiqc"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"README.md" = "share/doc/multiqc-fastaguard/README.md"

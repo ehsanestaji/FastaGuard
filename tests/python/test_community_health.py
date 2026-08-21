@@ -114,10 +114,33 @@ class CommunityHealthTest(unittest.TestCase):
         self.assertEqual(
             requirements,
             [
+                "build==1.5.0",
                 "jsonschema==4.26.0",
                 "pytest==9.1.1",
                 "PyYAML==6.0.3",
             ],
+        )
+
+    def test_ci_checks_multiqc_plugin_python_and_multiqc_compatibility(self):
+        workflow = yaml.safe_load(
+            (ROOT / ".github" / "workflows" / "ci.yml").read_text()
+        )
+        job = workflow["jobs"]["multiqc-plugin"]
+        matrix = job["strategy"]["matrix"]
+        steps = job["steps"]
+        test_step = next(
+            step for step in steps if step["name"] == "Test built MultiQC plugin"
+        )
+
+        self.assertEqual(matrix["python"], ["3.10", "3.14"])
+        self.assertEqual(matrix["multiqc"], ["1.28", "1.35"])
+        self.assertEqual(
+            test_step["env"]["FASTAGUARD_MULTIQC_VERSION"],
+            "${{ matrix.multiqc }}",
+        )
+        self.assertEqual(
+            test_step["run"],
+            "python3 -m pytest -q tests/python/test_multiqc_plugin.py",
         )
 
     def test_security_policy_uses_private_github_security_advisories(self):
