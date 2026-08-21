@@ -1,0 +1,165 @@
+[
+  {
+    "id": "contig_199",
+    "fixture": "contig_199.fa",
+    "expect_findings": [
+      "ncbi_genome_short_contigs",
+      "tiny_contigs"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A 199-base record is below the fixed NCBI genome minimum."
+  },
+  {
+    "id": "contig_200",
+    "fixture": "contig_200.fa",
+    "expect_findings": [],
+    "expect_can_continue": true,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A 200-base record is valid at the fixed NCBI genome minimum."
+  },
+  {
+    "id": "contig_201",
+    "fixture": "contig_201.fa",
+    "expect_findings": [],
+    "expect_can_continue": true,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A 201-base record is valid immediately above the fixed NCBI genome minimum."
+  },
+  {
+    "id": "duplicate_first_token",
+    "fixture": "duplicate_first_token.fa",
+    "expect_findings": [
+      "duplicate_first_token_ids",
+      "duplicate_ids"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "fastaguard_structural_extension",
+    "description": "Two records repeat the same first-token identifier while using different descriptions."
+  },
+  {
+    "id": "duplicate_full_id",
+    "fixture": "duplicate_full_id.fa",
+    "expect_findings": [
+      "duplicate_first_token_ids",
+      "duplicate_ids"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "fastaguard_structural_extension",
+    "description": "Two records repeat the same identifier and complete header."
+  },
+  {
+    "id": "invalid_sequence_symbol",
+    "fixture": "invalid_sequence_symbol.fa",
+    "expect_findings": [
+      "invalid_chars"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "fastaguard_structural_extension",
+    "description": "An otherwise valid record contains one non-IUPAC sequence symbol."
+  },
+  {
+    "id": "seqid_49",
+    "fixture": "seqid_49.fa",
+    "expect_findings": [],
+    "expect_can_continue": true,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A 49-byte ASCII SeqID is valid at the NCBI genome boundary."
+  },
+  {
+    "id": "seqid_50",
+    "fixture": "seqid_50.fa",
+    "expect_findings": [
+      "ncbi_genome_seqid"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A 50-byte ASCII SeqID exceeds the NCBI genome boundary."
+  },
+  {
+    "id": "seqid_51",
+    "fixture": "seqid_51.fa",
+    "expect_findings": [
+      "ncbi_genome_seqid"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A 51-byte ASCII SeqID remains invalid above the NCBI genome boundary."
+  },
+  {
+    "id": "seqid_allowed_ascii",
+    "fixture": "seqid_allowed_ascii.fa",
+    "expect_findings": [],
+    "expect_can_continue": true,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "The first-token SeqID uses all allowed ASCII punctuation characters."
+  },
+  {
+    "id": "seqid_allowed_chars",
+    "fixture": "seqid_allowed_chars.fa",
+    "expect_findings": [],
+    "expect_can_continue": true,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "The original CLI fixture keeps allowed first-token SeqID coverage in the corpus."
+  },
+  {
+    "id": "seqid_disallowed_ascii",
+    "fixture": "seqid_disallowed_ascii.fa",
+    "expect_findings": [
+      "ncbi_genome_seqid"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A percent sign is rejected in the first-token SeqID."
+  },
+  {
+    "id": "seqid_invalid_chars",
+    "fixture": "seqid_invalid_chars.fa",
+    "expect_findings": [
+      "ncbi_genome_seqid"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "The original CLI fixture keeps disallowed first-token SeqID coverage in the corpus."
+  },
+  {
+    "id": "seqid_unicode",
+    "fixture": "seqid_unicode.fa",
+    "expect_findings": [
+      "ncbi_genome_seqid"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A non-ASCII first-token SeqID is rejected by the NCBI genome policy."
+  },
+  {
+    "id": "terminal_n_prefix",
+    "fixture": "terminal_n_prefix.fa",
+    "expect_findings": [
+      "terminal_ns"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A 200-base record begins with a terminal N."
+  },
+  {
+    "id": "terminal_n_suffix",
+    "fixture": "terminal_n_suffix.fa",
+    "expect_findings": [
+      "terminal_ns"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "A 200-base record ends with a terminal N."
+  },
+  {
+    "id": "terminal_ns",
+    "fixture": "terminal_ns.fa",
+    "expect_findings": [
+      "terminal_ns"
+    ],
+    "expect_can_continue": false,
+    "source_scope": "table2asn_fasta_overlap",
+    "description": "The original CLI fixture keeps combined leading-and-trailing terminal-N coverage in the corpus."
+  }
+]
