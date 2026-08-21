@@ -1,13 +1,17 @@
 import csv
 import gzip
 import json
+import platform
 import re
+import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from scripts.benchmark_manifest import (
     BenchmarkManifestError,
     compare_observed_scale,
+    run_manifest,
     validate_baseline_case,
     validate_manifest,
     validate_publishable_summary,
@@ -373,6 +377,33 @@ class BenchmarkManifestValidationTests(unittest.TestCase):
                 prior[field] = different_value
                 with self.assertRaisesRegex(BenchmarkManifestError, field):
                     validate_baseline_case(case, prior)
+
+    def test_baseline_rejects_a_missing_selected_case_before_running(self):
+        baseline = self.valid_summary(baseline_supplied=True)
+        baseline.update(
+            {
+                "platform_system": platform.system(),
+                "platform_release": platform.release(),
+                "platform_machine": platform.machine(),
+                "python_version": platform.python_version(),
+            }
+        )
+        args = SimpleNamespace(local_synthetic_only=True, download=False)
+
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(
+                BenchmarkManifestError,
+                "missing selected case.*synthetic-many-records.*capture a baseline "
+                "with the same selected cases",
+            ):
+                run_manifest(
+                    self.valid_manifest(),
+                    Path(directory) / "unused-fastaguard",
+                    Path(directory),
+                    args,
+                    baseline,
+                )
+            self.assertFalse((Path(directory) / "runs").exists())
 
     def test_scale_comparison_reports_observed_deltas_without_a_verdict(self):
         case = self.valid_manifest()["cases"][0]

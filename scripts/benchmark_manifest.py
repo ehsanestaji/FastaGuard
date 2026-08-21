@@ -385,6 +385,21 @@ def run_manifest(
     ]
     if not selected:
         raise BenchmarkManifestError("no benchmark cases selected")
+
+    prior_by_id = {
+        case["id"]: case for case in baseline.get("cases", [])
+    } if baseline else {}
+    if baseline is not None:
+        missing_prior_cases = [
+            case["id"] for case in selected if case["id"] not in prior_by_id
+        ]
+        if missing_prior_cases:
+            raise BenchmarkManifestError(
+                "prior baseline is missing selected cases: "
+                + ", ".join(missing_prior_cases)
+                + "; capture a baseline with the same selected cases"
+            )
+
     if not args.local_synthetic_only and not args.download:
         public = [case["id"] for case in selected if case["category"] in PUBLIC_CATEGORIES]
         if public:
@@ -393,9 +408,6 @@ def run_manifest(
                 + ", ".join(public)
             )
 
-    prior_by_id = {
-        case["id"]: case for case in baseline.get("cases", [])
-    } if baseline else {}
     cases = []
     for case in selected:
         prior = prior_by_id.get(case["id"])
