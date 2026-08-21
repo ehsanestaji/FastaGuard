@@ -171,7 +171,84 @@ class MultiqcPluginReleaseTest(unittest.TestCase):
                     expected,
                 )
 
-    def test_installed_plugin_runs_strict_multiqc_and_writes_v0_6_fields(self):
+    def test_parser_reads_optional_v0_7_gate_and_policy_fields(self):
+        with TemporaryDirectory() as temp_dir:
+            report = Path(temp_dir) / "fastaguard_mqc.json"
+            required = {
+                "sequence_count": 3,
+                "total_length": 48,
+                "n50": 16,
+                "n90": 16,
+                "gc_percent": 50.0,
+                "n_percent": 0.0,
+                "finding_count": 0,
+            }
+            report.write_text(
+                json.dumps(
+                    {
+                        "id": "fastaguard",
+                        "plot_type": "table",
+                        "data": {
+                            "continuing": {
+                                "verdict": "WARN",
+                                **required,
+                                "gate_can_continue": True,
+                                "submission_policy_id": "ncbi_genome",
+                            },
+                            "blocked": {
+                                "verdict": "FAIL",
+                                **required,
+                                "gate_can_continue": False,
+                                "submission_policy_id": "ncbi_genome",
+                            },
+                        },
+                    }
+                )
+            )
+
+            parsed = load_custom_content_summary(report)
+
+            self.assertIs(parsed["continuing"]["gate_can_continue"], True)
+            self.assertIs(parsed["blocked"]["gate_can_continue"], False)
+            self.assertEqual(
+                parsed["continuing"]["submission_policy_id"], "ncbi_genome"
+            )
+            self.assertEqual(parsed["blocked"]["submission_policy_id"], "ncbi_genome")
+
+    def test_parser_keeps_v0_7_fields_optional_for_pre_v0_7_reports(self):
+        with TemporaryDirectory() as temp_dir:
+            report = Path(temp_dir) / "fastaguard_mqc.json"
+            report.write_text(
+                json.dumps(
+                    {
+                        "id": "fastaguard",
+                        "plot_type": "table",
+                        "data": {
+                            "legacy": {
+                                "verdict": "PASS",
+                                "sequence_count": 3,
+                                "total_length": 48,
+                                "n50": 16,
+                                "n90": 16,
+                                "gc_percent": 50.0,
+                                "n_percent": 0.0,
+                                "finding_count": 0,
+                                "gate_mode": "none",
+                                "gate_status": "PASS",
+                            }
+                        },
+                    }
+                )
+            )
+
+            parsed = load_custom_content_summary(report)["legacy"]
+
+            self.assertEqual(parsed["gate_mode"], "none")
+            self.assertEqual(parsed["gate_status"], "PASS")
+            self.assertNotIn("gate_can_continue", parsed)
+            self.assertNotIn("submission_policy_id", parsed)
+
+    def test_installed_plugin_runs_strict_multiqc_with_compact_summary(self):
         multiqc_version = os.environ.get("FASTAGUARD_MULTIQC_VERSION", "1.35")
         environment = self.test_path / f"multiqc-{multiqc_version}"
         create = subprocess.run(
@@ -284,9 +361,11 @@ class MultiqcPluginReleaseTest(unittest.TestCase):
                 "verdict": "WARN",
                 "gate_mode": "none",
                 "gate_status": "WARN",
+                "gate_can_continue": True,
                 "readiness_status": "WARN",
                 "submission_status": "WARN",
                 "submission_target": ".",
+                "submission_policy_id": ".",
                 "unsafe_identifier_count": 0,
                 "long_identifier_count": 0,
                 "duplicate_first_token_id_count": 0,
@@ -296,9 +375,11 @@ class MultiqcPluginReleaseTest(unittest.TestCase):
                 "verdict": "FAIL",
                 "gate_mode": "none",
                 "gate_status": "FAIL",
+                "gate_can_continue": False,
                 "readiness_status": "FAIL",
                 "submission_status": "FAIL",
                 "submission_target": ".",
+                "submission_policy_id": ".",
                 "unsafe_identifier_count": 0,
                 "long_identifier_count": 0,
                 "duplicate_first_token_id_count": 1,
@@ -309,6 +390,62 @@ class MultiqcPluginReleaseTest(unittest.TestCase):
             self.assertEqual(
                 {field: parsed[sample][field] for field in sample_expected},
                 sample_expected,
+            )
+
+        summary_table = output_dir / "multiqc_data" / "fastaguard_summary.txt"
+        self.assertTrue(summary_table.exists(), "missing rendered summary table data")
+        summary_columns = summary_table.read_text().splitlines()[0].split("\t")
+        self.assertEqual(
+            summary_columns,
+            [
+                "Sample",
+                "Verdict",
+                "Gate can continue",
+                "Gate status",
+                "Readiness",
+                "Submission target",
+                "Submission policy",
+                "Submission status",
+                "Sequences",
+                "Total length",
+                "N50",
+                "GC",
+                "N",
+                "Findings",
+            ],
+        )
+        for excluded_column in [
+            "Gate blockers",
+            "Readiness blockers",
+            "Duplicate IDs",
+            "Invalid sequences",
+            "High-N sequences",
+            "Tiny contigs",
+            "Max gap run",
+            "GC outliers",
+            "Length outliers",
+            "Composite anomalies",
+        ]:
+            self.assertNotIn(excluded_column, summary_columns)
+
+        general_stats = json.loads(data_path.read_text())["report_general_stats_data"]
+        if isinstance(general_stats, list):
+            self.assertEqual(len(general_stats), 1)
+            general_stats_by_sample = general_stats[0]
+        else:
+            general_stats_by_sample = general_stats["fastaguard"]
+        for sample in expected:
+            self.assertEqual(
+                set(general_stats_by_sample[sample]),
+                {
+                    "verdict",
+                    "gate_can_continue",
+                    "sequence_count",
+                    "total_length",
+                    "finding_count",
+                    "n50",
+                    "n_percent",
+                },
             )
 
 

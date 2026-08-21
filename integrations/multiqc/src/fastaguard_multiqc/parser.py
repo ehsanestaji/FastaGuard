@@ -21,11 +21,13 @@ REQUIRED_SUMMARY_FIELDS = (
 OPTIONAL_SUMMARY_FIELDS = (
     "gate_mode",
     "gate_status",
+    "gate_can_continue",
     "gate_blocking_findings",
     "readiness_status",
     "readiness_blockers",
     "submission_target",
     "submission_status",
+    "submission_policy_id",
     "unsafe_identifier_count",
     "long_identifier_count",
     "duplicate_first_token_id_count",

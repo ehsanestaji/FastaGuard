@@ -10,6 +10,33 @@ from multiqc.plots import table
 from .parser import load_custom_content_summary
 
 
+GENERAL_STATS_FIELDS = (
+    "verdict",
+    "gate_can_continue",
+    "sequence_count",
+    "total_length",
+    "finding_count",
+    "n50",
+    "n_percent",
+)
+
+COMPACT_SUMMARY_FIELDS = (
+    "verdict",
+    "gate_can_continue",
+    "gate_status",
+    "readiness_status",
+    "submission_target",
+    "submission_policy_id",
+    "submission_status",
+    "sequence_count",
+    "total_length",
+    "n50",
+    "gc_percent",
+    "n_percent",
+    "finding_count",
+)
+
+
 class MultiqcModule(BaseMultiqcModule):
     """Summarize FastaGuard FASTA preflight reports in MultiQC."""
 
@@ -34,7 +61,7 @@ class MultiqcModule(BaseMultiqcModule):
             anchor="fastaguard-summary",
             description="FASTA preflight verdicts and core assembly metrics.",
             plot=table.plot(
-                data_by_sample,
+                self._summary_data(data_by_sample),
                 headers=self._summary_headers(),
                 pconfig={
                     "id": "fastaguard_summary",
@@ -56,18 +83,10 @@ class MultiqcModule(BaseMultiqcModule):
 
     @staticmethod
     def _general_stats_data(data_by_sample: dict[str, dict]) -> dict[str, dict]:
-        visible_fields = (
-            "finding_count",
-            "gc_outlier_count",
-            "length_outlier_count",
-            "composite_anomaly_count",
-            "n50",
-            "n_percent",
-        )
         return {
             sample_name: {
                 field: row.get(field)
-                for field in visible_fields
+                for field in GENERAL_STATS_FIELDS
                 if row.get(field) is not None
             }
             for sample_name, row in data_by_sample.items()
@@ -76,29 +95,33 @@ class MultiqcModule(BaseMultiqcModule):
     @staticmethod
     def _general_stats_headers() -> dict:
         return {
+            "verdict": {
+                "title": "FG verdict",
+                "description": "FastaGuard FASTA preflight verdict",
+            },
+            "gate_can_continue": {
+                "title": "FG continue",
+                "description": "Whether the selected FastaGuard gate permits continuation",
+            },
+            "sequence_count": {
+                "title": "FG sequences",
+                "description": "Number of FASTA records",
+                "hidden": True,
+                "min": 0,
+                "scale": "Blues",
+            },
+            "total_length": {
+                "title": "FG total length",
+                "description": "Total sequence length",
+                "hidden": True,
+                "min": 0,
+                "scale": "Blues",
+            },
             "finding_count": {
                 "title": "FG findings",
                 "description": "Number of FastaGuard findings",
                 "min": 0,
                 "scale": "OrRd",
-            },
-            "gc_outlier_count": {
-                "title": "FG GC outliers",
-                "description": "Number of records flagged as GC composition outliers",
-                "min": 0,
-                "scale": "OrRd",
-            },
-            "length_outlier_count": {
-                "title": "FG length outliers",
-                "description": "Number of records flagged as length distribution outliers",
-                "min": 0,
-                "scale": "YlOrBr",
-            },
-            "composite_anomaly_count": {
-                "title": "FG composite anomalies",
-                "description": "Number of records flagged by composite anomaly checks",
-                "min": 0,
-                "scale": "Reds",
             },
             "n50": {
                 "title": "FG N50",
@@ -119,11 +142,46 @@ class MultiqcModule(BaseMultiqcModule):
         }
 
     @staticmethod
+    def _summary_data(data_by_sample: dict[str, dict]) -> dict[str, dict]:
+        return {
+            sample_name: {
+                field: row.get(field)
+                for field in COMPACT_SUMMARY_FIELDS
+                if row.get(field) is not None
+            }
+            for sample_name, row in data_by_sample.items()
+        }
+
+    @staticmethod
     def _summary_headers() -> dict:
         return {
             "verdict": {
                 "title": "Verdict",
                 "description": "FastaGuard FASTA preflight verdict",
+            },
+            "gate_can_continue": {
+                "title": "Gate can continue",
+                "description": "Whether the selected FastaGuard gate permits continuation",
+            },
+            "gate_status": {
+                "title": "Gate status",
+                "description": "Status of the selected FastaGuard gate",
+            },
+            "readiness_status": {
+                "title": "Readiness",
+                "description": "FastaGuard readiness status",
+            },
+            "submission_target": {
+                "title": "Submission target",
+                "description": "Submission target profile used by FastaGuard",
+            },
+            "submission_policy_id": {
+                "title": "Submission policy",
+                "description": "FastaGuard submission-policy snapshot identifier",
+            },
+            "submission_status": {
+                "title": "Submission status",
+                "description": "FASTA-level submission readiness status",
             },
             "sequence_count": {
                 "title": "Sequences",
@@ -141,13 +199,6 @@ class MultiqcModule(BaseMultiqcModule):
             "n50": {
                 "title": "N50",
                 "description": "Assembly N50",
-                "min": 0,
-                "suffix": " bp",
-                "scale": "Blues",
-            },
-            "n90": {
-                "title": "N90",
-                "description": "Assembly N90",
                 "min": 0,
                 "suffix": " bp",
                 "scale": "Blues",
@@ -173,106 +224,5 @@ class MultiqcModule(BaseMultiqcModule):
                 "description": "Number of FastaGuard findings",
                 "min": 0,
                 "scale": "OrRd",
-            },
-            "gate_mode": {
-                "title": "Gate mode",
-                "description": "FastaGuard gate profile used for the report",
-            },
-            "gate_status": {
-                "title": "Gate status",
-                "description": "FastaGuard assembly gate status",
-            },
-            "gate_blocking_findings": {
-                "title": "Gate blockers",
-                "description": "Finding IDs blocking the FastaGuard gate",
-            },
-            "readiness_status": {
-                "title": "Readiness",
-                "description": "FastaGuard readiness status",
-            },
-            "readiness_blockers": {
-                "title": "Readiness blockers",
-                "description": "Readiness categories and finding IDs blocking downstream use",
-            },
-            "submission_target": {
-                "title": "Submission target",
-                "description": "Submission target profile used by FastaGuard",
-            },
-            "submission_status": {
-                "title": "Submission status",
-                "description": "FASTA-level submission readiness status",
-            },
-            "unsafe_identifier_count": {
-                "title": "Unsafe IDs",
-                "description": "Number of identifiers with submission-unsafe characters",
-                "min": 0,
-                "scale": "OrRd",
-            },
-            "long_identifier_count": {
-                "title": "Long IDs",
-                "description": "Number of identifiers longer than the submission advisory threshold",
-                "min": 0,
-                "scale": "YlOrBr",
-            },
-            "duplicate_first_token_id_count": {
-                "title": "Duplicate first-token IDs",
-                "description": "Number of duplicate first-token FASTA identifiers",
-                "min": 0,
-                "scale": "OrRd",
-            },
-            "gap_like_n_run_count": {
-                "title": "Gap-like N runs",
-                "description": "Number of records with gap-like N runs worth submission review",
-                "min": 0,
-                "scale": "YlOrBr",
-            },
-            "duplicate_id_count": {
-                "title": "Duplicate IDs",
-                "description": "Number of duplicate FASTA record IDs",
-                "min": 0,
-                "scale": "OrRd",
-            },
-            "invalid_sequence_count": {
-                "title": "Invalid sequences",
-                "description": "Number of records with invalid sequence characters",
-                "min": 0,
-                "scale": "Reds",
-            },
-            "high_n_sequence_count": {
-                "title": "High-N sequences",
-                "description": "Number of records exceeding the high-N threshold",
-                "min": 0,
-                "scale": "OrRd",
-            },
-            "tiny_contig_count": {
-                "title": "Tiny contigs",
-                "description": "Number of records below the tiny-contig threshold",
-                "min": 0,
-                "scale": "YlOrBr",
-            },
-            "max_gap_run": {
-                "title": "Max gap run",
-                "description": "Longest consecutive N run",
-                "min": 0,
-                "suffix": " bp",
-                "scale": "OrRd",
-            },
-            "gc_outlier_count": {
-                "title": "GC outliers",
-                "description": "Number of records flagged as GC composition outliers",
-                "min": 0,
-                "scale": "OrRd",
-            },
-            "length_outlier_count": {
-                "title": "Length outliers",
-                "description": "Number of records flagged as length distribution outliers",
-                "min": 0,
-                "scale": "YlOrBr",
-            },
-            "composite_anomaly_count": {
-                "title": "Composite anomalies",
-                "description": "Number of records flagged by composite anomaly checks",
-                "min": 0,
-                "scale": "Reds",
             },
         }

@@ -272,6 +272,36 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("jq -e '.gate.can_continue == true'", readme)
         self.assertIn("reports/sample-01.fastaguard.json", readme)
 
+    def test_v0_7_multiqc_handoff_is_preparatory_and_release_independent(self):
+        handoff_path = ROOT / "docs" / "multiqc-core-module-handoff.md"
+        self.assertTrue(handoff_path.exists(), handoff_path)
+        if not handoff_path.exists():
+            return
+
+        handoff = " ".join(handoff_path.read_text().split())
+        for contract_term in [
+            "fastaguard_mqc.json",
+            "*.fastaguard_mqc.json",
+            "verdict",
+            "gate_can_continue",
+            "submission_policy_id",
+            "MultiQC 1.28",
+            "Python 3.10",
+            "assembly_pass",
+            "assembly_fail",
+            "screenshots",
+            "future upstream submission",
+            "does not establish repository acceptance",
+            "upstream review and merge timing do not block the v0.7 binary release",
+        ]:
+            self.assertIn(contract_term, handoff)
+
+        integration_readme = self.read("integrations/multiqc/README.md")
+        self.assertIn("gate_can_continue", integration_readme)
+        self.assertIn("submission_policy_id", integration_readme)
+        self.assertIn("compact", integration_readme)
+        self.assertIn("full parsed data", integration_readme)
+
     def test_multiqc_parser_reads_fastaguard_custom_content(self):
         fixture = ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard_mqc.json"
 
@@ -299,11 +329,13 @@ class AdoptionAssetsTest(unittest.TestCase):
                 "verdict": "FAIL",
                 "gate_mode": "none",
                 "gate_status": "FAIL",
+                "gate_can_continue": False,
                 "gate_blocking_findings": "duplicate_ids,duplicate_first_token_ids,invalid_chars",
                 "readiness_status": "FAIL",
                 "readiness_blockers": "index.duplicate_ids,submission.duplicate_ids,index.duplicate_first_token_ids,submission.duplicate_first_token_ids,alphabet.invalid_chars,submission.invalid_chars",
                 "submission_target": ".",
                 "submission_status": "FAIL",
+                "submission_policy_id": ".",
                 "unsafe_identifier_count": 0,
                 "long_identifier_count": 0,
                 "duplicate_first_token_id_count": 1,
@@ -533,38 +565,21 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn('fastaguard = "fastaguard_multiqc:MultiqcModule"', pyproject)
         self.assertIn("multiqc", pyproject)
 
-    def test_multiqc_plugin_summary_headers_include_gate_fields(self):
-        module_source = (
-            ROOT
-            / "integrations"
-            / "multiqc"
-            / "src"
-            / "fastaguard_multiqc"
-            / "multiqc_module.py"
-        ).read_text()
-
-        self.assertIn('"gate_mode"', module_source)
-        self.assertIn('"gate_status"', module_source)
-        self.assertIn('"gate_blocking_findings"', module_source)
-        self.assertIn('"readiness_status"', module_source)
-        self.assertIn('"readiness_blockers"', module_source)
-        self.assertIn('"submission_target"', module_source)
-        self.assertIn('"submission_status"', module_source)
-        self.assertIn('"unsafe_identifier_count"', module_source)
-        self.assertIn('"long_identifier_count"', module_source)
-        self.assertIn('"duplicate_first_token_id_count"', module_source)
-        self.assertIn('"gap_like_n_run_count"', module_source)
-        self.assertIn("Finding IDs blocking the FastaGuard gate", module_source)
-        self.assertIn("FastaGuard readiness status", module_source)
-        self.assertIn("FASTA-level submission readiness status", module_source)
+    def test_multiqc_parser_declares_v0_7_fields_as_optional(self):
+        for field in ["gate_can_continue", "submission_policy_id"]:
+            self.assertIn(field, multiqc_parser.OPTIONAL_SUMMARY_FIELDS)
+            self.assertNotIn(field, multiqc_parser.REQUIRED_SUMMARY_FIELDS)
 
     def test_multiqc_docs_describe_submission_fields(self):
         readme = (ROOT / "integrations" / "multiqc" / "README.md").read_text()
 
-        self.assertIn("submission readiness", readme)
+        self.assertIn("submission status", readme)
+        self.assertIn("`gate_can_continue`", readme)
+        self.assertIn("`submission_policy_id`", readme)
         self.assertIn("`submission_target`", readme)
         self.assertIn("`submission_status`", readme)
-        self.assertIn("duplicate first-token", readme)
+        self.assertIn("detailed finding-count columns", readme)
+        self.assertIn("full parsed data", readme)
 
     def test_multiqc_plugin_registers_filename_first_fastaguard_search_pattern(self):
         patterns = getattr(multiqc_parser, "FASTAGUARD_SEARCH_PATTERN", {})

@@ -5,9 +5,9 @@ Its package version remains `0.1.0` until the initial release is approved and
 published.
 
 FastaGuard already emits MultiQC custom-content JSON as `fastaguard_mqc.json`.
-The native module adds FastaGuard verdicts, gate status, readiness status,
-submission readiness, and key assembly preflight metrics directly to MultiQC
-reports.
+The native module adds FastaGuard verdicts, gate continuation, readiness and
+submission status, policy provenance, and a compact core metric set directly to
+MultiQC reports.
 
 ## Development Install
 
@@ -45,10 +45,17 @@ python3 -m venv "$validation_dir/venv"
 
 The strict report data at
 `$validation_dir/report/multiqc_data/multiqc_fastaguard.txt` should contain the
-committed pass and fail examples. It includes `verdict`, `gate_mode`,
-`gate_status`, `readiness_status`, `submission_target`, `submission_status`,
-unsafe and long identifier counts, duplicate first-token ID counts, and
-gap-like N-run counts.
+committed pass and fail examples. The full parsed data keeps all supported
+aggregate fields, including optional `gate_can_continue` and
+`submission_policy_id` values when they are present. Reports that predate v0.7
+and omit those fields remain valid plugin inputs.
+
+The rendered summary is deliberately compact. Its columns are `verdict`,
+`gate_can_continue`, `gate_status`, `readiness_status`, `submission_target`,
+`submission_policy_id`, `submission_status`, `sequence_count`, `total_length`,
+`n50`, `gc_percent`, `n_percent`, and `finding_count`. Blocker strings, raw
+finding IDs, per-record evidence, and detailed finding-count columns remain in
+FastaGuard's own outputs rather than being copied into this table.
 
 The release test builds the distributions, installs that exact wheel into its
 own disposable environment, and runs the same strict command. Set
@@ -77,11 +84,12 @@ rm -rf -- integrations/multiqc/dist
 ## Scope
 
 - Parse FastaGuard custom-content JSON.
-- Add verdict and summary metrics to the MultiQC general stats table.
-- Add one FastaGuard summary table section with gate, readiness, and
-  submission fields including `submission_target`, `submission_status`,
-  unsafe identifier counts, long identifier counts, duplicate first-token ID
-  counts, and gap-like N-run counts.
+- Add verdict, `gate_can_continue`, record count, total length, finding count,
+  N50, and N percentage to the MultiQC general stats table.
+- Add one compact FastaGuard summary section with gate, readiness, policy,
+  submission, and core FASTA metrics.
+- Preserve the full parsed data in `multiqc_fastaguard` for downstream export
+  without expanding the rendered table.
 
 Keep the module compact. MultiQC should summarize many FastaGuard reports, not
 replicate every field from the full FastaGuard HTML report.
@@ -96,3 +104,7 @@ checkout, inspect and check the wheel and source distribution, test the intended
 index upload, publish version `0.1.0`, and verify the installed package from the
 index. Any upstream MultiQC issue or pull request should be prepared only after
 the public package location and installation instructions are stable.
+
+The preparation checklist for a possible future core-module contribution is in
+`docs/multiqc-core-module-handoff.md`. Upstream review and merge timing do not
+block the FastaGuard v0.7 binary release.
