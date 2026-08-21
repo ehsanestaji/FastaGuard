@@ -969,7 +969,10 @@
           "type": "string"
         },
         "limitations": {
-          "type": "string"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "thresholds": {
           "type": "object",

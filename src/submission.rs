@@ -15,7 +15,7 @@ pub struct SubmissionPolicy {
     pub version: String,
     pub source_url: String,
     pub scope: String,
-    pub limitations: String,
+    pub limitations: Vec<String>,
     pub thresholds: SubmissionPolicyThresholds,
 }
 
@@ -40,11 +40,14 @@ pub fn policy_for(target: SubmissionTarget) -> SubmissionPolicy {
         SubmissionTarget::Generic => SubmissionPolicy {
             id: "generic_submission_readiness".to_string(),
             version: "2026-08-21".to_string(),
-            source_url: "https://fastaguard.dev/docs/submission-readiness".to_string(),
+            source_url: "https://github.com/ehsanestaji/FastaGuard/blob/main/docs/preflight-readiness.md"
+                .to_string(),
             scope: "Portable FASTA-level submission-readiness checks for common identifier, alphabet, and structural hazards."
                 .to_string(),
-            limitations: "This policy supports portability across submission workflows and does not establish acceptance by any repository."
-                .to_string(),
+            limitations: vec![
+                "Supports portability across submission workflows and does not establish acceptance by any repository."
+                    .to_string(),
+            ],
             thresholds: SubmissionPolicyThresholds {
                 seqid_max_bytes: None,
                 min_record_length_bases: None,
@@ -55,12 +58,13 @@ pub fn policy_for(target: SubmissionTarget) -> SubmissionPolicy {
             id: "ncbi_genome".to_string(),
             version: "2026-08-21".to_string(),
             source_url: "https://www.ncbi.nlm.nih.gov/genbank/table2asn/".to_string(),
-            scope: "FASTA-level genome-submission checks aligned with NCBI table2asn input guidance."
-                .to_string(),
-            limitations: "This policy does not determine NCBI repository acceptance, biological completeness, annotation correctness, contamination, or any validation outside the FASTA-level checks it documents."
-                .to_string(),
+            scope: "NCBI genome-assembly FASTA preflight".to_string(),
+            limitations: vec![
+                "Does not validate annotation, taxonomy, contamination, metadata, or repository acceptance."
+                    .to_string(),
+            ],
             thresholds: SubmissionPolicyThresholds {
-                seqid_max_bytes: Some(25),
+                seqid_max_bytes: Some(49),
                 min_record_length_bases: Some(200),
                 terminal_n_prohibited: true,
             },
@@ -94,9 +98,21 @@ mod tests {
             policy.source_url,
             "https://www.ncbi.nlm.nih.gov/genbank/table2asn/"
         );
+        assert_eq!(policy.scope, "NCBI genome-assembly FASTA preflight");
         assert_eq!(
-            policy.limitations,
-            "This policy does not determine NCBI repository acceptance, biological completeness, annotation correctness, contamination, or any validation outside the FASTA-level checks it documents."
+            serde_json::to_value(&policy.limitations).unwrap(),
+            serde_json::json!([
+                "Does not validate annotation, taxonomy, contamination, metadata, or repository acceptance."
+            ])
+        );
+        assert_eq!(policy.thresholds.seqid_max_bytes, Some(49));
+    }
+
+    #[test]
+    fn generic_policy_uses_project_documentation_as_its_provenance() {
+        assert_eq!(
+            policy_for(SubmissionTarget::Generic).source_url,
+            "https://github.com/ehsanestaji/FastaGuard/blob/main/docs/preflight-readiness.md"
         );
     }
 }

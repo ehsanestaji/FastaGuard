@@ -184,6 +184,7 @@ fn schema_requires_submission_policy_and_continuation_fields() {
             .iter()
             .any(|value| value == field));
     }
+    assert_eq!(policy["properties"]["limitations"]["type"], "array");
     assert_eq!(policy["properties"]["thresholds"]["type"], "object");
 }
 
@@ -211,6 +212,12 @@ fn schema_validates_no_target_and_ncbi_submission_policy_reports() {
         &["--gate", "submission", "--submission-target", "ncbi"],
     );
     assert_eq!(ncbi["gate"]["submission_policy"]["id"], "ncbi_genome");
+    assert_eq!(
+        ncbi["gate"]["submission_policy"]["limitations"],
+        serde_json::json!([
+            "Does not validate annotation, taxonomy, contamination, metadata, or repository acceptance."
+        ])
+    );
     assert_eq!(
         ncbi["provenance"]["submission_policy"],
         ncbi["gate"]["submission_policy"]
