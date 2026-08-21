@@ -224,6 +224,22 @@ mod tests {
     }
 
     #[test]
+    fn exact_ratio_n90_handles_large_totals_at_the_boundary() {
+        let unit = 1_u64 << 60;
+        let lengths = vec![4 * unit, 3 * unit, 2 * unit, unit];
+
+        let result = nx_lx_ratio(&lengths, 9, 10);
+
+        assert_eq!(
+            result,
+            Nx {
+                nx: 2 * unit,
+                lx: 3,
+            }
+        );
+    }
+
+    #[test]
     fn computes_n50_when_multiple_sequences_reach_target() {
         let lengths = vec![50, 40, 30, 20, 10];
         let result = nx_lx(&lengths, 0.50);

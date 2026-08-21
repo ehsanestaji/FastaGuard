@@ -157,9 +157,12 @@ benchmark output directory and must never be committed. Only the small synthetic
 fixtures in `testdata/` belong in Git.
 
 The runner writes `benchmark_summary.json` and `benchmark_summary.tsv` with the
-observed build commit, binary checksum/version, platform/runtime context, input
-checksum and scale, runtime, verdict, and core metrics. A `source_tree_dirty`
-flag prevents a local build from being presented as an exact clean-commit build.
+runner worktree commit/state, observed binary checksum/version, platform/runtime
+context, input checksum and scale, runtime, verdict, and core metrics.
+`runner_worktree_commit` and `runner_worktree_dirty` describe the checkout that
+invoked the benchmark; they do not attest which commit produced the observed
+binary. The binary itself is identified by `fastaguard_version` and
+`binary_sha256`.
 Publishable summaries contain no absolute paths, commands, FASTA sequence data,
 or time/memory
 pass-fail thresholds.
@@ -176,9 +179,16 @@ python3 scripts/benchmark_manifest.py \
 ```
 
 Baseline comparison is accepted only when the recorded system, release,
-architecture, and Python runtime match the current pinned runner. The elapsed
-ratio is contextual evidence; it is not a universal performance guarantee and
-does not produce a performance pass/fail verdict.
+architecture, and Python runtime match the current pinned runner. A matching case
+ID must also retain the same accession, assembly version, source URL, category,
+expected scale, and input SHA-256. The elapsed ratio is contextual evidence; it
+is not a universal performance guarantee and does not produce a performance
+pass/fail verdict.
+
+Each result also includes `scale_comparison`, which records expected and observed
+base/record counts plus their deltas. This makes a changed public payload or an
+imprecise scale expectation visible without turning scale agreement into an
+acceptance or performance verdict.
 
 ## Evidence Targets
 

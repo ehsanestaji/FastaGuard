@@ -7,6 +7,8 @@ from pathlib import Path
 
 from scripts.benchmark_manifest import (
     BenchmarkManifestError,
+    compare_observed_scale,
+    validate_baseline_case,
     validate_manifest,
     validate_publishable_summary,
 )
@@ -245,6 +247,45 @@ class BenchmarkManifestValidationTests(unittest.TestCase):
         )
         return {"schema_version": 1, "cases": cases}
 
+    def valid_summary(self, baseline_supplied=False):
+        return {
+            "schema_version": 1,
+            "runner_worktree_commit": "c" * 40,
+            "runner_worktree_dirty": False,
+            "binary_sha256": "d" * 64,
+            "baseline_supplied": baseline_supplied,
+            "runtime_context": (
+                "Elapsed seconds are contextual measurements from one pinned runner. "
+                "No captured prior baseline was supplied; these measurements are not "
+                "universal performance guarantees."
+                if not baseline_supplied
+                else "Elapsed ratios are contextual comparisons with a captured prior "
+                "baseline from the same pinned runner context, not universal performance "
+                "guarantees."
+            ),
+            "baseline_context": (
+                "No captured prior baseline was supplied; no comparison or time/memory "
+                "pass/fail threshold was applied."
+                if not baseline_supplied
+                else "Each elapsed ratio compares the same case identity, input checksum, "
+                "and expected scale on a matching pinned runner; no time/memory pass/fail "
+                "threshold was applied."
+            ),
+            "cases": [],
+        }
+
+    def baseline_case(self, case):
+        return {
+            "id": case["id"],
+            "accession": case["accession"],
+            "assembly_version": case["assembly_version"],
+            "source_url": case["source_url"],
+            "category": case["category"],
+            "expected_scale": case["expected_scale"],
+            "input_sha256": case["sha256"],
+            "elapsed_seconds": 1.0,
+        }
+
     def test_manifest_rejects_duplicate_ids(self):
         manifest = self.valid_manifest()
         manifest["cases"][1]["id"] = manifest["cases"][0]["id"]
@@ -276,10 +317,79 @@ class BenchmarkManifestValidationTests(unittest.TestCase):
             validate_manifest(manifest)
 
     def test_publishable_summary_rejects_universal_performance_claim(self):
-        summary = {
-            "runtime_context": "FastaGuard guarantees this runtime on every machine.",
-            "cases": [],
-        }
+        summary = self.valid_summary()
+        summary["runtime_context"] = "FastaGuard guarantees this runtime on every machine."
 
         with self.assertRaisesRegex(BenchmarkManifestError, "universal performance"):
             validate_publishable_summary(summary)
+
+    def test_publishable_summary_rejects_legacy_runner_provenance_labels(self):
+        legacy_labels = {
+            "source_commit": "runner_worktree_commit",
+            "source_tree_dirty": "runner_worktree_dirty",
+        }
+
+        for legacy, replacement in legacy_labels.items():
+            with self.subTest(legacy=legacy):
+                summary = self.valid_summary()
+                summary[legacy] = summary.pop(replacement)
+                with self.assertRaisesRegex(BenchmarkManifestError, replacement):
+                    validate_publishable_summary(summary)
+
+    def test_no_baseline_summary_rejects_comparison_wording(self):
+        summary = self.valid_summary()
+        summary["runtime_context"] = self.valid_summary(baseline_supplied=True)[
+            "runtime_context"
+        ]
+
+        with self.assertRaisesRegex(BenchmarkManifestError, "no-baseline runtime_context"):
+            validate_publishable_summary(summary)
+
+    def test_baseline_summary_rejects_no_baseline_wording(self):
+        summary = self.valid_summary(baseline_supplied=True)
+        summary["baseline_context"] = self.valid_summary()["baseline_context"]
+
+        with self.assertRaisesRegex(BenchmarkManifestError, "baseline_context"):
+            validate_publishable_summary(summary)
+
+    def test_mode_specific_publishable_summaries_are_valid(self):
+        validate_publishable_summary(self.valid_summary())
+        validate_publishable_summary(self.valid_summary(baseline_supplied=True))
+
+    def test_baseline_rejects_same_id_with_different_case_identity(self):
+        case = self.valid_manifest()["cases"][0]
+        mutations = {
+            "input_sha256": "e" * 64,
+            "accession": "GCF_999999999.1",
+            "assembly_version": "different-version",
+            "source_url": "https://example.org/different.fa.gz",
+            "category": "fungal",
+            "expected_scale": {"bases": 2000, "records": 2},
+        }
+
+        for field, different_value in mutations.items():
+            with self.subTest(field=field):
+                prior = self.baseline_case(case)
+                prior[field] = different_value
+                with self.assertRaisesRegex(BenchmarkManifestError, field):
+                    validate_baseline_case(case, prior)
+
+    def test_scale_comparison_reports_observed_deltas_without_a_verdict(self):
+        case = self.valid_manifest()["cases"][0]
+        report = {"summary": {"sequence_count": 2, "total_length": 1100}}
+
+        comparison = compare_observed_scale(case, report)
+
+        self.assertEqual(
+            comparison,
+            {
+                "expected_bases": 1000,
+                "observed_bases": 1100,
+                "bases_delta": 100,
+                "expected_records": 1,
+                "observed_records": 2,
+                "records_delta": 1,
+                "exact_match": False,
+            },
+        )
+        self.assertNotIn("status", comparison)

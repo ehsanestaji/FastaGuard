@@ -42,23 +42,40 @@ REQUIRED_CATEGORIES = {
     "high-record-count-synthetic",
 }
 PUBLIC_CATEGORIES = REQUIRED_CATEGORIES - {"high-record-count-synthetic"}
-RUNTIME_CONTEXT = (
-    "Elapsed seconds are contextual measurements from one pinned runner compared "
-    "with its captured prior baseline, not universal performance guarantees."
+NO_BASELINE_RUNTIME_CONTEXT = (
+    "Elapsed seconds are contextual measurements from one pinned runner. "
+    "No captured prior baseline was supplied; these measurements are not "
+    "universal performance guarantees."
 )
-SUMMARY_COLUMNS = [
+BASELINE_RUNTIME_CONTEXT = (
+    "Elapsed ratios are contextual comparisons with a captured prior baseline "
+    "from the same pinned runner context, not universal performance guarantees."
+)
+NO_BASELINE_CONTEXT = (
+    "No captured prior baseline was supplied; no comparison or time/memory "
+    "pass/fail threshold was applied."
+)
+BASELINE_CONTEXT = (
+    "Each elapsed ratio compares the same case identity, input checksum, and "
+    "expected scale on a matching pinned runner; no time/memory pass/fail "
+    "threshold was applied."
+)
+SHARED_SUMMARY_COLUMNS = [
     "schema_version",
     "generated_at",
     "fastaguard_version",
-    "source_commit",
-    "source_tree_dirty",
+    "runner_worktree_commit",
+    "runner_worktree_dirty",
     "binary_sha256",
     "platform_system",
     "platform_release",
     "platform_machine",
     "python_version",
+    "baseline_supplied",
     "runtime_context",
     "baseline_context",
+]
+CASE_SUMMARY_COLUMNS = [
     "id",
     "accession",
     "assembly_version",
@@ -74,9 +91,11 @@ SUMMARY_COLUMNS = [
     "total_length",
     "n50",
     "n90",
+    "scale_comparison",
     "prior_elapsed_seconds",
     "elapsed_ratio_to_prior",
 ]
+SUMMARY_COLUMNS = SHARED_SUMMARY_COLUMNS + CASE_SUMMARY_COLUMNS
 
 
 class BenchmarkManifestError(ValueError):
@@ -240,14 +259,43 @@ def validate_public_case(case_id: str, case: dict) -> None:
 def validate_publishable_summary(summary: dict) -> dict:
     if not isinstance(summary, dict):
         raise BenchmarkManifestError("publishable summary must be an object")
-    runtime_context = summary.get("runtime_context")
-    if not isinstance(runtime_context, str) or not all(
-        phrase in runtime_context.lower()
-        for phrase in ("contextual", "captured prior baseline", "not universal performance guarantees")
+    if "source_commit" in summary or "source_tree_dirty" in summary:
+        raise BenchmarkManifestError(
+            "publishable summary must use runner_worktree_commit and "
+            "runner_worktree_dirty; the runner cannot attest the binary's source commit"
+        )
+    runner_commit = summary.get("runner_worktree_commit")
+    if runner_commit != "unavailable" and (
+        not isinstance(runner_commit, str)
+        or re.fullmatch(r"[0-9a-f]{40}", runner_commit) is None
     ):
         raise BenchmarkManifestError(
-            "publishable summary must reject universal performance claims and describe contextual baseline comparison"
+            "runner_worktree_commit must be a 40-character Git commit or unavailable"
         )
+    if not isinstance(summary.get("runner_worktree_dirty"), bool):
+        raise BenchmarkManifestError("runner_worktree_dirty must be boolean")
+    binary_sha256 = summary.get("binary_sha256")
+    if not isinstance(binary_sha256, str) or SHA256.fullmatch(binary_sha256) is None:
+        raise BenchmarkManifestError("binary_sha256 must be 64 lowercase hex digits")
+
+    baseline_supplied = summary.get("baseline_supplied")
+    if not isinstance(baseline_supplied, bool):
+        raise BenchmarkManifestError("baseline_supplied must be boolean")
+    expected_runtime = (
+        BASELINE_RUNTIME_CONTEXT if baseline_supplied else NO_BASELINE_RUNTIME_CONTEXT
+    )
+    runtime_context = summary.get("runtime_context")
+    if runtime_context != expected_runtime:
+        mode = "baseline" if baseline_supplied else "no-baseline"
+        raise BenchmarkManifestError(
+            f"{mode} runtime_context must be mode-specific and reject universal performance claims"
+        )
+    expected_baseline_context = (
+        BASELINE_CONTEXT if baseline_supplied else NO_BASELINE_CONTEXT
+    )
+    if summary.get("baseline_context") != expected_baseline_context:
+        mode = "baseline" if baseline_supplied else "no-baseline"
+        raise BenchmarkManifestError(f"{mode} baseline_context does not match execution mode")
 
     forbidden_keys = {
         "input_path",
@@ -291,6 +339,24 @@ def load_baseline(path: Path | None) -> dict | None:
     return validate_publishable_summary(baseline)
 
 
+def validate_baseline_case(case: dict, prior: dict) -> dict:
+    current_identity = {
+        "id": case["id"],
+        "accession": case["accession"],
+        "assembly_version": case["assembly_version"],
+        "source_url": case["source_url"],
+        "category": case["category"],
+        "expected_scale": case["expected_scale"],
+        "input_sha256": case["sha256"],
+    }
+    for field, current_value in current_identity.items():
+        if prior.get(field) != current_value:
+            raise BenchmarkManifestError(
+                f"prior baseline {case['id']} {field} differs from the current case"
+            )
+    return prior
+
+
 def run_manifest(
     manifest: dict,
     binary: Path,
@@ -332,6 +398,9 @@ def run_manifest(
     } if baseline else {}
     cases = []
     for case in selected:
+        prior = prior_by_id.get(case["id"])
+        if prior is not None:
+            validate_baseline_case(case, prior)
         case_dir = out_dir / "runs" / case["id"]
         case_dir.mkdir(parents=True, exist_ok=True)
         input_path = prepare_input(case, out_dir, case_dir, args.download)
@@ -342,25 +411,23 @@ def run_manifest(
                 f"expected {case['sha256']}, got {actual_sha256}"
             )
         cases.append(
-            run_case(binary, input_path, case_dir, case, actual_sha256, prior_by_id.get(case["id"]))
+            run_case(binary, input_path, case_dir, case, actual_sha256, prior)
         )
 
-    source_commit = git_value(["rev-parse", "HEAD"])
+    runner_worktree_commit = git_value(["rev-parse", "HEAD"])
     summary = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "fastaguard_version": fastaguard_version(binary),
-        "source_commit": source_commit,
-        "source_tree_dirty": git_dirty(),
+        "runner_worktree_commit": runner_worktree_commit,
+        "runner_worktree_dirty": git_dirty(),
         "binary_sha256": sha256_path(binary),
         **runner,
-        "runtime_context": RUNTIME_CONTEXT,
-        "baseline_context": (
-            "Compared with a captured prior baseline from the same runner context; "
-            "no time or memory pass/fail threshold was applied."
-            if baseline
-            else "No captured prior baseline supplied; no time or memory pass/fail threshold was applied."
+        "baseline_supplied": baseline is not None,
+        "runtime_context": (
+            BASELINE_RUNTIME_CONTEXT if baseline else NO_BASELINE_RUNTIME_CONTEXT
         ),
+        "baseline_context": BASELINE_CONTEXT if baseline else NO_BASELINE_CONTEXT,
         "cases": cases,
     }
     return summary
@@ -456,8 +523,25 @@ def run_case(
         "total_length": report["summary"]["total_length"],
         "n50": report["summary"]["n50"],
         "n90": report["summary"]["n90"],
+        "scale_comparison": compare_observed_scale(case, report),
         "prior_elapsed_seconds": prior_elapsed,
         "elapsed_ratio_to_prior": elapsed_ratio,
+    }
+
+
+def compare_observed_scale(case: dict, report: dict) -> dict:
+    expected = case["expected_scale"]
+    observed_bases = report["summary"]["total_length"]
+    observed_records = report["summary"]["sequence_count"]
+    return {
+        "expected_bases": expected["bases"],
+        "observed_bases": observed_bases,
+        "bases_delta": observed_bases - expected["bases"],
+        "expected_records": expected["records"],
+        "observed_records": observed_records,
+        "records_delta": observed_records - expected["records"],
+        "exact_match": observed_bases == expected["bases"]
+        and observed_records == expected["records"],
     }
 
 
@@ -501,13 +585,16 @@ def write_json(path: Path, value: dict) -> None:
 
 
 def write_tsv(path: Path, summary: dict) -> None:
-    shared = {field: summary[field] for field in SUMMARY_COLUMNS[:12]}
+    shared = {field: summary[field] for field in SHARED_SUMMARY_COLUMNS}
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=SUMMARY_COLUMNS, delimiter="\t", lineterminator="\n")
         writer.writeheader()
         for case in summary["cases"]:
             row = {**shared, **case}
             row["expected_scale"] = json.dumps(row["expected_scale"], sort_keys=True, separators=(",", ":"))
+            row["scale_comparison"] = json.dumps(
+                row["scale_comparison"], sort_keys=True, separators=(",", ":")
+            )
             writer.writerow(row)
 
 
