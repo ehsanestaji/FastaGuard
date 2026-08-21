@@ -26,12 +26,15 @@ REQUIRED_ISSUE_DETAILS = {
     "Expected result",
     "Actual result",
 }
+ASSISTANT_IDENTITY = r"(?:chatgpt|codex|claude(?:\s+code)?|openai|anthropic)"
+GENERIC_AI_TOOL = r"(?:(?:an?\s+)?(?:ai|assistant)(?:\s+(?:tool|system|model))?)"
+PROHIBITED_ATTRIBUTION_SOURCE = rf"(?:{ASSISTANT_IDENTITY}|{GENERIC_AI_TOOL})"
 PROHIBITED_ATTRIBUTION_PATTERNS = [
-    re.compile(r"(?im)^co-authored-by:\s*(?:chatgpt|codex|openai)\b"),
+    re.compile(rf"(?im)^co-authored-by:\s*{PROHIBITED_ATTRIBUTION_SOURCE}\b"),
     re.compile(
-        r"(?im)^generated(?:-|\s+)by\s*:?\s*(?:chatgpt|codex|openai)\b"
+        rf"(?im)^generated(?:-|\s+)by\s*:?\s*{PROHIBITED_ATTRIBUTION_SOURCE}\b"
     ),
-    re.compile(r"(?i)written with (?:chatgpt|codex|openai)"),
+    re.compile(rf"(?i)written with {PROHIBITED_ATTRIBUTION_SOURCE}\b"),
     re.compile(
         r"(?i)\bai[- ]assisted\s+(?:contribution|change|code|content|documentation)\b"
     ),
@@ -40,6 +43,9 @@ PROHIBITED_ATTRIBUTION_PATTERNS = [
 ATTRIBUTION_TRACE_SAMPLES = (
     "Generated" + "-by: Code" + "x",
     "generated" + " by Code" + "x",
+    "Co-authored" + "-by: Claude" + " Code",
+    "Generated" + " by Anthro" + "pic",
+    "Generated" + " by an " + "AI tool",
     "AI" + "-assisted contribution",
     "Assistant " + "provenance: automation",
 )
