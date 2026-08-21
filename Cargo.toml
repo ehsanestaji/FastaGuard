@@ -22,3 +22,4 @@ thiserror = "1"
 assert_cmd = "2"
 jsonschema = { version = "0.46", default-features = false }
 predicates = "3"
+proptest = "1"

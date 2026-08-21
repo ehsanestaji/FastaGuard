@@ -186,3 +186,34 @@ The public run uses NCBI Datasets commands such as
 `datasets download genome accession <ACCESSION> --include genome --filename <zip>`.
 It writes compact `evidence_summary.json` and `evidence_summary.tsv` files while
 leaving downloaded FASTA files and full reports under `target/`.
+
+## Parser robustness and fuzz checks
+
+FastaGuard keeps parser robustness evidence separate from runtime dependencies.
+The property suite is a normal development dependency; `cargo-fuzz` and
+libFuzzer are external development tooling confined to `fuzz/`.
+
+Run the deterministic property check from the repository root:
+
+```bash
+cargo test --locked --test parser_properties
+```
+
+The property test generates one to eight valid records using only A, C, G, T,
+and N. For each case it parses seven wrap widths with both LF and CRLF endings,
+then checks exact record count, total length, N50, N90, and duplicate counts. It
+also checks that finding IDs retain the same order for every serialization.
+
+Install `cargo-fuzz` as external development tooling, then run the bounded
+fuzz checks:
+
+```bash
+cargo fuzz run parser_events -- -max_total_time=60
+cargo fuzz run report_serialization -- -max_total_time=60
+```
+
+`parser_events` passes arbitrary in-memory bytes through the reader parser and
+accepts either a completed event stream or a structured error.
+`report_serialization` builds bounded synthetic records and writes JSON, TSV,
+MultiQC JSON, and HTML only inside a per-input temporary directory. Generated
+fuzz corpora and artifacts are disposable test outputs and are not committed.

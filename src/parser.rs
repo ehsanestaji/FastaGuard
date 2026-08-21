@@ -66,7 +66,7 @@ where
     F: for<'a> FnMut(FastaEvent<'a>) -> Result<()>,
 {
     let reader = open_fasta_reader(path)?;
-    parse_events(reader, visitor)
+    for_each_fasta_event_from_reader(reader, visitor)
 }
 
 fn open_fasta_reader(path: &Path) -> Result<BufReader<Box<dyn Read>>> {
@@ -94,7 +94,7 @@ where
     let mut current_header = String::new();
     let mut current_sequence: Vec<u8> = Vec::new();
 
-    parse_events(reader, |event| {
+    for_each_fasta_event_from_reader(reader, |event| {
         match event {
             FastaEvent::StartRecord { id, header, .. } => {
                 current_id = id;
@@ -114,7 +114,7 @@ where
     })
 }
 
-fn parse_events<R, F>(reader: R, mut visitor: F) -> Result<()>
+pub fn for_each_fasta_event_from_reader<R, F>(reader: R, mut visitor: F) -> Result<()>
 where
     R: BufRead,
     F: for<'a> FnMut(FastaEvent<'a>) -> Result<()>,

@@ -1,0 +1,29 @@
+[package]
+name = "fastaguard-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tempfile = "3"
+
+[dependencies.fastaguard]
+path = ".."
+
+[[bin]]
+name = "parser_events"
+path = "fuzz_targets/parser_events.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "report_serialization"
+path = "fuzz_targets/report_serialization.rs"
+test = false
+doc = false
+bench = false
