@@ -16,7 +16,7 @@ use crate::readiness::{self, ReadinessReport, ReadinessScope};
 use crate::stats::composition::percent;
 use crate::submission::{policy_for_option, SubmissionPolicy, SubmissionTarget};
 
-pub const SCHEMA_VERSION: &str = "0.5.0";
+pub const SCHEMA_VERSION: &str = "0.7.0";
 pub const TOOL_NAME: &str = "FastaGuard";
 pub const TOOL_VERSION: &str = env!("CARGO_PKG_VERSION");
 const LENGTH_HISTOGRAM_BIN_COUNT: u64 = 10;

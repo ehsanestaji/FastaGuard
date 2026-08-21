@@ -187,6 +187,41 @@ class UpstreamContractTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 3, result.stderr)
 
+    def test_benchmark_workflow_can_replace_its_owned_outputs_on_repeat_runs(self):
+        with TemporaryDirectory() as temp_dir:
+            command = [
+                "python3",
+                str(ROOT / "scripts" / "benchmark_large_fasta.py"),
+                "--records",
+                "2",
+                "--length",
+                "32",
+                "--binary",
+                str(self.binary),
+                "--out-dir",
+                temp_dir,
+            ]
+
+            first = subprocess.run(
+                command,
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            second = subprocess.run(
+                command,
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertEqual(json.loads(first.stdout)["reported_total_length"], 64)
+        self.assertEqual(json.loads(second.stdout)["reported_total_length"], 64)
+
     def test_downstream_gate_can_reject_a_collected_fail_report(self):
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)

@@ -181,7 +181,7 @@ class AdoptionAssetsTest(unittest.TestCase):
             "docs/output-contract.md",
             "docs/releases/v0.7.0.md",
         ]
-        source_url = "https://www.ncbi.nlm.nih.gov/genbank/table2asn/"
+        source_url = "https://www.ncbi.nlm.nih.gov/genbank/genomesubmit/"
 
         for path in paths:
             with self.subTest(path=path):

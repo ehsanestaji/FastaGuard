@@ -62,8 +62,8 @@ fn contract_finding_catalog_can_be_printed_without_input() {
     cmd.arg("--finding-catalog")
         .assert()
         .success()
-        .stdout(predicate::str::contains(r#""schema_version": "0.5.0""#))
-        .stdout(predicate::str::contains(r#""catalog_version": "0.5.0""#))
+        .stdout(predicate::str::contains(r#""schema_version": "0.7.0""#))
+        .stdout(predicate::str::contains(r#""catalog_version": "0.7.0""#))
         .stdout(predicate::str::contains(r#""duplicate_ids""#))
         .stdout(predicate::str::contains(r#""invalid_fasta_structure""#))
         .stdout(predicate::str::contains(r#""gc_outliers""#))
@@ -174,7 +174,7 @@ fn compare_writes_json_with_mixed_status_samples() {
 
     let report = read_json(&outputs.json);
     assert_eq!(report["report_type"], json!("compare"));
-    assert_eq!(report["schema_version"], json!("0.5.0"));
+    assert_eq!(report["schema_version"], json!("0.7.0"));
     assert_eq!(report["summary"]["sample_count"], json!(2));
     assert_eq!(report["summary"]["fail_count"], json!(1));
     let samples = report["samples"].as_array().unwrap();
@@ -644,7 +644,7 @@ fn report_includes_v0_4_provenance_and_routing_hints() {
     .success();
 
     let report = read_json(&outputs.json);
-    assert_eq!(report["schema_version"], json!("0.5.0"));
+    assert_eq!(report["schema_version"], json!("0.7.0"));
     assert_eq!(report["gate"]["mode"], json!("none"));
     assert_eq!(report["gate"]["status"], json!("WARN"));
     assert_eq!(report["gate"]["blocking_findings"], json!([]));
@@ -950,7 +950,7 @@ fn pipeline_gate_report_lists_blocking_and_advisory_findings() {
     .stderr(predicate::str::contains("fastaguard error:").not());
 
     let report = read_json(&outputs.json);
-    assert_eq!(report["schema_version"], json!("0.5.0"));
+    assert_eq!(report["schema_version"], json!("0.7.0"));
     assert_eq!(report["gate"]["mode"], json!("pipeline"));
     assert_eq!(report["gate"]["status"], json!("FAIL"));
     assert!(array_contains_string(

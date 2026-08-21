@@ -25,6 +25,23 @@ fn committed_reports_validate_against_json_schema() {
 }
 
 #[test]
+fn current_schema_and_catalog_are_versioned_for_v0_7_contract_additions() {
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let catalog = read_json(Path::new("schema/finding-catalog.json"));
+
+    assert_eq!(
+        schema["$defs"]["single_report"]["properties"]["schema_version"]["const"],
+        "0.7.0"
+    );
+    assert_eq!(
+        schema["$defs"]["compare_report"]["properties"]["schema_version"]["const"],
+        "0.7.0"
+    );
+    assert_eq!(catalog["schema_version"], "0.7.0");
+    assert_eq!(catalog["catalog_version"], "0.7.0");
+}
+
+#[test]
 fn schema_requires_emitted_finding_taxonomy_fields() {
     let schema = read_json(Path::new("schema/fastaguard.schema.json"));
     let required = schema["$defs"]["finding"]["required"].as_array().unwrap();
@@ -74,7 +91,7 @@ fn schema_requires_gate_and_input_sha256() {
 
     assert_eq!(
         single_report["properties"]["schema_version"]["const"],
-        "0.5.0"
+        "0.7.0"
     );
     assert!(report_required.contains(&serde_json::json!("gate")));
     assert!(gate_required.contains(&serde_json::json!("mode")));
@@ -102,7 +119,7 @@ fn schema_requires_readiness_for_single_reports() {
         .any(|value| value == "readiness"));
     assert_eq!(
         single_report["properties"]["schema_version"]["const"],
-        "0.5.0"
+        "0.7.0"
     );
 }
 

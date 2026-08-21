@@ -265,7 +265,10 @@ class ReleaseMetadataTest(unittest.TestCase):
         )
         self.assertNotIn(marker + "PUBLIC_SOURCE_ARCHIVE_SHA256", recipe)
 
-    def test_committed_example_reports_match_current_published_version(self):
+    def test_committed_example_reports_match_current_source_contract(self):
+        source_version = tomllib.loads((ROOT / "Cargo.toml").read_text())["package"][
+            "version"
+        ]
         examples = [
             ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard.json",
             ROOT / "examples" / "reports" / "assembly_fail" / "fastaguard.json",
@@ -274,7 +277,8 @@ class ReleaseMetadataTest(unittest.TestCase):
         for path in examples:
             with self.subTest(path=path):
                 report = json.loads(path.read_text())
-                self.assertEqual(report["tool"]["version"], CURRENT_VERSION)
+                self.assertEqual(report["tool"]["version"], source_version)
+                self.assertEqual(report["schema_version"], "0.7.0")
 
     def test_bioconda_recipe_avoids_unneeded_runtime_zlib(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()

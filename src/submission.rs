@@ -57,7 +57,7 @@ pub fn policy_for(target: SubmissionTarget) -> SubmissionPolicy {
         SubmissionTarget::Ncbi => SubmissionPolicy {
             id: "ncbi_genome".to_string(),
             version: "2026-08-21".to_string(),
-            source_url: "https://www.ncbi.nlm.nih.gov/genbank/table2asn/".to_string(),
+            source_url: "https://www.ncbi.nlm.nih.gov/genbank/genomesubmit/".to_string(),
             scope: "NCBI genome-assembly FASTA preflight".to_string(),
             limitations: vec![
                 "Does not validate annotation, taxonomy, contamination, metadata, or repository acceptance."
@@ -96,7 +96,7 @@ mod tests {
         assert_eq!(policy.version, "2026-08-21");
         assert_eq!(
             policy.source_url,
-            "https://www.ncbi.nlm.nih.gov/genbank/table2asn/"
+            "https://www.ncbi.nlm.nih.gov/genbank/genomesubmit/"
         );
         assert_eq!(policy.scope, "NCBI genome-assembly FASTA preflight");
         assert_eq!(

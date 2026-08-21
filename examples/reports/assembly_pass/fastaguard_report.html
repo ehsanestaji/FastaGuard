@@ -43,7 +43,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <body>
 <main>
 <h1>FastaGuard Report</h1>
-<div class="verdict">Verdict: WARN</div>
+<div class="verdict">Overall QC signal: WARN</div>
 <p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
 <h2>Gate Decision</h2>
 <div class="grid">
@@ -51,6 +51,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <h3>Gate</h3>
 <p><span class="label">Mode:</span> none</p>
 <p><span class="label">Status:</span> WARN</p>
+<p><span class="label">Workflow may continue:</span> Yes</p>
 </section>
 <section class="panel">
 <h3>Blocking</h3>
@@ -66,6 +67,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <section class="panel">
 <h3>Target</h3>
 <p>.</p>
+<p><span class="label">Policy ID:</span> .</p>
 </section>
 <section class="panel">
 <h3>Status</h3>
@@ -87,7 +89,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 <section class="panel">
 <h3>Verdict</h3>
 <p><span class="label">Machine verdict:</span> WARN</p>
-<p><span class="label">Safe for downstream:</span> No</p>
+<p><span class="label">PASS-only downstream safety:</span> No</p>
 <p><span class="label">Top findings:</span> terminal_ns</p>
 </section>
 <section class="panel">
@@ -198,10 +200,10 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
 </section>
 <h2>JSON</h2>
 <pre>{
-  &quot;schema_version&quot;: &quot;0.5.0&quot;,
+  &quot;schema_version&quot;: &quot;0.7.0&quot;,
   &quot;tool&quot;: {
     &quot;name&quot;: &quot;FastaGuard&quot;,
-    &quot;version&quot;: &quot;0.6.0&quot;
+    &quot;version&quot;: &quot;0.7.0&quot;
   },
   &quot;input&quot;: {
     &quot;path&quot;: &quot;testdata/valid_assembly.fa&quot;,
@@ -217,7 +219,9 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
   &quot;gate&quot;: {
     &quot;mode&quot;: &quot;none&quot;,
     &quot;submission_target&quot;: null,
+    &quot;submission_policy&quot;: null,
     &quot;status&quot;: &quot;WARN&quot;,
+    &quot;can_continue&quot;: true,
     &quot;blocking_findings&quot;: [],
     &quot;advisory_findings&quot;: [
       &quot;terminal_ns&quot;
@@ -332,6 +336,7 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
   &quot;provenance&quot;: {
     &quot;profile&quot;: &quot;assembly&quot;,
     &quot;submission_target&quot;: null,
+    &quot;submission_policy&quot;: null,
     &quot;threads&quot;: 1,
     &quot;fail_on&quot;: [],
     &quot;thresholds&quot;: {
@@ -341,9 +346,9 @@ pre { overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }
       &quot;max_gap_run&quot;: 100,
       &quot;gc_outlier_zscore&quot;: 3.0
     },
-    &quot;command&quot;: &quot;target/release/fastaguard testdata/valid_assembly.fa --min-contig-length 1 --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json&quot;,
-    &quot;started_at&quot;: &quot;2026-06-02T12:17:31Z&quot;,
-    &quot;completed_at&quot;: &quot;2026-06-02T12:17:31Z&quot;,
+    &quot;command&quot;: &quot;target/debug/fastaguard testdata/valid_assembly.fa --min-contig-length 1 --force --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json&quot;,
+    &quot;started_at&quot;: &quot;2026-08-21T00:00:00Z&quot;,
+    &quot;completed_at&quot;: &quot;2026-08-21T00:00:00Z&quot;,
     &quot;duration_ms&quot;: 0,
     &quot;input_size_bytes&quot;: 92,
     &quot;input_sha256&quot;: &quot;373699c0422b364607fc6879c46c053c105413c81df9403998d3d26a7122d2e8&quot;

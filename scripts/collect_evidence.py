@@ -362,6 +362,7 @@ def run_case(binary: Path, case: dict[str, Any]) -> dict[str, Any]:
         str(tsv_path),
         "--multiqc",
         str(multiqc_path),
+        "--force",
     ]
 
     started = time.perf_counter()

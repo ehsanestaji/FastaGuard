@@ -1,12 +1,14 @@
 metric	value
-schema_version	0.5.0
+schema_version	0.7.0
 input_path	testdata/valid_assembly.fa
 profile	assembly
 verdict	WARN
 gate_mode	none
 gate_status	WARN
+gate_can_continue	true
 gate_blocking_findings	.
 gate_advisory_findings	terminal_ns
+finding_ids	terminal_ns
 readiness_status	WARN
 readiness_blockers	.
 readiness_file_status	PASS
@@ -18,6 +20,7 @@ readiness_submission_status	WARN
 readiness_machine_status	PASS
 submission_target	.
 submission_status	WARN
+submission_policy_id	.
 submission_blocking_findings	.
 submission_advisory_findings	terminal_ns
 unsafe_identifier_count	0

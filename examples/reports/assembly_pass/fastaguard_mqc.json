@@ -10,8 +10,32 @@
       "duplicate_first_token_id_count": {
         "title": "Duplicate First-Token IDs"
       },
+      "expected_size_bases": {
+        "title": "Expected Size"
+      },
+      "expected_size_deviation_bases": {
+        "title": "Expected Size Deviation"
+      },
+      "expected_size_lower_bound": {
+        "title": "Expected Size Lower Bound"
+      },
+      "expected_size_observed_ungapped_length": {
+        "title": "Observed Ungapped Length"
+      },
+      "expected_size_tolerance": {
+        "title": "Expected Size Tolerance"
+      },
+      "expected_size_upper_bound": {
+        "title": "Expected Size Upper Bound"
+      },
+      "finding_ids": {
+        "title": "Finding IDs"
+      },
       "gap_like_n_run_count": {
         "title": "Gap-Like N Runs"
+      },
+      "gate_can_continue": {
+        "title": "Gate Can Continue"
       },
       "long_identifier_count": {
         "title": "Long Headers"
@@ -21,6 +45,9 @@
       },
       "readiness_status": {
         "title": "Readiness"
+      },
+      "submission_policy_id": {
+        "title": "Submission Policy ID"
       },
       "submission_status": {
         "title": "Submission Status"
@@ -38,11 +65,20 @@
       "verdict": "WARN",
       "gate_mode": "none",
       "gate_status": "WARN",
+      "gate_can_continue": true,
       "gate_blocking_findings": "",
+      "finding_ids": "terminal_ns",
       "readiness_status": "WARN",
       "readiness_blockers": "",
       "submission_target": ".",
       "submission_status": "WARN",
+      "submission_policy_id": ".",
+      "expected_size_bases": null,
+      "expected_size_tolerance": null,
+      "expected_size_observed_ungapped_length": null,
+      "expected_size_lower_bound": null,
+      "expected_size_upper_bound": null,
+      "expected_size_deviation_bases": null,
       "unsafe_identifier_count": 0,
       "long_identifier_count": 0,
       "duplicate_first_token_id_count": 0,

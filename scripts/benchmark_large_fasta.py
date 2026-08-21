@@ -50,6 +50,7 @@ def main() -> int:
         str(tsv_path),
         "--multiqc",
         str(multiqc_path),
+        "--force",
     ]
 
     started = time.perf_counter()

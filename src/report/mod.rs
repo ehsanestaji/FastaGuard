@@ -22,12 +22,15 @@ pub fn write_all(report: &FastaguardReport, outputs: &OutputPaths) -> Result<()>
     let write_tsv = |path: &Path| tsv::write(report, path);
     let write_multiqc = |path: &Path| multiqc::write(report, path);
     let write_html = |path: &Path| html::write(report, path);
-    write_staged_set(&[
-        (&outputs.json, &write_json),
-        (&outputs.tsv, &write_tsv),
-        (&outputs.multiqc, &write_multiqc),
-        (&outputs.html, &write_html),
-    ])
+    write_staged_set(
+        &[
+            (&outputs.json, &write_json),
+            (&outputs.tsv, &write_tsv),
+            (&outputs.multiqc, &write_multiqc),
+            (&outputs.html, &write_html),
+        ],
+        outputs.allow_overwrite,
+    )
 }
 
 pub fn write_compare_all(report: &CompareReport, outputs: &OutputPaths) -> Result<()> {
@@ -37,17 +40,20 @@ pub fn write_compare_all(report: &CompareReport, outputs: &OutputPaths) -> Resul
     let write_tsv = |path: &Path| compare_tsv::write(report, path);
     let write_multiqc = |path: &Path| compare_multiqc::write(report, path);
     let write_html = |path: &Path| compare_html::write(report, path);
-    write_staged_set(&[
-        (&outputs.json, &write_json),
-        (&outputs.tsv, &write_tsv),
-        (&outputs.multiqc, &write_multiqc),
-        (&outputs.html, &write_html),
-    ])
+    write_staged_set(
+        &[
+            (&outputs.json, &write_json),
+            (&outputs.tsv, &write_tsv),
+            (&outputs.multiqc, &write_multiqc),
+            (&outputs.html, &write_html),
+        ],
+        outputs.allow_overwrite,
+    )
 }
 
 type StagedSerializer<'a> = (&'a Path, &'a dyn Fn(&Path) -> Result<()>);
 
-fn write_staged_set(serializers: &[StagedSerializer<'_>]) -> Result<()> {
+fn write_staged_set(serializers: &[StagedSerializer<'_>], allow_overwrite: bool) -> Result<()> {
     let mut staged = Vec::with_capacity(serializers.len());
 
     for (final_path, serializer) in serializers {
@@ -71,10 +77,26 @@ fn write_staged_set(serializers: &[StagedSerializer<'_>]) -> Result<()> {
     // Publication is sequential: each file is staged before its rename, but the
     // complete set of final filenames is not atomic as a unit.
     for (temporary, final_path) in staged {
-        temporary
-            .persist(final_path)
-            .map_err(|error| error.error)
-            .with_context(|| format!("failed to publish report {}", final_path.display()))?;
+        if allow_overwrite {
+            temporary
+                .persist(final_path)
+                .map_err(|error| error.error)
+                .with_context(|| format!("failed to publish report {}", final_path.display()))?;
+        } else {
+            temporary.persist_noclobber(final_path).map_err(|error| {
+                if error.error.kind() == std::io::ErrorKind::AlreadyExists {
+                    anyhow!(
+                        "output path {} already exists; use --force to replace it",
+                        final_path.display()
+                    )
+                } else {
+                    anyhow!(error.error).context(format!(
+                        "failed to publish report {} without overwriting an existing entry",
+                        final_path.display()
+                    ))
+                }
+            })?;
+        }
     }
     Ok(())
 }
@@ -117,20 +139,27 @@ fn validate_output_paths(outputs: &OutputPaths) -> Result<()> {
     }
 
     for path in paths {
-        if path
-            .try_exists()
-            .with_context(|| format!("failed to check output path {}", path.display()))?
-        {
-            if path.is_dir() {
-                return Err(anyhow!(
-                    "output path {} is a directory, not a file",
-                    path.display()
-                ));
+        match std::fs::symlink_metadata(path) {
+            Ok(metadata) => {
+                if metadata.file_type().is_dir() {
+                    return Err(anyhow!(
+                        "output path {} is a directory, not a file",
+                        path.display()
+                    ));
+                }
+                if !outputs.allow_overwrite {
+                    return Err(anyhow!(
+                        "output path {} already exists; use --force to replace it",
+                        path.display()
+                    ));
+                }
             }
-            if !outputs.allow_overwrite {
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => {
                 return Err(anyhow!(
-                    "output path {} already exists; use --force to replace it",
-                    path.display()
+                    "failed to check output path {}: {}",
+                    path.display(),
+                    error
                 ));
             }
         }
@@ -211,12 +240,71 @@ mod tests {
             (&second_final, &failing_serializer),
         ];
 
-        let error = write_staged_set(&serializers).unwrap_err();
+        let error = write_staged_set(&serializers, false).unwrap_err();
 
         assert!(error.to_string().contains("injected serializer failure"));
         assert!(!first_final.exists());
         assert!(!second_final.exists());
         assert_eq!(fs::read_dir(temp_dir.path()).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn no_clobber_publication_rejects_collision_created_after_preflight() {
+        let temp_dir = TempDir::new().unwrap();
+        let first_final = temp_dir.path().join("first.json");
+        let second_final = temp_dir.path().join("second.tsv");
+        let first_serializer = |path: &Path| -> Result<()> {
+            fs::write(path, "first staged report")?;
+            Ok(())
+        };
+        let second_serializer = |path: &Path| -> Result<()> {
+            fs::write(&first_final, "concurrent writer")?;
+            fs::write(path, "second staged report")?;
+            Ok(())
+        };
+        let serializers: [StagedSerializer<'_>; 2] = [
+            (&first_final, &first_serializer),
+            (&second_final, &second_serializer),
+        ];
+
+        let error = write_staged_set(&serializers, false).unwrap_err();
+
+        assert!(error.to_string().contains("already exists"), "{error:#}");
+        assert_eq!(
+            fs::read_to_string(&first_final).unwrap(),
+            "concurrent writer"
+        );
+        assert!(!second_final.exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn no_clobber_rejects_dangling_symlink_output_entry() {
+        use std::os::unix::fs::symlink;
+
+        let temp_dir = TempDir::new().unwrap();
+        let dangling_target = temp_dir.path().join("missing-target");
+        let dangling_output = temp_dir.path().join("report.json");
+        symlink(&dangling_target, &dangling_output).unwrap();
+        let outputs = OutputPaths {
+            html: temp_dir.path().join("report.html"),
+            json: dangling_output.clone(),
+            tsv: temp_dir.path().join("report.tsv"),
+            multiqc: temp_dir.path().join("multiqc.json"),
+            allow_overwrite: false,
+        };
+
+        let error = write_all(&test_report(), &outputs).unwrap_err();
+
+        assert!(error.to_string().contains("already exists"), "{error:#}");
+        assert!(fs::symlink_metadata(&dangling_output)
+            .unwrap()
+            .file_type()
+            .is_symlink());
+        assert!(!dangling_target.exists());
+        assert!(!outputs.html.exists());
+        assert!(!outputs.tsv.exists());
+        assert!(!outputs.multiqc.exists());
     }
 
     #[test]

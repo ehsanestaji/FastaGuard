@@ -74,7 +74,9 @@ with `--out`, `--json`, `--tsv`, or `--multiqc`. Direct single-file output is
 no-clobber: FastaGuard validates every final path before writing and exits `3`
 if any path already exists. `--force` permits replacement of the exact
 requested final paths. Exact four-name guarantees apply to `--outdir` bundles;
-explicit path options customize only the requested destinations.
+explicit path options customize only the requested destinations. Without
+`--force`, final publication also refuses to replace an entry created after
+preflight, including a dangling symbolic link.
 
 For both bundle and explicit output paths, each requested report is staged to a
 temporary file before any final name is published. Only after all requested
@@ -291,7 +293,6 @@ Stable in the v0.3 contract:
 - `verdict.reasons`
 - `gate.mode`
 - `gate.status`
-- `gate.can_continue`
 - `gate.blocking_findings`
 - `gate.advisory_findings`
 - `gate.fail_on`
@@ -333,6 +334,9 @@ Stable in the v0.3 contract:
 - `findings[].actions`
 
 Fields can be added in later schema versions, but existing meanings should not drift casually.
+
+`gate.can_continue` was introduced in the v0.7 contract. It is stable from
+schema version `0.7.0` onward.
 
 ## Gate Contract
 
@@ -426,10 +430,11 @@ BlobToolKit, CheckM, or annotation validation.
 
 For the `ncbi` target, `gate.submission_policy.id` is `ncbi_genome`. This policy
 is FASTA preflight only and records
-[NCBI table2asn genome-submission guidance](https://www.ncbi.nlm.nih.gov/genbank/table2asn/)
-as its source. It checks first-token SeqIDs against the 1–49 ASCII-byte
-`[A-Za-z0-9_.:*#-]` rule, requires records to be at least 200 bases, and blocks
-terminal Ns. It does not validate annotation, taxonomy, contamination,
+[NCBI Genome Submission Guide](https://www.ncbi.nlm.nih.gov/genbank/genomesubmit/)
+as its source. The v0.7 policy snapshot is dated `2026-08-21`. It checks
+first-token SeqIDs against the 1–49 ASCII-byte `[A-Za-z0-9_.:*#-]` rule,
+requires records to be at least 200 bases, and blocks terminal Ns. It does not
+validate annotation, taxonomy, contamination,
 metadata, or repository acceptance. It is not an official NCBI validator.
 
 ## Machine-Actionable Contract
@@ -477,7 +482,7 @@ Recommended first rows:
 
 ```text
 metric	value
-schema_version	0.5.0
+schema_version	0.7.0
 input_path	sample.fa
 profile	assembly
 verdict	FAIL

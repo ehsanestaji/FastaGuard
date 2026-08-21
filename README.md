@@ -176,9 +176,10 @@ annotation validation, QUAST, BUSCO, BlobToolKit, or CheckM.
 
 For `--submission-target ncbi`, the report identifies the active policy as
 `ncbi_genome`. This policy is FASTA preflight only and is based on the
-[NCBI table2asn genome-submission guidance](https://www.ncbi.nlm.nih.gov/genbank/table2asn/).
-It checks the first-token SeqID syntax and 49-byte limit, the fixed 200-base
-minimum record length, and terminal Ns. It does not validate annotation,
+[NCBI Genome Submission Guide](https://www.ncbi.nlm.nih.gov/genbank/genomesubmit/).
+The v0.7 policy snapshot is dated `2026-08-21`. It checks the first-token SeqID
+syntax and 49-byte limit, the fixed 200-base minimum record length, and terminal
+Ns. It does not validate annotation,
 taxonomy, contamination, metadata, or repository acceptance. Official NCBI
 validation remains required.
 
@@ -199,10 +200,11 @@ reports/sample-01.fastaguard_mqc.json
 
 Direct single-file runs use no-clobber behavior: if any requested final path
 already exists, FastaGuard exits `3` before publishing reports. Pass `--force`
-to replace the exact requested paths. For both bundle and explicit output
-paths, each report is staged to a temporary file before any final name is
-published; final renames are sequential, so the four-file bundle is not atomic
-as a set.
+to replace the exact requested paths. Without `--force`, final publication also
+uses no-clobber semantics so an entry created after preflight is preserved. For
+both bundle and explicit output paths, each report is staged to a temporary
+file before any final name is published; final renames are sequential, so the
+four-file bundle is not atomic as a set.
 
 Inspect the machine-readable contract:
 

@@ -123,9 +123,10 @@ fastaguard sample.fa --outdir reports --prefix sample-01
 Its final files are `sample-01.fastaguard.html`,
 `sample-01.fastaguard.json`, `sample-01.fastaguard.tsv`, and
 `sample-01.fastaguard_mqc.json`. Output paths use no-clobber validation unless
-`--force` is supplied. Internally, each report is staged to a temporary file
-before any final name is published; final renames are sequential, so the bundle
-is not atomic as a four-file set.
+`--force` is supplied, and publication itself will not replace an entry created
+after preflight. Internally, each report is staged to a temporary file before
+any final name is published; final renames are sequential, so the bundle is not
+atomic as a four-file set.
 
 For a public release:
 

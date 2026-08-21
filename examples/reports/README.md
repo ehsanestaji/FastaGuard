@@ -1,6 +1,6 @@
 # Example Reports
 
-These tiny examples show the current v0.6 output contract without requiring large datasets.
+These tiny examples show the current v0.7 output contract without requiring large datasets.
 
 ## Assembly Pass
 
@@ -14,8 +14,12 @@ Generated from `testdata/valid_assembly.fa` with `--min-contig-length 1`.
 Regenerate:
 
 ```bash
-cargo run -- testdata/valid_assembly.fa \
+cargo build --locked
+FASTAGUARD_PROVENANCE_TIMESTAMP=2026-08-21T00:00:00Z \
+FASTAGUARD_PROVENANCE_COMMAND='target/debug/fastaguard testdata/valid_assembly.fa --min-contig-length 1 --force --out examples/reports/assembly_pass/fastaguard_report.html --json examples/reports/assembly_pass/fastaguard.json --tsv examples/reports/assembly_pass/fastaguard.tsv --multiqc examples/reports/assembly_pass/fastaguard_mqc.json' \
+target/debug/fastaguard testdata/valid_assembly.fa \
   --min-contig-length 1 \
+  --force \
   --out examples/reports/assembly_pass/fastaguard_report.html \
   --json examples/reports/assembly_pass/fastaguard.json \
   --tsv examples/reports/assembly_pass/fastaguard.tsv \
@@ -34,7 +38,11 @@ Generated from `testdata/problem_assembly.fa`. This fixture intentionally contai
 Regenerate:
 
 ```bash
-cargo run -- testdata/problem_assembly.fa \
+cargo build --locked
+FASTAGUARD_PROVENANCE_TIMESTAMP=2026-08-21T00:00:00Z \
+FASTAGUARD_PROVENANCE_COMMAND='target/debug/fastaguard testdata/problem_assembly.fa --force --out examples/reports/assembly_fail/fastaguard_report.html --json examples/reports/assembly_fail/fastaguard.json --tsv examples/reports/assembly_fail/fastaguard.tsv --multiqc examples/reports/assembly_fail/fastaguard_mqc.json' \
+target/debug/fastaguard testdata/problem_assembly.fa \
+  --force \
   --out examples/reports/assembly_fail/fastaguard_report.html \
   --json examples/reports/assembly_fail/fastaguard.json \
   --tsv examples/reports/assembly_fail/fastaguard.tsv \
