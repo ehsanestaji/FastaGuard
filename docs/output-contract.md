@@ -29,22 +29,56 @@ fastaguard_compare_mqc.json
 v0.5 adds submission-readiness gate fields to the same JSON, TSV, HTML,
 MultiQC, and compare artifacts. JSON remains the source of truth.
 
-v0.6 separates process execution from QC status. Successful report generation
-returns exit code `0` for PASS, WARN, and FAIL reports.
+v0.6 separates process execution from QC status. v0.7 adds deterministic output
+bundles, no-clobber validation, per-file staging, and explicit gate-continuation
+semantics.
 
 ## Process Exit Contract
 
 Starting with FastaGuard v0.6.0:
 
 ```text
-0 = command completed and requested outputs were written
+0 = completed report generation for PASS, WARN, and FAIL results
 2 = argument parsing error
-3 = configuration, input-access, runtime, or output-write error
+3 = configuration, input-access/I/O, runtime, or output-write error
 ```
 
 Workflow engines should apply stop/go policy from `gate.status`,
 `gate.blocking_findings`, or `verdict.status`. Process status only indicates
 whether FastaGuard completed the requested command and reports.
+
+`machine_summary.safe_for_downstream` and `gate.can_continue` are intentionally
+different. The summary safety flag is true only for an overall PASS verdict.
+The gate continuation flag is true when the selected gate has no blocking
+findings. A WARN report can have `gate.can_continue = true`, while
+`machine_summary.safe_for_downstream` remains false. JSON is the source of truth
+for downstream gating.
+
+## Deterministic Output Bundle
+
+```bash
+fastaguard sample.fa --outdir reports --prefix sample-01
+```
+
+The bundle contains:
+
+```text
+reports/sample-01.fastaguard.html
+reports/sample-01.fastaguard.json
+reports/sample-01.fastaguard.tsv
+reports/sample-01.fastaguard_mqc.json
+```
+
+Without `--prefix`, the stem is `fastaguard`. `--outdir` cannot be combined
+with `--out`, `--json`, `--tsv`, or `--multiqc`. Direct single-file output is
+no-clobber: FastaGuard validates every final path before writing and exits `3`
+if any path already exists. `--force` permits replacement of the exact four
+paths.
+
+For both bundle and explicit output paths, each report is staged to a temporary
+file before any final name is published. Only after all four serializers
+complete are the temporary files persisted to their final paths. Publication is
+not atomic across the four-file set: final renames are sequential.
 
 ## JSON Contract
 
@@ -256,6 +290,7 @@ Stable in the v0.3 contract:
 - `verdict.reasons`
 - `gate.mode`
 - `gate.status`
+- `gate.can_continue`
 - `gate.blocking_findings`
 - `gate.advisory_findings`
 - `gate.fail_on`
@@ -387,6 +422,14 @@ tiny-record findings into a submission-readiness view. It can report
 FASTA-level hazards before official validators, but it does not guarantee NCBI,
 ENA, or DDBJ repository acceptance and does not replace NCBI FCS, QUAST, BUSCO,
 BlobToolKit, CheckM, or annotation validation.
+
+For the `ncbi` target, `gate.submission_policy.id` is `ncbi_genome`. This policy
+is FASTA preflight only and records
+[NCBI table2asn genome-submission guidance](https://www.ncbi.nlm.nih.gov/genbank/table2asn/)
+as its source. It checks first-token SeqIDs against the 1–49 ASCII-byte
+`[A-Za-z0-9_.:*#-]` rule, requires records to be at least 200 bases, and blocks
+terminal Ns. It does not validate annotation, taxonomy, contamination,
+metadata, or repository acceptance. It is not an official NCBI validator.
 
 ## Machine-Actionable Contract
 

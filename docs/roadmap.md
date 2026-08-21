@@ -2,10 +2,11 @@
 
 ## Current Release
 
-FastaGuard v0.6.0 is the current GitHub, Bioconda, and BioContainers release.
-Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`; the
-published BioContainers tag is `0.6.0--hfa8f182_0`. Future releases update
-existing integrations after GitHub and package publication.
+FastaGuard v0.7.0 is the current source release and focuses on operational
+trust. The published GitHub, Bioconda, and BioContainers artifacts remain
+v0.6.0 until their v0.7 updates are released. Bioconda serves `linux-64`,
+`linux-aarch64`, `osx-64`, and `osx-arm64`; the published BioContainers tag is
+`0.6.0--hfa8f182_0`.
 
 ## v0.1: Assembly Preflight
 
@@ -144,30 +145,48 @@ Development scope:
 - include `input_path` in single-file TSV reports for downstream routing
 - document migration from legacy QC-derived process exit codes
 
-## v0.7: Transcriptome Profile
+## v0.7: Operational Trust
 
-Potential additions:
+Goal:
+
+```text
+Make the assembly preflight contract predictable to run, publish, and automate.
+```
+
+Release scope:
+
+- deterministic `--outdir`/`--prefix` report bundles with exact filenames
+- no-clobber output validation and explicit `--force` replacement
+- per-file temporary staging before sequential final publication
+- an explicit `ncbi_genome` policy identifier, source, thresholds, and FASTA-only
+  limitations
+- separate `machine_summary.safe_for_downstream` from `gate.can_continue`
+- route downstream work from stable JSON fields
+- package the executable, README, license, and schema assets in one archive root
+
+Process exit contract:
+
+```text
+0 = completed report generation for PASS, WARN, and FAIL results
+2 = argument parsing error
+3 = configuration, input-access/I/O, runtime, or output-write error
+```
+
+## Future Biological Profiles
+
+Transcriptome, protein, and reference-panel profiles are deferred to separately
+scoped future releases. Candidate work remains:
 
 - excessive duplicate transcripts
 - polyA and polyT tails
 - very short transcripts
 - extreme GC outliers
 - isoform-heavy warning heuristics
-
-## v0.8: Protein Profile
-
-Potential additions:
-
 - invalid amino acid symbols
 - internal stop codons
 - terminal stop codons
 - low-complexity regions
 - suspicious nucleotide-looking proteins
-
-## v0.9: Reference Panel Profile
-
-Potential additions:
-
 - stricter ID normalization checks
 - reference naming conventions
 - sequence uniqueness checks
@@ -215,6 +234,6 @@ Completed foundation:
 
 Recommended next sequence:
 
-- extend evidence tables across submission, transcriptome, protein, reference, and compare modes
+- extend evidence tables across the existing assembly, submission, and compare modes
 - keep the v0.3 gate contract stable through workflow adoption examples
 - explore an MCP or tool-server interface after the CLI schema is stable

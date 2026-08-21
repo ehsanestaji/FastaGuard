@@ -153,15 +153,21 @@ Default WARN conditions:
 Starting with FastaGuard v0.6.0:
 
 ```text
-0 = command completed and requested outputs were written
+0 = completed report generation for PASS, WARN, and FAIL results
 2 = argument parsing error
-3 = configuration, input-access, runtime, or output-write error
+3 = configuration, input-access/I/O, runtime, or output-write error
 ```
 
 QC PASS/WARN/FAIL decisions are report fields, not process-failure signals.
 Pipelines should read `verdict.status`, `gate.status`, and
 `gate.blocking_findings` from JSON/TSV outputs. Single-file TSV reports include
 `input_path`, `verdict`, and `gate_status` for downstream routing.
+
+`machine_summary.safe_for_downstream` is true only for an overall PASS verdict.
+`gate.can_continue` is true when the selected gate has no blocking findings, so
+a WARN report can have `gate.can_continue = true`. JSON-driven workflows should
+use the gate fields for their configured stop/go policy and should not treat
+process status or the conservative summary safety flag as the gate decision.
 
 ## Success Criteria
 

@@ -150,6 +150,113 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("mkdir -p target/evidence/v0.5", evidence)
         self.assertTrue((ROOT / "testdata" / "submission_warnings.fa").exists())
 
+    def test_v0_7_docs_define_exact_process_exit_contract(self):
+        contract = [
+            "0 = completed report generation for PASS, WARN, and FAIL results",
+            "2 = argument parsing error",
+            "3 = configuration, input-access/I/O, runtime, or output-write error",
+        ]
+        paths = [
+            "README.md",
+            "docs/mvp-spec.md",
+            "docs/output-contract.md",
+            "docs/releases/v0.7.0.md",
+            "docs/roadmap.md",
+            "docs/vision-plan.md",
+        ]
+
+        for path in paths:
+            with self.subTest(path=path):
+                document = ROOT / path
+                self.assertTrue(document.exists(), document)
+                if not document.exists():
+                    continue
+                text = document.read_text()
+                for line in contract:
+                    self.assertIn(line, text)
+
+    def test_v0_7_docs_limit_ncbi_policy_to_fasta_preflight(self):
+        paths = [
+            "README.md",
+            "docs/output-contract.md",
+            "docs/releases/v0.7.0.md",
+        ]
+        source_url = "https://www.ncbi.nlm.nih.gov/genbank/table2asn/"
+
+        for path in paths:
+            with self.subTest(path=path):
+                document = ROOT / path
+                self.assertTrue(document.exists(), document)
+                if not document.exists():
+                    continue
+                text = document.read_text()
+                self.assertIn("ncbi_genome", text)
+                self.assertIn("FASTA preflight only", text)
+                self.assertIn(source_url, text)
+                for exclusion in [
+                    "annotation",
+                    "taxonomy",
+                    "contamination",
+                    "metadata",
+                    "repository acceptance",
+                ]:
+                    self.assertIn(exclusion, text)
+
+    def test_v0_7_docs_explain_output_bundle_and_staging(self):
+        paths = [
+            "README.md",
+            "docs/output-contract.md",
+            "docs/packaging.md",
+            "docs/releases/v0.7.0.md",
+        ]
+        expected_names = [
+            "sample-01.fastaguard.html",
+            "sample-01.fastaguard.json",
+            "sample-01.fastaguard.tsv",
+            "sample-01.fastaguard_mqc.json",
+        ]
+
+        for path in paths:
+            with self.subTest(path=path):
+                document = ROOT / path
+                self.assertTrue(document.exists(), document)
+                if not document.exists():
+                    continue
+                text = " ".join(document.read_text().split())
+                self.assertIn(
+                    "fastaguard sample.fa --outdir reports --prefix sample-01",
+                    text,
+                )
+                for name in expected_names:
+                    self.assertIn(name, text)
+                self.assertIn("no-clobber", text)
+                self.assertIn("--force", text)
+                self.assertIn("each report is staged to a temporary file", text)
+                self.assertIn("final renames are sequential", text)
+
+    def test_v0_7_docs_distinguish_summary_safety_from_gate_continuation(self):
+        paths = [
+            "README.md",
+            "docs/output-contract.md",
+            "docs/mvp-spec.md",
+            "docs/releases/v0.7.0.md",
+        ]
+
+        for path in paths:
+            with self.subTest(path=path):
+                document = ROOT / path
+                self.assertTrue(document.exists(), document)
+                if not document.exists():
+                    continue
+                text = " ".join(document.read_text().split())
+                self.assertIn("machine_summary.safe_for_downstream", text)
+                self.assertIn("gate.can_continue", text)
+                self.assertIn("WARN report can have `gate.can_continue = true`", text)
+
+        readme = self.read("README.md")
+        self.assertIn("jq -e '.gate.can_continue == true'", readme)
+        self.assertIn("reports/sample-01.fastaguard.json", readme)
+
     def test_multiqc_parser_reads_fastaguard_custom_content(self):
         fixture = ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard_mqc.json"
 

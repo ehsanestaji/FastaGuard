@@ -1,9 +1,11 @@
 import json
 import re
 import subprocess
+import tarfile
 import tomllib
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -15,10 +17,72 @@ CURRENT_SOURCE_SHA256 = (
 
 
 class ReleaseMetadataTest(unittest.TestCase):
-    def test_package_targets_v0_6_0(self):
+    def test_package_targets_v0_7_0(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
 
-        self.assertEqual(cargo["package"]["version"], "0.6.0")
+        self.assertEqual(cargo["package"]["version"], "0.7.0")
+
+    def test_v0_7_0_release_notes_define_operational_trust_contract(self):
+        notes = ROOT / "docs" / "releases" / "v0.7.0.md"
+
+        self.assertTrue(notes.exists())
+        text = notes.read_text()
+        for expected in [
+            "FastaGuard v0.7.0",
+            "Operational Trust",
+            "ncbi_genome",
+            "FASTA preflight only",
+            "machine_summary.safe_for_downstream",
+            "gate.can_continue",
+            "--outdir",
+            "--force",
+        ]:
+            with self.subTest(expected=expected):
+                self.assertIn(expected, text)
+
+    def test_release_archive_contains_runtime_and_contract_assets(self):
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            binary = temp_path / "fastaguard"
+            binary.write_text("#!/usr/bin/env sh\nexit 0\n")
+            binary.chmod(0o755)
+            dist = temp_path / "dist"
+
+            completed = subprocess.run(
+                [
+                    str(ROOT / "scripts" / "package_release_artifact.sh"),
+                    "test-target",
+                    "0.7.0",
+                    str(binary),
+                    str(dist),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            archive = Path(completed.stdout.strip())
+            if not archive.is_absolute():
+                archive = ROOT / archive
+            self.assertTrue(archive.exists(), archive)
+
+            with tarfile.open(archive, "r:gz") as package:
+                names = set(package.getnames())
+
+            top_levels = {name.split("/", 1)[0] for name in names}
+            self.assertEqual(top_levels, {"fastaguard-0.7.0-test-target"})
+            root = "fastaguard-0.7.0-test-target"
+            for expected in [
+                f"{root}/fastaguard",
+                f"{root}/README.md",
+                f"{root}/LICENSE",
+                f"{root}/schema/fastaguard.schema.json",
+                f"{root}/schema/finding-catalog.json",
+            ]:
+                with self.subTest(expected=expected):
+                    self.assertIn(expected, names)
 
     def test_bioconda_recipe_tracks_published_v0_6_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
@@ -129,9 +193,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         )
         self.assertNotIn(marker + "PUBLIC_SOURCE_ARCHIVE_SHA256", recipe)
 
-    def test_committed_example_reports_match_cargo_package_version(self):
-        cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
-        package_version = cargo["package"]["version"]
+    def test_committed_example_reports_match_current_published_version(self):
         examples = [
             ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard.json",
             ROOT / "examples" / "reports" / "assembly_fail" / "fastaguard.json",
@@ -140,7 +202,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         for path in examples:
             with self.subTest(path=path):
                 report = json.loads(path.read_text())
-                self.assertEqual(report["tool"]["version"], package_version)
+                self.assertEqual(report["tool"]["version"], CURRENT_VERSION)
 
     def test_bioconda_recipe_avoids_unneeded_runtime_zlib(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()

@@ -128,63 +128,58 @@ engines can route samples without scraping logs or HTML. FastaGuard v0.6.0 is
 published on GitHub, Bioconda, and BioContainers; future releases update
 existing integrations after GitHub and package publication.
 
-### v0.7: Transcriptome Profile
+### v0.7: Operational Trust
 
 Goal:
 
 ```text
-Extend the FASTA preflight contract to transcriptome assemblies.
+Make the assembly preflight contract predictable to run, publish, and automate.
 ```
 
-Initial transcriptome checks should stay lightweight:
+Operational trust includes:
 
-- very short transcripts
-- excessive duplicate transcript sequences
-- polyA/polyT tail summaries
-- GC outliers
-- isoform-heavy warning heuristics
+- deterministic four-report bundles with exact filenames
+- no-clobber output validation with explicit `--force` replacement
+- per-file temporary staging before sequential publication
+- an NCBI genome FASTA policy with stable provenance and explicit exclusions
+- a documented distinction between summary safety and gate continuation
+- complete release archives with the binary, README, license, and schema assets
 
-FastaGuard should not claim transcriptome biological completeness. It should
-route users to transcriptome-specific completeness and annotation tools when
-needed.
+The process exit contract remains:
 
-### v0.8: Protein Profile
+```text
+0 = completed report generation for PASS, WARN, and FAIL results
+2 = argument parsing error
+3 = configuration, input-access/I/O, runtime, or output-write error
+```
+
+### Future Biological Profiles
 
 Goal:
 
 ```text
-Validate protein FASTA files before annotation, clustering, search, or database submission.
+Extend the trusted FASTA contract through separately scoped biological profiles.
 ```
 
-Initial protein checks:
+Transcriptome, protein, and reference-panel work remains valuable, but it is
+deferred until each profile has its own contract and evidence scope. Candidate
+checks include:
 
+- very short transcripts, duplicate transcript sequences, and polyA/polyT tails
 - invalid amino-acid symbols
 - internal stop codons
 - terminal stop codons
 - low-complexity summaries
 - suspicious nucleotide-looking proteins
-
-Protein mode should be strict about alphabet validity and careful about biology:
-it should flag preflight problems, not infer functional correctness.
-
-### v0.9: Reference-Panel Profile
-
-Goal:
-
-```text
-Make curated reference FASTA panels safer to maintain and distribute.
-```
-
-Initial reference-panel checks:
-
 - stricter ID normalization
 - naming convention reports
 - sequence uniqueness
 - panel consistency summaries
 - submission-readiness warnings
 
-This is useful for labs, databases, and core facilities maintaining reference
-sets that many downstream workflows depend on.
+Future profiles must keep the same product boundary: flag preflight hazards and
+route to biological completeness, annotation, or validation tools without
+claiming those conclusions.
 
 ## Machine-Actionable Vision
 
@@ -250,10 +245,11 @@ time.
 
 ## Current Recommendation
 
-FastaGuard v0.6.0 is the current GitHub, Bioconda, and BioContainers release.
+FastaGuard v0.7.0 is the current source release and establishes operational
+trust before a new biological profile. Published GitHub, Bioconda, and
+BioContainers artifacts remain v0.6.0 until their v0.7 updates are released.
 Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`, and the
-published BioContainers tag is `0.6.0--hfa8f182_0`. The next big release should
-not be a huge biology expansion yet.
+published BioContainers tag is `0.6.0--hfa8f182_0`.
 
 Recommended sequence:
 
@@ -262,12 +258,12 @@ v0.3: evidence pack + assembly gate + provenance checksums
 v0.4: compare mode for many FASTA files
 v0.5: submission readiness gate
 v0.6: workflow-compatible exit contract
-v0.7: transcriptome profile
-v0.8: protein profile
-v0.9: reference-panel profile
+v0.7: operational trust for outputs, policies, gating, and archives
+future: separately scoped transcriptome, protein, and reference-panel profiles
 later: MCP/tool-agent interface and optional local summaries
 ```
 
 This path gives FastaGuard the best chance to become a default tool: prove the
 assembly gate first, scale to batches, make submission readiness concrete,
-simplify workflow integration, then expand profiles.
+simplify workflow integration, harden operational behavior, then scope each new
+profile independently.

@@ -49,7 +49,7 @@ downstream tool.
 
 | Channel | Status |
 | --- | --- |
-| Source/package metadata | `v0.6.0` |
+| Source/package metadata | `v0.7.0` operational-trust release |
 | GitHub release | `v0.6.0` release binaries are published |
 | Bioconda | `v0.6.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
 | BioContainers | `0.6.0--hfa8f182_0` is the published pinned workflow image |
@@ -124,6 +124,8 @@ The `--gate pipeline` examples below require FastaGuard `v0.3.0` or newer.
 The `fastaguard compare` example requires FastaGuard `v0.4.0` or newer.
 The `--gate submission` example requires FastaGuard `v0.5.0` or newer.
 The conventional exit contract below starts with FastaGuard `v0.6.0`.
+The deterministic output bundle and NCBI genome policy metadata are documented
+for FastaGuard `v0.7.0`.
 
 Run the assembly preflight check:
 
@@ -172,6 +174,36 @@ FastaGuard reports FASTA-level risks before official validators. It does not
 guarantee NCBI, ENA, or DDBJ acceptance and does not replace NCBI FCS,
 annotation validation, QUAST, BUSCO, BlobToolKit, or CheckM.
 
+For `--submission-target ncbi`, the report identifies the active policy as
+`ncbi_genome`. This policy is FASTA preflight only and is based on the
+[NCBI table2asn genome-submission guidance](https://www.ncbi.nlm.nih.gov/genbank/table2asn/).
+It checks the first-token SeqID syntax and 49-byte limit, the fixed 200-base
+minimum record length, and terminal Ns. It does not validate annotation,
+taxonomy, contamination, metadata, or repository acceptance. Official NCBI
+validation remains required.
+
+Write the deterministic four-report bundle to one directory:
+
+```bash
+fastaguard sample.fa --outdir reports --prefix sample-01
+```
+
+This produces exactly these final names:
+
+```text
+reports/sample-01.fastaguard.html
+reports/sample-01.fastaguard.json
+reports/sample-01.fastaguard.tsv
+reports/sample-01.fastaguard_mqc.json
+```
+
+Direct single-file runs use no-clobber behavior: if any requested final path
+already exists, FastaGuard exits `3` before publishing reports. Pass `--force`
+to replace the exact requested paths. For both bundle and explicit output
+paths, each report is staged to a temporary file before any final name is
+published; final renames are sequential, so the four-file bundle is not atomic
+as a set.
+
 Inspect the machine-readable contract:
 
 ```bash
@@ -201,9 +233,9 @@ docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
 Starting with FastaGuard v0.6.0, exit codes are:
 
 ```text
-0 = command completed and requested outputs were written
+0 = completed report generation for PASS, WARN, and FAIL results
 2 = argument parsing error
-3 = configuration, input-access, runtime, or output-write error
+3 = configuration, input-access/I/O, runtime, or output-write error
 ```
 
 QC PASS/WARN/FAIL decisions are recorded in the machine-readable outputs,
@@ -212,6 +244,22 @@ Workflow engines should route on those fields instead of interpreting QC
 findings from the process exit code. Single-file TSV reports include
 `input_path`, `verdict`, and `gate_status`; compare TSV reports retain one row
 per input with its path and status fields.
+
+`machine_summary.safe_for_downstream` is a conservative summary of the overall
+verdict: it is true only for PASS. `gate.can_continue` answers the narrower
+question defined by the selected gate and its blocking findings. A
+WARN report can have `gate.can_continue = true`; pipelines should therefore
+apply their chosen policy from JSON instead of treating the two fields as
+synonyms.
+
+For example, collect the reports first and gate the downstream step from JSON:
+
+```bash
+fastaguard sample.fa --gate pipeline --outdir reports --prefix sample-01
+if jq -e '.gate.can_continue == true' reports/sample-01.fastaguard.json >/dev/null; then
+  run_downstream_qc sample.fa
+fi
+```
 
 ## Product Thesis
 
@@ -302,6 +350,15 @@ v0.6 makes report generation workflow-compatible:
 - workflows enforce QC policy from stable report fields instead of process
   status
 
+v0.7 makes that contract operationally safer:
+
+- deterministic `--outdir`/`--prefix` four-report bundles
+- no-clobber output validation with explicit `--force` replacement
+- per-file temporary staging before sequential final publication
+- explicit `ncbi_genome` policy provenance and FASTA-only scope limitations
+- documented separation of `machine_summary.safe_for_downstream` from
+  `gate.can_continue`
+
 ## v0.6 Public Evidence
 
 The [public evidence report](docs/evidence/fastaguard-v0.6-public-evidence.md)
@@ -361,6 +418,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.5 public evidence workflow](docs/evidence/fastaguard-v0.5-public-evidence.md)
 - [v0.6 public evidence](docs/evidence/fastaguard-v0.6-public-evidence.md)
 - [Packaging](docs/packaging.md)
+- [v0.7.0 release notes](docs/releases/v0.7.0.md)
 - [v0.6.0 release notes](docs/releases/v0.6.0.md)
 - [v0.5.0 release notes](docs/releases/v0.5.0.md)
 - [v0.4.0 release notes](docs/releases/v0.4.0.md)
@@ -372,10 +430,10 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 ## Status
 
-FastaGuard v0.6.0 is the latest tagged GitHub release and the current published
-Bioconda/BioContainers release. It adds the workflow-compatible exit contract
-on top of the v0.5 submission-readiness, v0.4 preflight-readiness, and
-compare-mode contracts.
+FastaGuard v0.7.0 source and package metadata prepare the operational-trust
+release. The latest published GitHub, Bioconda, and BioContainers artifacts
+remain v0.6.0 until the v0.7 release and downstream package updates are
+published.
 
 Bioconda serves v0.6.0 for `linux-64`, `linux-aarch64`, `osx-64`, and
 `osx-arm64`. BioContainers publishes the pinned v0.6 workflow image

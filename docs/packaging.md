@@ -8,11 +8,12 @@ Treat packaging as part of the product, not as a later chore. For bioinformatics
 Bioconda -> BioContainers -> GitHub release binaries -> Docker image -> Homebrew later
 ```
 
-FastaGuard v0.6.0 is published on GitHub with Linux and macOS release binaries.
-Bioconda serves v0.6.0 on `linux-64`, `linux-aarch64`, `osx-64`, and
+FastaGuard v0.7.0 source and package metadata prepare the operational-trust
+release. FastaGuard v0.6.0 is published on GitHub with Linux and macOS release
+binaries. Bioconda serves v0.6.0 on `linux-64`, `linux-aarch64`, `osx-64`, and
 `osx-arm64` platforms. BioContainers provides the pinned v0.6 workflow image
-`quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0` generated from the
-Bioconda package. Docker remains useful for local smoke tests.
+`quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0` generated from the Bioconda
+package. Docker remains useful for local smoke tests.
 
 The current published package includes the `--gate submission` and
 `--submission-target generic|ncbi` contract. Keep future docs pinned to
@@ -99,6 +100,32 @@ docker run --rm \
 ```
 
 ## GitHub Release Binaries
+
+Build and inspect a host archive locally:
+
+```bash
+cargo build --release --locked
+scripts/package_release_artifact.sh "$(rustc -vV | sed -n 's/^host: //p')" 0.7.0
+tar -tzf "dist/fastaguard-0.7.0-$(rustc -vV | sed -n 's/^host: //p').tar.gz"
+```
+
+Each archive has one top-level directory containing `fastaguard`, `README.md`,
+`LICENSE`, and `schema/`. Cross-target CI builds continue to use
+`target/<target>/release/fastaguard`; a local host build falls back to
+`target/release/fastaguard`.
+
+The same release exposes the deterministic CLI bundle:
+
+```bash
+fastaguard sample.fa --outdir reports --prefix sample-01
+```
+
+Its final files are `sample-01.fastaguard.html`,
+`sample-01.fastaguard.json`, `sample-01.fastaguard.tsv`, and
+`sample-01.fastaguard_mqc.json`. Output paths use no-clobber validation unless
+`--force` is supplied. Internally, each report is staged to a temporary file
+before any final name is published; final renames are sequential, so the bundle
+is not atomic as a four-file set.
 
 For a public release:
 
