@@ -1,18 +1,10 @@
-# nf-core Local Module Starter
+# nf-core Module Reference
 
-This directory is a starter for a local nf-core-style FastaGuard module. It is not yet an upstream nf-core module.
+This directory mirrors the interface of the FastaGuard module merged into
+nf-core/modules in [PR #12239](https://github.com/nf-core/modules/pull/12239).
+It remains a local compatibility reference for future FastaGuard releases.
 
-See `../../docs/workflow-readiness.md` for the current upstream readiness
-checklist before submitting this starter to nf-core.
-
-Safe local order before upstream submission:
-
-1. Run repository Python tests that inspect this module layout.
-2. Install nf-core/tools, Nextflow, and nf-test in a workflow test environment.
-3. Run `nf-core modules lint fastaguard`.
-4. Run `nf-core modules test fastaguard`.
-5. Port the local starter into an upstream nf-core/modules checkout only after
-   those checks pass.
+See `../../docs/workflow-readiness.md` for the current update checklist.
 
 Expected input channel:
 
@@ -20,67 +12,70 @@ Expected input channel:
 tuple val(meta), path(fasta)
 ```
 
-Emitted outputs:
+The module emits four QC reports plus version metadata:
 
 - `html`
 - `json`
 - `tsv`
 - `mqc`
-- `exit_code`
-- `versions`
+- `versions_fastaguard` on the versions topic
 
 The module assumes `fastaguard` is available on `PATH` when run without a
-container. The recommended install is:
+container. The published v0.6 install and pinned workflow image are:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.5.0
+mamba install -c conda-forge -c bioconda fastaguard=0.6.0
+docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
 ```
 
-Published BioContainers provides the pinned v0.5 image:
+The reusable module does not select a profile or gate. Callers pass optional
+CLI arguments through `task.ext.args` and may customize output names through
+`task.ext.prefix ?: "${meta.id}"`. For example:
 
-```text
-quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
+```nextflow
+process {
+    withName: FASTAGUARD {
+        ext.args = '--profile assembly --gate pipeline'
+    }
+}
 ```
 
-The command block is written for the v0.3 assembly gate and runs:
+FastaGuard v0.6 returns `0` after successfully writing PASS, WARN, or FAIL
+reports. A downstream collect-then-gate step should parse the JSON or TSV and
+route on `verdict.status`, `gate.status`, and `gate.blocking_findings`. Process
+status is reserved for command, input, runtime, and output-write errors.
 
-```bash
-fastaguard sample.fa --profile assembly --gate pipeline
+For submission-readiness preflight before official validators, callers can use:
+
+```nextflow
+process {
+    withName: FASTAGUARD {
+        ext.args = '--profile assembly --gate submission --submission-target ncbi'
+    }
+}
 ```
 
-That gate contract marks duplicate IDs, invalid characters, invalid FASTA
-structure, and high-N content as blocking findings. The published v0.5.0
-runtime returns `1` for WARN and `2` for FAIL. This module captures that legacy
-status so JSON, HTML, TSV, and MultiQC evidence can be published; a downstream
-gate step should then enforce stop/go policy from `gate.status` or the captured
-exit code. Runtime errors with status `3` still fail the process.
+This remains FASTA-level readiness only and does not replace repository
+validators or downstream interpretive QC.
 
-For v0.4 cohort triage, compare mode is a starter pattern:
+For cohort triage, `fastaguard compare` remains a separate starter pattern:
 
 ```bash
 fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
 ```
-
-For v0.5 submission-readiness preflight before official validators, use the
-published v0.5 package or container:
-
-```bash
-fastaguard {input.fasta} --gate submission --submission-target ncbi
-```
-
-Pipeline authors should route on:
-
-- `gate.mode`
-- `gate.status`
-- `gate.blocking_findings`
-- `readiness.categories[id=submission]`
-
-This is local collect-then-gate starter guidance only. It is not yet an
-upstream nf-core module submission, and the Snakemake example is not yet an
-official wrapper submission.
 
 Example include:
 
 ```nextflow
 include { FASTAGUARD } from './modules/local/fastaguard'
 ```
+
+For a future upstream update, use this safe local order:
+
+1. Run the repository Python contract tests.
+2. Validate a fresh nf-core/modules checkout with the current nf-core/tools,
+   Nextflow, and nf-test versions.
+3. Run `nf-core modules lint fastaguard`.
+4. Run `nf-core modules test fastaguard`.
+5. Update the existing upstream module only after the FastaGuard release and
+   package are published.

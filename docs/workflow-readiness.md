@@ -25,16 +25,16 @@ merged 2026-08-21. The Snakemake wrapper PR
 merged 2026-07-31. The repository starters remain local compatibility
 references.
 
-External upstream-style validation was run on 2026-07-03 in dedicated checkouts:
+Historical v0.5 upstream-style validation was run on 2026-07-03 in dedicated
+checkouts:
 
 - `nf-core modules lint fastaguard`: 47 tests passed, 0 warnings, 0 failures.
 - `nf-core modules test fastaguard --profile conda --once --no-prompts`: all
-  nf-test cases passed against Bioconda v0.5.0.
+  nf-test cases passed against the package available at that time.
 - Snakemake wrapper formatting: `black --check` and `snakefmt --check` passed.
 - Snakemake wrapper lint: `snakemake --lint --snakefile test/Snakefile` passed.
 - Snakemake wrapper pytest: `test_wrappers.py::test_fastaguard` passed with
-  PASS, WARN, FAIL, and invalid FASTA fixtures plus captured `exit_code`
-  outputs.
+  PASS, WARN, FAIL, and invalid FASTA fixtures.
 
 The v0.6 contract removes QC-derived process failures: successfully written
 PASS, WARN, and FAIL reports all return exit code `0`. Future releases update
@@ -77,10 +77,10 @@ The merged nf-core module is tracked by
 module carries the expected interface shape:
 
 - input channel: `tuple val(meta), path(fasta)`
-- outputs: HTML, JSON, TSV, MultiQC custom-content JSON, captured exit code,
-  and versions metadata
-- runtime and container pins in the local fixture retain v0.5 historical
-  compatibility coverage
+- reports: HTML, JSON, TSV, and MultiQC custom-content JSON
+- version metadata on the current nf-core versions topic
+- optional CLI arguments supplied by callers through `task.ext.args`
+- output prefixes supplied through `task.ext.prefix ?: "${meta.id}"`
 - starter nf-test fixture layout for PASS, WARN, FAIL, and invalid FASTA cases
 - topic-aware `versions.yml` output for current nf-core version collection
 
@@ -101,6 +101,8 @@ GitHub and package publication:
 
 The module should remain database-free, pinned to Bioconda/BioContainers, and
 focused on stable machine-readable outputs.
+It should not choose a profile or gate by default. Callers select policy through
+`task.ext.args`, and downstream processes enforce it by parsing JSON or TSV.
 
 ## Snakemake Integration
 
@@ -112,8 +114,7 @@ The local wrapper starter already provides:
 - `environment.linux-64.pin.txt` as a local starter pin file
 - a copy-pasteable `Snakefile`
 - a `test/Snakefile` starter with PASS, WARN, FAIL, and invalid FASTA fixtures
-- outputs for HTML, JSON, TSV, MultiQC custom-content JSON, and captured exit
-  code
+- outputs for HTML, JSON, TSV, and MultiQC custom-content JSON
 
 The merged wrapper is tracked by
 [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436). For future
@@ -125,8 +126,10 @@ updates, complete this checklist after GitHub and package publication:
 - update `test_wrappers.py` so wrapper tests run in the upstream repository
 - test PASS, WARN, FAIL, and invalid FASTA behavior
 - ensure the wrapper can handle arbitrary input and output paths
-- preserve evidence on blocking FASTA results, either through workflow-specific
-  output handling or a collect-then-gate wrapper pattern
+- keep `wrapper.py` thin, consume optional arguments only through
+  `params.extra`, and avoid a default profile or gate
+- preserve evidence on blocking FASTA results and enforce policy downstream by
+  parsing JSON or TSV
 
 ## Submission Gate Usage
 

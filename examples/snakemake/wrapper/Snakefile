@@ -6,14 +6,11 @@ rule fastaguard_wrapped:
         json="fastaguard.json",
         tsv="fastaguard.tsv",
         multiqc="fastaguard_mqc.json",
-        exit_code="fastaguard.exit_code",
     log:
         "fastaguard.log",
     conda:
         "environment.yaml"
     params:
-        profile="assembly",
-        gate="pipeline",
-        extra="",
+        extra="--profile assembly --gate pipeline",
     wrapper:
         "file:."

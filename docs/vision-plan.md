@@ -119,8 +119,9 @@ Let workflows collect complete QC reports before applying their own stop/go poli
 
 Successful report generation should exit with code `0` for PASS, WARN, and FAIL
 reports. Argument parsing errors should use code `2`; configuration,
-input-access, and runtime errors should use code `3`. JSON and TSV remain the
-source of truth for `verdict.status`, `gate.status`, and blocking findings.
+input-access, runtime, and output-write errors should use code `3`. JSON and TSV
+remain the source of truth for `verdict.status`, `gate.status`, and blocking
+findings.
 
 Single-file TSV reports include `input_path` alongside status fields so workflow
 engines can route samples without scraping logs or HTML. FastaGuard v0.6.0 is

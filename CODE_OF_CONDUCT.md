@@ -59,9 +59,10 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-[the project maintainers](https://github.com/ehsanestaji/FastaGuard/issues/new).
-All complaints will be reviewed and investigated promptly and fairly.
+reported confidentially to the community leaders responsible for enforcement
+at [ehsan.estaji@umu.se](mailto:ehsan.estaji@umu.se). Do not use a public issue
+for a conduct report. All complaints will be reviewed and investigated promptly
+and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
 reporter of any incident.

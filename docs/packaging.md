@@ -105,8 +105,9 @@ For a public release:
 1. Tag the release:
 
    ```bash
-   git tag v0.6.0
-   git push origin v0.6.0
+   release_version="X.Y.Z"
+   git tag "v${release_version}"
+   git push origin "v${release_version}"
    ```
 
 2. Push the tag to trigger `.github/workflows/release.yml`.

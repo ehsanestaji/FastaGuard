@@ -138,7 +138,8 @@ Development scope:
 - return exit code `0` whenever requested reports are written successfully,
   including WARN and FAIL reports
 - reserve exit code `2` for argument parsing errors
-- reserve exit code `3` for configuration, input-access, and runtime errors
+- reserve exit code `3` for configuration, input-access, runtime, and
+  output-write errors
 - keep PASS/WARN/FAIL decisions in stable JSON and TSV report fields
 - include `input_path` in single-file TSV reports for downstream routing
 - document migration from legacy QC-derived process exit codes

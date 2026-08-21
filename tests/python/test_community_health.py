@@ -53,12 +53,13 @@ ATTRIBUTION_TRACE_SAMPLES = (
 
 class CommunityHealthTest(unittest.TestCase):
     def tracked_paths(self):
-        return subprocess.check_output(
+        paths = subprocess.check_output(
             ["git", "ls-files"], cwd=ROOT, text=True
         ).splitlines()
+        return [path for path in paths if (ROOT / path).is_file()]
 
     @staticmethod
-    def has_private_security_advisory_contact(config):
+    def has_security_policy_contact(config):
         for contact in config.get("contact_links", []):
             if not isinstance(contact, dict):
                 continue
@@ -70,7 +71,7 @@ class CommunityHealthTest(unittest.TestCase):
             if (
                 destination.scheme == "https"
                 and destination.netloc.lower() == "github.com"
-                and destination.path.endswith("/security/advisories/new")
+                and destination.path.endswith("/security/policy")
                 and "security" in context
             ):
                 return True
@@ -169,10 +170,20 @@ class CommunityHealthTest(unittest.TestCase):
             "python3 -m pytest -q tests/python/test_multiqc_plugin.py",
         )
 
-    def test_security_policy_uses_private_github_security_advisories(self):
+    def test_security_policy_uses_functional_private_email(self):
         text = (ROOT / "SECURITY.md").read_text()
 
-        self.assertRegex(text, r"(?is)private.*?GitHub Security\s+Advisories")
+        self.assertIn("mailto:ehsan.estaji@umu.se", text)
+        self.assertRegex(text, r"(?is)private.*?ehsan\.estaji@umu\.se")
+        self.assertNotIn("/security/advisories/new", text)
+        self.assertNotIn("issues/new", text)
+
+    def test_code_of_conduct_uses_confidential_maintainer_email(self):
+        text = (ROOT / "CODE_OF_CONDUCT.md").read_text()
+
+        self.assertIn("mailto:ehsan.estaji@umu.se", text)
+        self.assertRegex(text, r"(?is)confidential.*?ehsan\.estaji@umu\.se")
+        self.assertNotIn("issues/new", text)
 
     def test_issue_forms_are_parseable_and_collect_reproducible_context(self):
         for path in (
@@ -201,7 +212,11 @@ class CommunityHealthTest(unittest.TestCase):
         self.assertIsInstance(config, dict)
         self.assertIs(config.get("blank_issues_enabled"), False)
         self.assertIsInstance(config.get("contact_links"), list)
-        self.assertTrue(self.has_private_security_advisory_contact(config))
+        self.assertTrue(self.has_security_policy_contact(config))
+        config_text = (
+            ROOT / ".github" / "ISSUE_TEMPLATE" / "config.yml"
+        ).read_text()
+        self.assertNotIn("/security/advisories/new", config_text)
 
     def test_security_contact_rejects_public_issue_destination(self):
         inadequate_config = {
@@ -214,7 +229,18 @@ class CommunityHealthTest(unittest.TestCase):
             ]
         }
 
-        self.assertFalse(self.has_private_security_advisory_contact(inadequate_config))
+        self.assertFalse(self.has_security_policy_contact(inadequate_config))
+
+        disabled_advisory_config = {
+            "contact_links": [
+                {
+                    "name": "Security vulnerability report",
+                    "url": "https://github.com/ehsanestaji/FastaGuard/security/advisories/new",
+                    "about": "Use this link for security reports.",
+                }
+            ]
+        }
+        self.assertFalse(self.has_security_policy_contact(disabled_advisory_config))
 
     def test_pull_request_template_covers_review_mechanisms(self):
         text = (ROOT / ".github/pull_request_template.md").read_text()
@@ -232,7 +258,9 @@ class CommunityHealthTest(unittest.TestCase):
 
     def test_tracked_tree_excludes_tool_specific_planning_paths(self):
         planning_paths = [
-            path for path in self.tracked_paths() if path.startswith("docs/superpowers/")
+            path
+            for path in self.tracked_paths()
+            if path == "AGENTS.md" or path.startswith("docs/superpowers/")
         ]
 
         self.assertEqual(planning_paths, [])

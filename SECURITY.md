@@ -2,9 +2,8 @@
 
 ## Reporting a vulnerability
 
-Please use a private report through [GitHub Security
-Advisories](https://github.com/ehsanestaji/FastaGuard/security/advisories/new)
-for suspected vulnerabilities.
+Send suspected vulnerabilities privately to
+[ehsan.estaji@umu.se](mailto:ehsan.estaji@umu.se).
 Do not open a public issue for a suspected security vulnerability.
 
 Include the affected FastaGuard version, installation method, operating system,

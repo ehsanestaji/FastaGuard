@@ -39,7 +39,7 @@ Starting with FastaGuard v0.6.0:
 ```text
 0 = command completed and requested outputs were written
 2 = argument parsing error
-3 = configuration, input-access, or runtime error
+3 = configuration, input-access, runtime, or output-write error
 ```
 
 Workflow engines should apply stop/go policy from `gate.status`,

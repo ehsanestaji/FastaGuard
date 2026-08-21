@@ -9,6 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CURRENT_VERSION = "0.6.0"
 CURRENT_CONTAINER = "0.6.0--hfa8f182_0"
+CURRENT_SOURCE_SHA256 = (
+    "b57e967ccaa03ef5e70c14b96247a644750d8bd492360633988f2f53fe84184b"
+)
 
 
 class ReleaseMetadataTest(unittest.TestCase):
@@ -17,10 +20,10 @@ class ReleaseMetadataTest(unittest.TestCase):
 
         self.assertEqual(cargo["package"]["version"], "0.6.0")
 
-    def test_bioconda_recipe_tracks_published_v0_5_0_archive(self):
+    def test_bioconda_recipe_tracks_published_v0_6_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
 
-        self.assertIn('{% set version = "0.5.0" %}', recipe)
+        self.assertIn('{% set version = "0.6.0" %}', recipe)
         self.assertIn("fastaguard --version | grep {{ version }}", recipe)
 
     def test_v0_2_0_release_notes_exist(self):
@@ -65,19 +68,41 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn("`input_path`", text)
         self.assertIn("`gate.status`", text)
 
-    def test_bioconda_recipe_has_publishable_v0_5_0_source_sha(self):
+    def test_v0_6_exit_contract_docs_include_output_write_failures(self):
+        contract_docs = [
+            ROOT / "README.md",
+            ROOT / "docs" / "mvp-spec.md",
+            ROOT / "docs" / "output-contract.md",
+            ROOT / "docs" / "releases" / "v0.6.0.md",
+            ROOT / "docs" / "roadmap.md",
+            ROOT / "docs" / "vision-plan.md",
+        ]
+
+        for path in contract_docs:
+            with self.subTest(path=path):
+                text = " ".join(path.read_text().split())
+                starts = [
+                    match.start()
+                    for match in re.finditer("configuration, input-access", text)
+                ]
+                self.assertTrue(starts, path)
+                for start in starts:
+                    description = text[start : start + 120]
+                    self.assertIn("output-write", description, description)
+
+    def test_bioconda_recipe_has_publishable_v0_6_0_source_sha(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         marker = "REPLACE" + "_WITH_"
 
-        self.assertTrue((ROOT / "docs" / "releases" / "v0.5.0.md").exists())
-        self.assertIn('{% set version = "0.5.0" %}', recipe)
+        self.assertTrue((ROOT / "docs" / "releases" / "v0.6.0.md").exists())
+        self.assertIn('{% set version = "0.6.0" %}', recipe)
         self.assertNotIn(marker, recipe)
 
         match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
         self.assertIsNotNone(match, recipe)
         self.assertEqual(
             match.group(1),
-            "b3de60c83cb570bb90e894c262effe4092101b1655e5c64023445078ee2c5971",
+            CURRENT_SOURCE_SHA256,
         )
 
     def test_release_ready_bioconda_recipe_requires_real_sha(self):
@@ -100,7 +125,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIsNotNone(match, recipe)
         self.assertEqual(
             match.group(1),
-            "b3de60c83cb570bb90e894c262effe4092101b1655e5c64023445078ee2c5971",
+            CURRENT_SOURCE_SHA256,
         )
         self.assertNotIn(marker + "PUBLIC_SOURCE_ARCHIVE_SHA256", recipe)
 
@@ -158,6 +183,9 @@ class ReleaseMetadataTest(unittest.TestCase):
         packaging = (ROOT / "docs" / "packaging.md").read_text()
         self.assertNotIn("GitHub repository is private", packaging)
         self.assertNotIn("placeholder SHA256", packaging)
+        self.assertIn('release_version="X.Y.Z"', packaging)
+        self.assertIn('git tag "v${release_version}"', packaging)
+        self.assertNotIn("git tag v0.6.0", packaging)
 
     def test_current_release_docs_do_not_present_v0_5_as_latest(self):
         current_docs = [

@@ -1,74 +1,68 @@
-# Snakemake Wrapper Starter
+# Snakemake Wrapper Reference
 
-This is a local wrapper-style starter for FastaGuard. It assumes `fastaguard` is available on `PATH`.
+This directory mirrors the FastaGuard wrapper merged into
+snakemake-wrappers in
+[PR #5436](https://github.com/snakemake/snakemake-wrappers/pull/5436). It is a
+local compatibility reference and copy-paste starter for future releases.
 
-See `../../../docs/workflow-readiness.md` for the current upstream readiness
-checklist before submitting this starter as an official Snakemake wrapper.
+See `../../../docs/workflow-readiness.md` for the current update checklist.
 
-Published Bioconda provides v0.5.0:
+Published Bioconda and BioContainers provide FastaGuard v0.6.0:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.5.0
+mamba install -c conda-forge -c bioconda fastaguard=0.6.0
+docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
 ```
 
-Run from this directory with a `sample.fa` input:
+Run the local starter from this directory with a `sample.fa` input:
 
 ```bash
 snakemake -s Snakefile --cores 1
 ```
 
-The wrapper command uses the v0.3 assembly gate:
+The starter passes its example policy through the wrapper's only optional
+interface, `params.extra`:
 
-```bash
-fastaguard sample.fa --profile assembly --gate pipeline
+```python
+params:
+    extra="--profile assembly --gate pipeline"
 ```
 
-That gate marks duplicate IDs, invalid characters, invalid FASTA structure, and
-high-N content as blocking findings. GC and length outliers remain advisory
-unless explicitly added with `--fail-on`. The wrapper captures FastaGuard's
-status in `fastaguard.exit_code` so workflows can route on PASS/WARN/FAIL while
-retaining the JSON/HTML evidence. Tool-error status `3` still fails the job.
-
-The wrapper also includes a v0.5 Conda environment:
-
-```bash
-snakemake -s Snakefile --cores 1 --use-conda
-```
-
-For v0.5 submission-readiness preflight before official validators, use the
-published v0.5 package or container:
-
-```bash
-fastaguard {input.fasta} --gate submission --submission-target ncbi
-```
-
-Pipeline authors should route on:
-
-- `gate.mode`
-- `gate.status`
-- `gate.blocking_findings`
-- `readiness.categories[id=submission]`
-
-For containerized workflow runs, the latest pinned BioContainers image is:
-
-```text
-quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
-```
-
-Use this safe local order before upstream submission:
-
-1. Run repository Python tests that inspect this wrapper layout.
-2. Install Snakemake in a workflow test environment.
-3. Run `snakemake -s test/Snakefile --cores 1 --use-conda`.
-4. Generate a real upstream `environment.linux-64.pin.txt` if the upstream
-   wrapper repository requires a solver-produced pin file.
-5. Adapt `test/test_wrappers.py` into the upstream wrapper repository test
-   harness.
-
-The wrapper emits:
+The reusable `wrapper.py` itself has no default profile or gate. It emits
+exactly four reports:
 
 - `fastaguard_report.html`
 - `fastaguard.json`
 - `fastaguard.tsv`
 - `fastaguard_mqc.json`
-- `fastaguard.exit_code`
+
+FastaGuard v0.6 returns `0` after successfully writing PASS, WARN, or FAIL
+reports. Apply workflow stop/go policy downstream by parsing the JSON or TSV,
+especially `verdict.status`, `gate.status`, and `gate.blocking_findings`.
+
+The wrapper includes a v0.6 Conda environment:
+
+```bash
+snakemake -s Snakefile --cores 1 --use-conda
+```
+
+For submission-readiness preflight before official validators, pass a different
+`params.extra` value:
+
+```python
+params:
+    extra="--profile assembly --gate submission --submission-target ncbi"
+```
+
+This remains FASTA-level readiness only and does not replace repository
+validators or downstream interpretive QC.
+
+For a future upstream update, use this safe local order:
+
+1. Run the repository Python contract tests and the local copy-paste starter.
+2. Install Snakemake in an isolated workflow test environment.
+3. Run the upstream `test/Snakefile` and `test_wrappers.py` suite.
+4. Regenerate `environment.linux-64.pin.txt` when the upstream repository
+   requires a solver-produced pin file.
+5. Submit an autobump or manual update only when the published dependency or
+   wrapper interface needs to change.

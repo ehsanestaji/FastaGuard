@@ -203,7 +203,7 @@ Starting with FastaGuard v0.6.0, exit codes are:
 ```text
 0 = command completed and requested outputs were written
 2 = argument parsing error
-3 = configuration, input-access, or runtime error
+3 = configuration, input-access, runtime, or output-write error
 ```
 
 QC PASS/WARN/FAIL decisions are recorded in the machine-readable outputs,
@@ -268,7 +268,8 @@ v0.2 expands the assembly preflight layer with:
 
 v0.3 adds the assembly gate contract:
 
-- `--gate pipeline` for the default workflow gate policy
+- `--gate pipeline` as the recommended workflow gate preset; the CLI default
+  remains no gate
 - `gate.blocking_findings` for machine stop/go decisions
 - checksum provenance with `provenance.input_sha256`
 - explicit advisory findings for evidence that should route follow-up QC rather
@@ -295,8 +296,8 @@ v0.5 adds the submission-readiness gate:
 v0.6 makes report generation workflow-compatible:
 
 - successful report generation exits `0` for PASS, WARN, and FAIL reports
-- argument parsing errors exit `2`; configuration, input-access, and runtime
-  errors exit `3`
+- argument parsing errors exit `2`; configuration, input-access, runtime, and
+  output-write errors exit `3`
 - single-file TSV reports include `input_path` for downstream routing
 - workflows enforce QC policy from stable report fields instead of process
   status

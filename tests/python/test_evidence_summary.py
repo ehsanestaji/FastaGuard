@@ -35,6 +35,7 @@ STABLE_CASE_FIELDS = (
     "downstream_route",
     "input_bytes",
     "input_sha256",
+    "elapsed_seconds",
     "exit_code",
     "verdict",
     "gate_mode",
@@ -47,6 +48,28 @@ STABLE_CASE_FIELDS = (
     "finding_count",
     "finding_ids",
 )
+SHARED_SUMMARY_FIELDS = (
+    "schema_version",
+    "generated_at",
+    "fastaguard_version",
+    "source_commit",
+    "binary_sha256",
+    "provenance_scope",
+    "binary_to_source_reproducibility_attested",
+    "platform",
+    "python",
+    "runtime_context",
+)
+
+
+def tsv_value(value):
+    if isinstance(value, list):
+        return ",".join(value)
+    if isinstance(value, bool):
+        return str(value).lower()
+    if value is None:
+        return ""
+    return str(value)
 
 
 def load_summaries():
@@ -61,13 +84,20 @@ def test_portable_summaries_have_expected_cases_and_release_provenance():
 
     assert summary["fastaguard_version"] == "0.6.0"
     assert summary["source_commit"] == EXPECTED_SOURCE_COMMIT
-    assert {case["id"] for case in summary["cases"]} == EXPECTED_CASES
-    assert {row["id"] for row in rows} == EXPECTED_CASES
+    case_ids = [case["id"] for case in summary["cases"]]
+    row_ids = [row["id"] for row in rows]
+    assert len(case_ids) == len(EXPECTED_CASES)
+    assert len(row_ids) == len(EXPECTED_CASES)
+    assert len(case_ids) == len(set(case_ids))
+    assert len(row_ids) == len(set(row_ids))
+    assert set(case_ids) == EXPECTED_CASES
+    assert set(row_ids) == EXPECTED_CASES
     assert {case["accession"] for case in summary["cases"] if case["accession"]} == (
         EXPECTED_ACCESSIONS
     )
 
     for case in summary["cases"]:
+        assert case["exit_code"] == 0
         assert SHA256.fullmatch(case["input_sha256"])
         assert case["verdict"] in VALID_STATUSES
         assert case["gate_status"] in VALID_STATUSES
@@ -75,6 +105,7 @@ def test_portable_summaries_have_expected_cases_and_release_provenance():
         assert case["finding_count"] == len(case["finding_ids"])
 
     for row in rows:
+        assert row["exit_code"] == "0"
         assert row["fastaguard_version"] == "0.6.0"
         assert row["source_commit"] == EXPECTED_SOURCE_COMMIT
         assert SHA256.fullmatch(row["input_sha256"])
@@ -112,19 +143,25 @@ def test_standalone_tsv_carries_runtime_interpretation_context():
 
 def test_json_and_tsv_agree_on_stable_case_data():
     summary, rows = load_summaries()
+    assert set(summary) - {"cases"} == set(SHARED_SUMMARY_FIELDS)
+    assert all(set(case) == set(STABLE_CASE_FIELDS) for case in summary["cases"])
+    assert set(rows[0]) == set(SHARED_SUMMARY_FIELDS) | set(STABLE_CASE_FIELDS)
+    row_ids = [row["id"] for row in rows]
+    assert len(row_ids) == len(set(row_ids))
     rows_by_id = {row["id"]: row for row in rows}
+
+    for row in rows:
+        for field in SHARED_SUMMARY_FIELDS:
+            assert row[field] == tsv_value(summary[field]), (
+                f"{row['id']} differs for summary field {field}"
+            )
 
     for case in summary["cases"]:
         row = rows_by_id[case["id"]]
         for field in STABLE_CASE_FIELDS:
-            expected = case[field]
-            if isinstance(expected, list):
-                expected = ",".join(expected)
-            elif expected is None:
-                expected = ""
-            else:
-                expected = str(expected)
-            assert row[field] == expected, f"{case['id']} differs for {field}"
+            assert row[field] == tsv_value(case[field]), (
+                f"{case['id']} differs for {field}"
+            )
 
 
 def test_portable_tsv_uses_repository_line_format():

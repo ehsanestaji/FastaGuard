@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 import sys
 import types
@@ -86,8 +87,11 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertNotIn("--gate {gate}", wrapper_py)
         self.assertIn('extra = snakemake.params.get("extra", "")', wrapper_py)
         self.assertIn('"{extra} "', wrapper_py)
-        self.assertIn("published v0.5.0", nf_core_readme)
-        self.assertIn("captures that legacy", nf_core_readme)
+        self.assertNotIn("fastaguard=0.5.0", nf_core_readme)
+        self.assertNotIn("fastaguard:0.5.0--", nf_core_readme)
+        self.assertIn("task.ext.args", nf_core_readme)
+        self.assertNotIn("exit_code", nf_core_readme)
+        self.assertIn("params.extra", snakemake_readme)
         self.assertIn("gate.status", snakemake_readme)
 
     def test_v0_4_docs_explain_preflight_readiness_and_compare_mode(self):
@@ -525,14 +529,32 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn(install, nfcore_readme)
         self.assertIn(install, snakemake_readme)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0",
             nfcore_readme,
         )
         self.assertNotIn("0.2.0--", nfcore_module)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0",
             snakemake_readme,
         )
+
+    def test_current_integration_assets_have_no_v0_5_runtime_pins(self):
+        stale_runtime = re.compile(
+            r"(?:fastaguard=0\.5\.0|fastaguard:0\.5\.0--|"
+            r'\{% set version = "0\.5\.0" %\})'
+        )
+        paths = subprocess.check_output(
+            ["git", "ls-files", "examples", "packaging"],
+            cwd=ROOT,
+            text=True,
+        ).splitlines()
+        violations = [
+            path
+            for path in paths
+            if stale_runtime.search((ROOT / path).read_text(errors="ignore"))
+        ]
+
+        self.assertEqual(violations, [])
 
     def test_workflow_readiness_plan_defines_upstream_submission_path(self):
         readme = (ROOT / "README.md").read_text()
@@ -684,6 +706,7 @@ class AdoptionAssetsTest(unittest.TestCase):
         wrapper = ROOT / "examples" / "snakemake" / "wrapper"
         readme = (wrapper / "README.md").read_text()
         wrapper_py = (wrapper / "wrapper.py").read_text()
+        starter_snakefile = (wrapper / "Snakefile").read_text()
         test_snakefile = (wrapper / "test" / "Snakefile").read_text()
         test_py = (wrapper / "test" / "test_wrappers.py").read_text()
         pin = (wrapper / "environment.linux-64.pin.txt").read_text()
@@ -716,6 +739,30 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn('extra="--profile assembly --gate pipeline"', test_snakefile)
         self.assertFalse((wrapper / "wrapper" / "fastaguard" / "wrapper.py").exists())
 
+        output_block = starter_snakefile.split("    output:\n", 1)[1].split(
+            "    log:\n", 1
+        )[0]
+        outputs = dict(
+            re.findall(r'^\s+(\w+)="([^"]+)",$', output_block, flags=re.MULTILINE)
+        )
+        self.assertEqual(
+            outputs,
+            {
+                "html": "fastaguard_report.html",
+                "json": "fastaguard.json",
+                "tsv": "fastaguard.tsv",
+                "multiqc": "fastaguard_mqc.json",
+            },
+        )
+        params_block = starter_snakefile.split("    params:\n", 1)[1].split(
+            "    wrapper:\n", 1
+        )[0]
+        self.assertEqual(
+            params_block.strip(),
+            'extra="--profile assembly --gate pipeline",',
+        )
+        self.assertNotIn("exit_code", starter_snakefile)
+
     def test_workflow_readiness_safe_order_is_explicit(self):
         readiness = (ROOT / "docs" / "workflow-readiness.md").read_text()
         adoption = (ROOT / "docs" / "adoption-plan.md").read_text()
@@ -738,6 +785,17 @@ class AdoptionAssetsTest(unittest.TestCase):
             self.assertNotIn("prepare external PR branches", text)
             self.assertNotIn("Before an upstream nf-core module submission", text)
             self.assertNotIn("Before an official Snakemake wrapper submission", text)
+
+    def test_current_workflow_assets_do_not_claim_a_default_gate(self):
+        readme = (ROOT / "README.md").read_text()
+        nfcore_module = self.read(
+            "examples/nf-core/modules/local/fastaguard/main.nf"
+        )
+        snakemake_wrapper = self.read("examples/snakemake/wrapper/wrapper.py")
+
+        self.assertNotIn("default workflow gate policy", readme)
+        self.assertNotIn("--gate", nfcore_module)
+        self.assertNotIn("--gate", snakemake_wrapper)
 
     def test_benchmarking_docs_include_v0_2_evidence_topics(self):
         text = (ROOT / "docs" / "benchmarking.md").read_text()
@@ -1073,9 +1131,8 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
             self.assertNotEqual(completed.returncode, 0)
             self.assertIn("expected gate.mode pipeline", completed.stderr)
 
-    def test_deep_release_vision_is_documented_and_memorized(self):
+    def test_deep_release_vision_is_documented_in_project_docs(self):
         vision = (ROOT / "docs" / "vision-plan.md").read_text()
-        memory = (ROOT / "AGENTS.md").read_text()
         readme = (ROOT / "README.md").read_text()
 
         required_phrases = [
@@ -1095,8 +1152,6 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, vision)
 
-        self.assertIn("Deep Release Vision", memory)
-        self.assertIn("FASTA preflight operating system", memory)
         self.assertIn("docs/vision-plan.md", readme)
 
     def test_snakemake_wrapper_declares_bioconda_environment(self):
