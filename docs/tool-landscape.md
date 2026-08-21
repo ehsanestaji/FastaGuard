@@ -108,10 +108,13 @@ Current product evidence:
   commands, and the boundary before official validators.
 - v0.5 public evidence workflow defines manifest roles, expected scales, and
   downstream routes for compact benchmark summaries.
+- The v0.6 public evidence pack commits portable JSON and TSV summaries for
+  three local contract cases plus `GCF_000005845.2` and `GCF_000182925.2`.
+  The measured public outcomes include one PASS without findings and one
+  non-blocking WARN with gap-pattern advisories.
 
-Evidence still needed before Task 5 closes out:
+Remaining evidence gaps:
 
-- committed benchmark summaries from public assemblies
 - user feedback from real pipeline authors
 - broader public assembly evidence runs
 - real cohort compare-mode examples from public assemblies

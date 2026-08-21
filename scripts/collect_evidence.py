@@ -45,6 +45,40 @@ SUMMARY_COLUMNS = [
     "finding_count",
     "top_findings",
 ]
+PORTABLE_METADATA_COLUMNS = [
+    "schema_version",
+    "generated_at",
+    "fastaguard_version",
+    "source_commit",
+    "platform",
+    "python",
+]
+PORTABLE_CASE_COLUMNS = [
+    "id",
+    "label",
+    "category",
+    "source",
+    "accession",
+    "source_url",
+    "evidence_role",
+    "expected_scale",
+    "downstream_route",
+    "input_bytes",
+    "input_sha256",
+    "elapsed_seconds",
+    "exit_code",
+    "verdict",
+    "gate_mode",
+    "gate_status",
+    "gate_blocking_findings",
+    "sequence_count",
+    "total_length",
+    "n50",
+    "n90",
+    "finding_ids",
+    "finding_count",
+]
+PORTABLE_SUMMARY_COLUMNS = PORTABLE_METADATA_COLUMNS + PORTABLE_CASE_COLUMNS
 
 
 def main() -> int:
@@ -52,6 +86,9 @@ def main() -> int:
     binary = args.binary.resolve()
     out_dir = args.out_dir.resolve()
     manifest_path = args.manifest.resolve()
+    portable_summary_dir = (
+        args.portable_summary_dir.resolve() if args.portable_summary_dir else None
+    )
 
     if not binary.exists():
         raise SystemExit(f"FastaGuard binary not found: {binary}")
@@ -66,17 +103,19 @@ def main() -> int:
     if not args.local_only:
         cases.extend(public_cases(manifest_path, out_dir))
 
+    version = fastaguard_version(binary)
     summary = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "fastaguard_version": fastaguard_version(binary),
-        "git_commit": git_commit(),
+        "fastaguard_version": version,
         "platform": platform.platform(),
         "python": platform.python_version(),
         "command": " ".join(sys.argv),
         "local_only": args.local_only,
         "cases": [],
     }
+    if portable_summary_dir is not None:
+        summary["source_commit"] = release_source_commit(version)
 
     for case in cases:
         if case["source"] == "public_ncbi":
@@ -85,6 +124,8 @@ def main() -> int:
         summary["cases"].append(result)
 
     write_summary(out_dir, summary)
+    if portable_summary_dir is not None:
+        write_portable_summary(portable_summary_dir, summary)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
@@ -104,6 +145,14 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("target/evidence/v0.3"),
         help="Directory for evidence outputs and summaries.",
+    )
+    parser.add_argument(
+        "--portable-summary-dir",
+        type=Path,
+        help=(
+            "Write normalized evidence_summary.json and evidence_summary.tsv "
+            "without local paths or commands under this directory."
+        ),
     )
     parser.add_argument(
         "--manifest",
@@ -217,8 +266,9 @@ def write_synthetic_fasta(path: Path) -> None:
 
 
 def gzip_fasta(source: Path, destination: Path) -> None:
-    with source.open("rb") as src, gzip.open(destination, "wb") as dst:
-        shutil.copyfileobj(src, dst)
+    with source.open("rb") as src, destination.open("wb") as compressed:
+        with gzip.GzipFile(filename="", mode="wb", fileobj=compressed, mtime=0) as dst:
+            shutil.copyfileobj(src, dst)
 
 
 def prepare_public_input(case: dict[str, Any]) -> None:
@@ -305,7 +355,8 @@ def run_case(binary: Path, case: dict[str, Any]) -> dict[str, Any]:
     report = json.loads(json_path.read_text())
     summary = report["summary"]
     findings = report.get("findings", [])
-    top_findings = [finding.get("id", "unknown") for finding in findings[:5]]
+    finding_ids = [finding.get("id", "unknown") for finding in findings]
+    top_findings = finding_ids[:5]
     gate = required_mapping(report, "gate", case["id"])
     provenance = required_mapping(report, "provenance", case["id"])
     gate_mode = required_value(gate, "mode", "gate.mode", case["id"])
@@ -355,6 +406,7 @@ def run_case(binary: Path, case: dict[str, Any]) -> dict[str, Any]:
         "n50": summary["n50"],
         "n90": summary["n90"],
         "finding_count": len(findings),
+        "finding_ids": finding_ids,
         "top_findings": top_findings,
         "command": " ".join(command),
         "artifacts": {
@@ -409,26 +461,89 @@ def write_summary(out_dir: Path, summary: dict[str, Any]) -> None:
             writer.writerow(row)
 
 
+def write_portable_summary(out_dir: Path, summary: dict[str, Any]) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    portable = {
+        "schema_version": summary["schema_version"],
+        "generated_at": summary["generated_at"],
+        "fastaguard_version": summary["fastaguard_version"],
+        "source_commit": summary["source_commit"],
+        "platform": summary["platform"],
+        "python": summary["python"],
+        "runtime_context": (
+            "Elapsed seconds are contextual measurements from one local run, "
+            "not cross-platform performance guarantees."
+        ),
+        "cases": [portable_case(case) for case in summary["cases"]],
+    }
+    json_path = out_dir / "evidence_summary.json"
+    tsv_path = out_dir / "evidence_summary.tsv"
+    json_path.write_text(json.dumps(portable, indent=2, sort_keys=True) + "\n")
+
+    metadata = {key: portable[key] for key in PORTABLE_METADATA_COLUMNS}
+    with tsv_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=PORTABLE_SUMMARY_COLUMNS,
+            delimiter="\t",
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        for case in portable["cases"]:
+            row = {**metadata, **case}
+            row["finding_ids"] = ",".join(case["finding_ids"])
+            writer.writerow(row)
+
+
+def portable_case(case: dict[str, Any]) -> dict[str, Any]:
+    return {key: case.get(key) for key in PORTABLE_CASE_COLUMNS}
+
+
 def fastaguard_version(binary: Path) -> str:
     completed = subprocess.run(
         [str(binary), "--version"], capture_output=True, text=True, check=False
     )
     if completed.returncode != 0:
         return "unknown"
-    return completed.stdout.strip() or "unknown"
+    output = completed.stdout.strip()
+    if not output:
+        return "unknown"
+    return output.rsplit(maxsplit=1)[-1]
 
 
-def git_commit() -> str:
+def release_source_commit(version: str) -> str:
+    tag = f"v{version}^{{commit}}"
     completed = subprocess.run(
-        ["git", "rev-parse", "--short", "HEAD"],
+        ["git", "rev-parse", "--verify", tag],
         cwd=ROOT,
         capture_output=True,
         text=True,
         check=False,
     )
     if completed.returncode != 0:
-        return "unknown"
-    return completed.stdout.strip() or "unknown"
+        raise SystemExit(f"Release tag v{version} not found for source provenance")
+    commit = completed.stdout.strip()
+    source_diff = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--no-ext-diff",
+            "--quiet",
+            commit,
+            "--",
+            "Cargo.toml",
+            "Cargo.lock",
+            "src",
+        ],
+        cwd=ROOT,
+        check=False,
+    )
+    if source_diff.returncode != 0:
+        raise SystemExit(
+            f"Tracked Rust/Cargo source differs from release tag v{version}; "
+            "refusing to record release provenance"
+        )
+    return commit
 
 
 if __name__ == "__main__":

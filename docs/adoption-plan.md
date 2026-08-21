@@ -62,8 +62,14 @@ Goal: show why FastaGuard is worth adding before expensive tools.
 - Document which findings should block downstream tools and which should only recommend deeper QC.
 - Create a concise comparison against `seqkit stats`, QUAST, BUSCO, BlobToolKit, FastQC, and MultiQC.
 
-Public benchmark summaries and broader user evidence remain closeout work until
-Task 5 completes.
+Status: the v0.6 public evidence pack now commits portable JSON and TSV results
+for three local contract cases and two exact NCBI reference assemblies. It
+demonstrates a clean public PASS, a non-blocking public WARN, and a local
+blocking FAIL while keeping complete reports and downloaded FASTA files out of
+the repository.
+
+Broader user evidence, cohort-scale compare runs, and direct comparisons with
+downstream tools remain future adoption work.
 
 ## Phase 4: Workflow Readiness
 

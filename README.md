@@ -301,6 +301,22 @@ v0.6 makes report generation workflow-compatible:
 - workflows enforce QC policy from stable report fields instead of process
   status
 
+## v0.6 Public Evidence
+
+The [public evidence report](docs/evidence/fastaguard-v0.6-public-evidence.md)
+records three local contract cases and two exact NCBI reference assemblies.
+Portable results are committed as
+[JSON](docs/evidence/results/v0.6/evidence_summary.json) and
+[TSV](docs/evidence/results/v0.6/evidence_summary.tsv).
+
+| Public assembly | Scale | Pipeline gate | Finding IDs |
+| --- | ---: | --- | --- |
+| E. coli K-12 MG1655 (`GCF_000005845.2`) | 4,641,652 bp; 1 record | PASS | none |
+| Neurospora crassa OR74A (`GCF_000182925.2`) | 41,102,378 bp; 21 records | WARN | `gap_runs`, `gap_pattern_warnings` |
+
+Elapsed time in the summaries is contextual to the recorded machine and is not
+a cross-platform performance guarantee.
+
 ## Positioning
 
 FastaGuard should recommend deeper tools when they are appropriate:
@@ -339,6 +355,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.3 evidence workflow](docs/evidence/fastaguard-v0.3-evidence.md)
 - [v0.5 submission readiness evidence](docs/evidence/fastaguard-v0.5-submission-readiness.md)
 - [v0.5 public evidence workflow](docs/evidence/fastaguard-v0.5-public-evidence.md)
+- [v0.6 public evidence](docs/evidence/fastaguard-v0.6-public-evidence.md)
 - [Packaging](docs/packaging.md)
 - [v0.6.0 release notes](docs/releases/v0.6.0.md)
 - [v0.5.0 release notes](docs/releases/v0.5.0.md)
