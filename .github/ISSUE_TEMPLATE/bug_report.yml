@@ -1,0 +1,62 @@
+name: Bug report
+description: Report a reproducible FastaGuard problem.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Please remove private sequence data. A minimal synthetic FASTA reproducer is preferred."
+  - type: input
+    id: version
+    attributes:
+      label: FastaGuard version
+      description: Include the output of `fastaguard --version`.
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system
+      description: Include the operating system and version.
+    validations:
+      required: true
+  - type: dropdown
+    id: installation-method
+    attributes:
+      label: Installation method
+      options:
+        - Bioconda
+        - Container image
+        - Release binary
+        - Source build
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command
+      description: Paste the complete command and relevant options.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Minimal FASTA reproducer or safe description
+      description: Share a minimal synthetic FASTA or describe the input safely.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Include output, error messages, and generated report details.
+    validations:
+      required: true

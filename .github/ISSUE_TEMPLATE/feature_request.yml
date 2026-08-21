@@ -1,0 +1,63 @@
+name: Feature request
+description: Suggest a focused improvement to FastaGuard.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: "Describe the workflow problem and avoid including private sequence data."
+  - type: input
+    id: version
+    attributes:
+      label: FastaGuard version
+      description: Include the version you use, if applicable.
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system
+      description: Include the operating system and version, if applicable.
+    validations:
+      required: true
+  - type: dropdown
+    id: installation-method
+    attributes:
+      label: Installation method
+      options:
+        - Bioconda
+        - Container image
+        - Release binary
+        - Source build
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command
+      description: Show the current workflow command, if applicable.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Minimal FASTA reproducer or safe description
+      description: Provide a minimal synthetic example or safe workflow description.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: Describe the outcome that would make the workflow work better.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Describe the current behavior or limitation.
+    validations:
+      required: true
