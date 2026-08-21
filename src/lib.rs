@@ -123,6 +123,7 @@ mod tests {
                 json: PathBuf::from("fastaguard.json"),
                 tsv: PathBuf::from("fastaguard.tsv"),
                 multiqc: PathBuf::from("fastaguard_mqc.json"),
+                allow_overwrite: false,
             },
             rules: RuleConfig {
                 fail_on: BTreeSet::new(),

@@ -70,6 +70,26 @@ fn validate_output_paths(outputs: &OutputPaths) -> Result<()> {
         }
     }
 
+    for path in paths {
+        if path
+            .try_exists()
+            .with_context(|| format!("failed to check output path {}", path.display()))?
+        {
+            if path.is_dir() {
+                return Err(anyhow!(
+                    "output path {} is a directory, not a file",
+                    path.display()
+                ));
+            }
+            if !outputs.allow_overwrite {
+                return Err(anyhow!(
+                    "output path {} already exists; use --force to replace it",
+                    path.display()
+                ));
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -136,6 +156,7 @@ mod tests {
             json: duplicate.clone(),
             tsv: duplicate.clone(),
             multiqc: temp_dir.path().join("multiqc.json"),
+            allow_overwrite: false,
         };
 
         let error = write_all(&test_report(), &outputs).unwrap_err();
@@ -155,6 +176,7 @@ mod tests {
             json: temp_dir.path().join("report.json"),
             tsv: missing_parent.join("report.tsv"),
             multiqc: temp_dir.path().join("multiqc.json"),
+            allow_overwrite: false,
         };
 
         let error = write_all(&test_report(), &outputs).unwrap_err();
@@ -179,6 +201,7 @@ mod tests {
             json: temp_dir.path().join("report.json"),
             tsv: parent_file.join("report.tsv"),
             multiqc: temp_dir.path().join("multiqc.json"),
+            allow_overwrite: false,
         };
 
         let error = write_all(&test_report(), &outputs).unwrap_err();
@@ -194,6 +217,27 @@ mod tests {
     }
 
     #[test]
+    fn directory_output_target_errors_even_when_overwrite_is_allowed() {
+        let temp_dir = TempDir::new().unwrap();
+        let directory_target = temp_dir.path().join("report.json");
+        fs::create_dir(&directory_target).unwrap();
+        let outputs = OutputPaths {
+            html: temp_dir.path().join("report.html"),
+            json: directory_target,
+            tsv: temp_dir.path().join("report.tsv"),
+            multiqc: temp_dir.path().join("multiqc.json"),
+            allow_overwrite: true,
+        };
+
+        let error = write_all(&test_report(), &outputs).unwrap_err();
+
+        assert!(error.to_string().contains("is a directory, not a file"));
+        assert!(!outputs.html.exists());
+        assert!(!outputs.tsv.exists());
+        assert!(!outputs.multiqc.exists());
+    }
+
+    #[test]
     fn duplicate_output_paths_detect_equivalent_dot_relative_paths() {
         let _guard = current_dir_lock().lock().unwrap();
         let temp_dir = TempDir::new().unwrap();
@@ -204,6 +248,7 @@ mod tests {
             json: "report.json".into(),
             tsv: "./report.json".into(),
             multiqc: "multiqc.json".into(),
+            allow_overwrite: false,
         };
 
         let result = write_all(&test_report(), &outputs);
@@ -228,6 +273,7 @@ mod tests {
             json: "report.json".into(),
             tsv: "subdir/../report.json".into(),
             multiqc: "multiqc.json".into(),
+            allow_overwrite: false,
         };
 
         let result = write_all(&test_report(), &outputs);
@@ -252,6 +298,7 @@ mod tests {
             json: "report.same".into(),
             tsv: absolute_duplicate,
             multiqc: "multiqc.json".into(),
+            allow_overwrite: false,
         };
 
         let result = write_all(&test_report(), &outputs);

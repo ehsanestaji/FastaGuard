@@ -385,6 +385,130 @@ fn valid_assembly_writes_all_outputs_and_warns_for_terminal_ns() {
 }
 
 #[test]
+fn outdir_creates_nested_bundle_with_exact_names() {
+    let temp_dir = TempDir::new().unwrap();
+    let outdir = temp_dir.path().join("nested").join("reports");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("testdata/valid_assembly.fa")
+        .arg("--outdir")
+        .arg(&outdir)
+        .args(["--prefix", "sample-01"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("fastaguard error:").not());
+
+    let expected = [
+        "sample-01.fastaguard.html",
+        "sample-01.fastaguard.json",
+        "sample-01.fastaguard.tsv",
+        "sample-01.fastaguard_mqc.json",
+    ];
+    let mut actual = std::fs::read_dir(&outdir)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .collect::<Vec<_>>();
+    actual.sort();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn outdir_prefix_requires_outdir() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args(["testdata/valid_assembly.fa", "--prefix", "sample-01"])
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("--outdir"));
+}
+
+#[test]
+fn outdir_conflicts_with_explicit_json_output() {
+    let temp_dir = TempDir::new().unwrap();
+    let outdir = temp_dir.path().join("reports");
+    let json = temp_dir.path().join("explicit.json");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("testdata/valid_assembly.fa")
+        .arg("--outdir")
+        .arg(&outdir)
+        .arg("--json")
+        .arg(&json)
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("cannot be used with"));
+}
+
+#[test]
+fn outdir_rejects_prefix_with_parent_component() {
+    let temp_dir = TempDir::new().unwrap();
+    let outdir = temp_dir.path().join("reports");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("testdata/valid_assembly.fa")
+        .arg("--outdir")
+        .arg(&outdir)
+        .args(["--prefix", "../escape"])
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("--prefix"));
+
+    assert!(!outdir.exists());
+    assert!(!temp_dir.path().join("escape.fastaguard.json").exists());
+}
+
+#[test]
+fn outdir_rejects_existing_bundle_file_without_force() {
+    let temp_dir = TempDir::new().unwrap();
+    let outdir = temp_dir.path().join("reports");
+    std::fs::create_dir(&outdir).unwrap();
+    let collision = outdir.join("sample-01.fastaguard.json");
+    std::fs::write(&collision, "keep me").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("testdata/valid_assembly.fa")
+        .arg("--outdir")
+        .arg(&outdir)
+        .args(["--prefix", "sample-01"])
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("already exists"));
+
+    assert_eq!(std::fs::read_to_string(collision).unwrap(), "keep me");
+    assert!(!outdir.join("sample-01.fastaguard.html").exists());
+    assert!(!outdir.join("sample-01.fastaguard.tsv").exists());
+    assert!(!outdir.join("sample-01.fastaguard_mqc.json").exists());
+}
+
+#[test]
+fn outdir_force_replaces_exact_bundle_paths() {
+    let temp_dir = TempDir::new().unwrap();
+    let outdir = temp_dir.path().join("reports");
+    std::fs::create_dir(&outdir).unwrap();
+    let paths = [
+        outdir.join("sample-01.fastaguard.html"),
+        outdir.join("sample-01.fastaguard.json"),
+        outdir.join("sample-01.fastaguard.tsv"),
+        outdir.join("sample-01.fastaguard_mqc.json"),
+    ];
+    for path in &paths {
+        std::fs::write(path, "replace me").unwrap();
+    }
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("testdata/valid_assembly.fa")
+        .arg("--outdir")
+        .arg(&outdir)
+        .args(["--prefix", "sample-01", "--force"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("fastaguard error:").not());
+
+    for path in paths {
+        assert_ne!(std::fs::read_to_string(path).unwrap(), "replace me");
+    }
+}
+
+#[test]
 fn valid_report_includes_machine_summary_scope_and_provenance() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "valid_machine");
@@ -709,6 +833,7 @@ fn valid_assembly_json_matches_golden_contract() {
         "testdata/valid_assembly.fa",
         "--min-contig-length",
         "1",
+        "--force",
         "--out",
     ])
     .arg(&paths.html)
@@ -1105,7 +1230,7 @@ fn problem_assembly_json_matches_golden_contract() {
 
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     with_golden_provenance(&mut cmd, provenance_command);
-    cmd.args(["testdata/problem_assembly.fa", "--out"])
+    cmd.args(["testdata/problem_assembly.fa", "--force", "--out"])
         .arg(&paths.html)
         .arg("--json")
         .arg(&paths.json)
@@ -1253,6 +1378,7 @@ fn invalid_fasta_json_matches_golden_contract() {
     let mut cmd = Command::cargo_bin("fastaguard").unwrap();
     with_golden_provenance(&mut cmd, provenance_command);
     cmd.arg("testdata/invalid_empty_record.fa")
+        .arg("--force")
         .arg("--out")
         .arg(&paths.html)
         .arg("--json")

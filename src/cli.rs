@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, SecondsFormat, Utc};
 use clap::error::ErrorKind;
 use clap::parser::ValueSource;
@@ -118,6 +118,22 @@ pub struct AnalysisArgs {
 
 #[derive(Debug, Clone, Args)]
 pub struct RunOutputArgs {
+    /// Directory for a deterministic four-report bundle.
+    #[arg(
+        long,
+        value_name = "DIR",
+        conflicts_with_all = ["out", "json", "tsv", "multiqc"]
+    )]
+    pub outdir: Option<PathBuf>,
+
+    /// Filename stem for reports written with --outdir.
+    #[arg(long, value_name = "STEM", requires = "outdir")]
+    pub prefix: Option<String>,
+
+    /// Allow existing direct-run report files to be replaced.
+    #[arg(long)]
+    pub force: bool,
+
     /// HTML report path.
     #[arg(long, default_value = "fastaguard_report.html")]
     pub out: PathBuf,
@@ -197,6 +213,7 @@ pub struct OutputPaths {
     pub json: PathBuf,
     pub tsv: PathBuf,
     pub multiqc: PathBuf,
+    pub allow_overwrite: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -299,6 +316,9 @@ const ROOT_RUN_ARG_IDS: &[&str] = &[
     "json",
     "tsv",
     "multiqc",
+    "outdir",
+    "prefix",
+    "force",
 ];
 
 impl ContractFlags {
@@ -348,7 +368,7 @@ impl RunArgs {
             profile: analysis.profile,
             gate_mode: analysis.gate_mode,
             submission_target: analysis.submission_target,
-            outputs: self.outputs.output_paths(),
+            outputs: self.outputs.output_paths()?,
             rules: analysis.rules,
             thresholds: analysis.thresholds,
             threads: analysis.threads,
@@ -454,20 +474,55 @@ impl AnalysisArgs {
 
 impl RunOutputArgs {
     fn has_overrides(&self) -> bool {
-        self.out != Path::new("fastaguard_report.html")
+        self.outdir.is_some()
+            || self.prefix.is_some()
+            || self.force
+            || self.out != Path::new("fastaguard_report.html")
             || self.json != Path::new("fastaguard.json")
             || self.tsv != Path::new("fastaguard.tsv")
             || self.multiqc != Path::new("fastaguard_mqc.json")
     }
 
-    fn output_paths(&self) -> OutputPaths {
-        OutputPaths {
+    fn output_paths(&self) -> Result<OutputPaths> {
+        if let Some(outdir) = &self.outdir {
+            let prefix = self.prefix.as_deref().unwrap_or("fastaguard");
+            validate_output_prefix(prefix)?;
+            std::fs::create_dir_all(outdir).with_context(|| {
+                format!(
+                    "failed to create bundle output directory {}",
+                    outdir.display()
+                )
+            })?;
+
+            return Ok(OutputPaths {
+                html: outdir.join(format!("{prefix}.fastaguard.html")),
+                json: outdir.join(format!("{prefix}.fastaguard.json")),
+                tsv: outdir.join(format!("{prefix}.fastaguard.tsv")),
+                multiqc: outdir.join(format!("{prefix}.fastaguard_mqc.json")),
+                allow_overwrite: self.force,
+            });
+        }
+
+        Ok(OutputPaths {
             html: self.out.clone(),
             json: self.json.clone(),
             tsv: self.tsv.clone(),
             multiqc: self.multiqc.clone(),
-        }
+            allow_overwrite: self.force,
+        })
     }
+}
+
+fn validate_output_prefix(prefix: &str) -> Result<()> {
+    let mut components = Path::new(prefix).components();
+    let valid_component = matches!(components.next(), Some(std::path::Component::Normal(_)))
+        && components.next().is_none();
+    if prefix.is_empty() || prefix.contains(['/', '\\']) || !valid_component {
+        return Err(anyhow!(
+            "--prefix must be a non-empty filename stem without path separators, '.' or '..' components"
+        ));
+    }
+    Ok(())
 }
 
 impl CompareOutputArgs {
@@ -477,6 +532,7 @@ impl CompareOutputArgs {
             json: self.json.clone(),
             tsv: self.tsv.clone(),
             multiqc: self.multiqc.clone(),
+            allow_overwrite: true,
         }
     }
 }
@@ -567,6 +623,9 @@ mod tests {
                     threads: 1,
                 },
                 outputs: RunOutputArgs {
+                    outdir: None,
+                    prefix: None,
+                    force: false,
                     out: PathBuf::from("fastaguard_report.html"),
                     json: PathBuf::from("fastaguard.json"),
                     tsv: PathBuf::from("fastaguard.tsv"),
