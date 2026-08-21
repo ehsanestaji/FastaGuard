@@ -39,7 +39,11 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("Run FastaGuard first.", readme)
         self.assertIn('"gate"', output_contract)
         self.assertIn("provenance.input_sha256", output_contract)
-        self.assertIn("--gate pipeline", nf_core_module)
+        nf_core_test_config = self.read(
+            "examples/nf-core/modules/local/fastaguard/tests/nextflow.config"
+        )
+        self.assertNotIn("--gate pipeline", nf_core_module)
+        self.assertIn("--profile assembly --gate pipeline", nf_core_test_config)
         self.assertIn("--gate pipeline", snakemake)
         self.assertIn(
             '"blocking_findings": ["duplicate_ids", "invalid_chars", "high_n_rate"]',
@@ -66,13 +70,7 @@ class AdoptionAssetsTest(unittest.TestCase):
             ROOT / "examples" / "snakemake" / "wrapper" / "environment.yaml"
         ).read_text()
         wrapper_py = (
-            ROOT
-            / "examples"
-            / "snakemake"
-            / "wrapper"
-            / "wrapper"
-            / "fastaguard"
-            / "wrapper.py"
+            ROOT / "examples" / "snakemake" / "wrapper" / "wrapper.py"
         ).read_text()
         nf_core_readme = (ROOT / "examples" / "nf-core" / "README.md").read_text()
         snakemake_readme = (
@@ -81,14 +79,16 @@ class AdoptionAssetsTest(unittest.TestCase):
 
         self.assertNotIn("0.2.0--", nf_core_module)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0",
             nf_core_module,
         )
         self.assertNotIn("fastaguard=0.2.0", wrapper_env)
-        self.assertIn("--gate {gate}", wrapper_py)
+        self.assertNotIn("--gate {gate}", wrapper_py)
+        self.assertIn('extra = snakemake.params.get("extra", "")', wrapper_py)
+        self.assertIn('"{extra} "', wrapper_py)
         self.assertIn("published v0.5.0", nf_core_readme)
         self.assertIn("captures that legacy", nf_core_readme)
-        self.assertIn("fastaguard.exit_code", snakemake_readme)
+        self.assertIn("gate.status", snakemake_readme)
 
     def test_v0_4_docs_explain_preflight_readiness_and_compare_mode(self):
         readme = ROOT / "README.md"
@@ -573,7 +573,7 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0", readiness)
         self.assertIn("docs/workflow-readiness.md", nfcore_readme)
         self.assertIn("docs/workflow-readiness.md", snakemake_readme)
-        self.assertIn("fastaguard=0.5.0", nfcore_environment)
+        self.assertIn("fastaguard=0.6.0", nfcore_environment)
         self.assertIn("name: fastaguard", snakemake_meta)
         self.assertIn("description:", snakemake_meta)
         self.assertIn("output:", snakemake_meta)
@@ -588,13 +588,12 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("versions_fastaguard:", meta_yml)
         self.assertIn("topic", meta_yml)
         self.assertIn('process "FASTAGUARD"', nf_test)
-        self.assertIn("pass.fa", nf_test)
-        self.assertIn("warn.fa", nf_test)
-        self.assertIn("fail.fa", nf_test)
-        self.assertIn("invalid.fa", nf_test)
-        self.assertIn("fastaguard_mqc.json", nf_test)
+        self.assertIn("file(workDir.resolve", nf_test)
+        self.assertIn("assertAll", nf_test)
+        self.assertIn("process.success", nf_test)
+        self.assertIn('unstableKeys: ["html", "json", "tsv", "mqc"]', nf_test)
         for name in ("pass.fa", "warn.fa", "fail.fa", "invalid.fa"):
-            self.assertTrue((module / "tests" / "data" / name).exists(), name)
+            self.assertFalse((module / "tests" / "data" / name).exists(), name)
 
     def test_nf_core_starter_matches_current_nf_core_module_shape(self):
         module = ROOT / "examples" / "nf-core" / "modules" / "local" / "fastaguard"
@@ -605,36 +604,32 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn('conda "${moduleDir}/environment.yml"', main_nf)
         self.assertIn("workflow.containerEngine in ['singularity', 'apptainer']", main_nf)
         self.assertIn(
-            "https://depot.galaxyproject.org/singularity/fastaguard:0.5.0--hfa8f182_0",
+            "https://depot.galaxyproject.org/singularity/fastaguard:0.6.0--hfa8f182_0",
             main_nf,
         )
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0",
             main_nf,
         )
         self.assertIn("\n    when:\n    task.ext.when == null || task.ext.when\n", main_nf)
         self.assertIn("emit: versions_fastaguard, topic: versions", main_nf)
-        self.assertIn("emit: exit_code", main_nf)
+        self.assertNotIn("emit: exit_code", main_nf)
+        self.assertIn('def prefix = task.ext.prefix ?: "${meta.id}"', main_nf)
+        self.assertIn("def args = task.ext.args ?: ''", main_nf)
+        self.assertNotIn("set +e", main_nf)
         self.assertIn("output:\n  html:", meta_yml)
         self.assertNotIn("output:\n  - html:", meta_yml)
         self.assertIn("versions_fastaguard:", meta_yml)
         self.assertIn('fastaguard --version | cut -d " " -f 2:', meta_yml)
-        self.assertIn("exit_code:", meta_yml)
+        self.assertNotIn("exit_code:", meta_yml)
+        self.assertIn('- "@ehsanestaji"', meta_yml)
         self.assertIn('tag "modules"', nf_test)
         self.assertIn('tag "modules_nfcore"', nf_test)
-        self.assertIn('file("${moduleDir}/tests/data/pass.fa"', nf_test)
-        self.assertNotIn("file('data/pass.fa'", nf_test)
-        self.assertIn("file(process.out.html[0][1]).name.endsWith", nf_test)
-        self.assertNotIn("process.out.html[0][1].name.endsWith", nf_test)
-
-        warn_fasta = (module / "tests" / "data" / "warn.fa").read_text()
-        self.assertIn(">long", warn_fasta)
-        self.assertIn(">tiny", warn_fasta)
-        self.assertNotIn("NNNNNNNN", warn_fasta)
-
-        pass_fasta = (module / "tests" / "data" / "pass.fa").read_text()
-        self.assertIn(">clean", pass_fasta)
-        self.assertNotIn(">contig1", pass_fasta)
+        self.assertIn('file(workDir.resolve("pass.fa").toString())', nf_test)
+        self.assertIn(
+            'snapshot(sanitizeOutput(process.out, unstableKeys: ["html", "json", "tsv", "mqc"])).match()',
+            nf_test,
+        )
 
     def test_snakemake_wrapper_has_upstream_prep_test_layout(self):
         wrapper = ROOT / "examples" / "snakemake" / "wrapper"
@@ -647,26 +642,21 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("safe local order", readme)
         self.assertIn("fastaguard", pin)
         self.assertIn("fastaguard {snakemake.input.fasta}", wrapper_py)
-        self.assertIn("snakemake.output.exit_code", wrapper_py)
-        self.assertIn('status" -eq 3', wrapper_py)
+        self.assertNotIn("snakemake.output.exit_code", wrapper_py)
+        self.assertNotIn("set +e", wrapper_py)
+        self.assertIn('extra = snakemake.params.get("extra", "")', wrapper_py)
+        self.assertIn('"{extra} "', wrapper_py)
         self.assertIn('"master/bio/fastaguard"', test_snakefile)
         self.assertNotIn('"file:../wrapper/fastaguard"', test_snakefile)
-        self.assertIn('exit_code="pass/fastaguard.exit_code"', test_snakefile)
+        self.assertNotIn("exit_code", test_snakefile)
         self.assertIn("rule fastaguard_pass", test_snakefile)
         self.assertIn("rule fastaguard_warn", test_snakefile)
         self.assertIn("rule fastaguard_fail", test_snakefile)
         self.assertIn("rule fastaguard_invalid", test_snakefile)
         self.assertIn("pytest", test_py)
         self.assertIn("snakemake", test_py)
-        for name in ("pass.fa", "warn.fa", "fail.fa", "invalid.fa"):
-            self.assertTrue((wrapper / "test" / "data" / name).exists(), name)
-
-        pass_fasta = (wrapper / "test" / "data" / "pass.fa").read_text()
-        warn_fasta = (wrapper / "test" / "data" / "warn.fa").read_text()
-        self.assertIn(">clean", pass_fasta)
-        self.assertIn(">long", warn_fasta)
-        self.assertIn(">tiny", warn_fasta)
-        self.assertNotIn("NNNNNNNN", warn_fasta)
+        self.assertIn('extra="--profile assembly --gate pipeline"', test_snakefile)
+        self.assertFalse((wrapper / "wrapper" / "fastaguard" / "wrapper.py").exists())
 
     def test_workflow_readiness_safe_order_is_explicit(self):
         readiness = (ROOT / "docs" / "workflow-readiness.md").read_text()
@@ -1050,8 +1040,9 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
                 "channels:",
                 "  - conda-forge",
                 "  - bioconda",
+                "  - nodefaults",
                 "dependencies:",
-                "  - fastaguard=0.5.0",
+                "  - fastaguard=0.6.0",
             ],
         )
         self.assertIn("conda:\n        \"environment.yaml\"", snakefile.read_text())

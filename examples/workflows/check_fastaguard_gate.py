@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Apply downstream workflow policy after FastaGuard has written its reports."""
+
 import json
 import sys
 from pathlib import Path
@@ -31,7 +33,7 @@ def main(argv):
         print("missing or unsupported gate.status", file=sys.stderr)
         return 3
 
-    print(f"FastaGuard gate status: {status}")
+    print(f"FastaGuard report gate status: {status}")
     return EXIT_BY_STATUS[status]
 
 
