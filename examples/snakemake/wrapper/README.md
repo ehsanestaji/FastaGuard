@@ -36,9 +36,18 @@ exactly four reports:
 - `fastaguard.tsv`
 - `fastaguard_mqc.json`
 
-FastaGuard v0.6 returns `0` after successfully writing PASS, WARN, or FAIL
-reports. Apply workflow stop/go policy downstream by parsing the JSON or TSV,
-especially `verdict.status`, `gate.status`, and `gate.blocking_findings`.
+FastaGuard returns `0` after successfully writing PASS, WARN, or FAIL reports.
+The wrapper therefore remains a thin report-producing step with four explicit
+outputs, normal Snakemake logging, and caller-supplied `params.extra` arguments.
+It does not add an exit-code output, `--outdir`, or `--threads`.
+
+Apply workflow stop/go policy only after the final JSON report has been
+collected. The optional local helper at
+`examples/workflows/check_fastaguard_gate.py` reads `gate.can_continue` as a
+strict JSON boolean and returns workflow-local status `0` for `true`, `2` for
+`false`, or `3` when the field is missing or malformed. It prints the report
+verdict and gate context for logs; it does not run FastaGuard and never guesses
+continuation from `verdict.status` or `gate.status`.
 
 The wrapper includes a v0.6 Conda environment:
 

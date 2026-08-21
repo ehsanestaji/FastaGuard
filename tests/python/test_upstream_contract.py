@@ -32,13 +32,14 @@ FIXTURES = {
 }
 
 EXPECTED = {
-    "pass": ("PASS", []),
-    "warn": ("WARN", []),
+    "pass": ("PASS", [], True),
+    "warn": ("WARN", [], True),
     "fail": (
         "FAIL",
         ["duplicate_ids", "duplicate_first_token_ids", "invalid_chars"],
+        False,
     ),
-    "invalid": ("FAIL", ["invalid_fasta_structure"]),
+    "invalid": ("FAIL", ["invalid_fasta_structure"], False),
 }
 
 
@@ -73,7 +74,7 @@ class UpstreamContractTest(unittest.TestCase):
         )
 
     def assert_report_contract(self, case, extra_args):
-        expected_status, expected_blockers = EXPECTED[case]
+        expected_status, expected_blockers, expected_can_continue = EXPECTED[case]
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)
             fasta = output_dir / f"{case}.fa"
@@ -107,6 +108,7 @@ class UpstreamContractTest(unittest.TestCase):
             self.schema_validator.validate(report)
             self.assertEqual(report["verdict"]["status"], expected_status)
             self.assertEqual(report["gate"]["status"], expected_status)
+            self.assertIs(report["gate"]["can_continue"], expected_can_continue)
             self.assertEqual(report["gate"]["blocking_findings"], expected_blockers)
 
             with outputs["tsv"].open(newline="") as handle:
@@ -253,7 +255,15 @@ class UpstreamContractTest(unittest.TestCase):
 
         self.assertEqual(report_result.returncode, 0, report_result.stderr)
         self.assertEqual(gate_result.returncode, 2, gate_result.stderr)
-        self.assertEqual(gate_result.stdout.strip(), "FastaGuard report gate status: FAIL")
+        self.assertIn("verdict=FAIL", gate_result.stdout)
+        self.assertIn("gate.status=FAIL", gate_result.stdout)
+        self.assertIn("gate.can_continue=false", gate_result.stdout)
+        self.assertIn("gate.mode=pipeline", gate_result.stdout)
+        self.assertIn(
+            'gate.blocking_findings=["duplicate_ids","duplicate_first_token_ids",'
+            '"invalid_chars"]',
+            gate_result.stdout,
+        )
 
 
 if __name__ == "__main__":

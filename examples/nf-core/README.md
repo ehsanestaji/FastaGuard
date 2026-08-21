@@ -40,10 +40,19 @@ process {
 }
 ```
 
-FastaGuard v0.6 returns `0` after successfully writing PASS, WARN, or FAIL
-reports. A downstream collect-then-gate step should parse the JSON or TSV and
-route on `verdict.status`, `gate.status`, and `gate.blocking_findings`. Process
-status is reserved for command, input, runtime, and output-write errors.
+FastaGuard returns `0` after successfully writing PASS, WARN, or FAIL reports.
+The maintained module therefore stays a thin report-producing process with
+four explicit QC outputs, the standard `task.ext.prefix` and `task.ext.args`
+interfaces, and no exit-code output, `--outdir`, or `--threads`. Process status
+is reserved for command, input, runtime, and output-write errors.
+
+Apply workflow stop/go policy only after the final JSON report has been
+collected. The optional local helper at
+`examples/workflows/check_fastaguard_gate.py` reads `gate.can_continue` as a
+strict JSON boolean and returns workflow-local status `0` for `true`, `2` for
+`false`, or `3` when the field is missing or malformed. It prints the report
+verdict and gate context for logs; it does not run FastaGuard and never guesses
+continuation from `verdict.status` or `gate.status`.
 
 For submission-readiness preflight before official validators, callers can use:
 

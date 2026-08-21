@@ -23,6 +23,7 @@ process FASTAGUARD {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: ''
+    // Keep report collection explicit; downstream policy reads the final JSON.
     """
     fastaguard ${fasta} \
       ${args} \
