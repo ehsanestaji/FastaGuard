@@ -20,7 +20,9 @@
   "gate": {
     "mode": "none",
     "submission_target": null,
+    "submission_policy": null,
     "status": "FAIL",
+    "can_continue": false,
     "blocking_findings": [
       "duplicate_ids",
       "duplicate_first_token_ids",
@@ -227,6 +229,7 @@
   "provenance": {
     "profile": "assembly",
     "submission_target": null,
+    "submission_policy": null,
     "threads": 1,
     "fail_on": [],
     "thresholds": {

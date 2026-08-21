@@ -18,7 +18,9 @@
   "gate": {
     "mode": "none",
     "submission_target": null,
+    "submission_policy": null,
     "status": "WARN",
+    "can_continue": true,
     "blocking_findings": [],
     "advisory_findings": [
       "terminal_ns"
@@ -133,6 +135,7 @@
   "provenance": {
     "profile": "assembly",
     "submission_target": null,
+    "submission_policy": null,
     "threads": 1,
     "fail_on": [],
     "thresholds": {

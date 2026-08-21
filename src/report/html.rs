@@ -800,7 +800,9 @@ mod tests {
             gate: GateDecision {
                 mode: "none".to_string(),
                 submission_target: None,
+                submission_policy: None,
                 status: VerdictStatus::Pass,
+                can_continue: true,
                 blocking_findings: Vec::new(),
                 advisory_findings: Vec::new(),
                 fail_on: Vec::new(),
@@ -827,6 +829,7 @@ mod tests {
             provenance: Provenance {
                 profile: "assembly".to_string(),
                 submission_target: None,
+                submission_policy: None,
                 threads: 1,
                 fail_on: Vec::new(),
                 thresholds: ProvenanceThresholds {

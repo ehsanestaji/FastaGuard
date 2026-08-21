@@ -155,6 +155,70 @@ fn schema_supports_submission_gate_fields() {
 }
 
 #[test]
+fn schema_requires_submission_policy_and_continuation_fields() {
+    let schema: serde_json::Value =
+        serde_json::from_str(fastaguard::contract::schema_json()).unwrap();
+    let gate = &schema["$defs"]["single_report"]["properties"]["gate"];
+    let provenance = &schema["$defs"]["single_report"]["properties"]["provenance"];
+    let policy = &schema["$defs"]["submission_policy"];
+
+    assert!(gate["required"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|value| value == "can_continue"));
+    assert!(gate["properties"]["submission_policy"].is_object());
+    assert!(provenance["properties"]["submission_policy"].is_object());
+    assert_eq!(policy["type"], "object");
+    for field in [
+        "id",
+        "version",
+        "source_url",
+        "scope",
+        "limitations",
+        "thresholds",
+    ] {
+        assert!(policy["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|value| value == field));
+    }
+    assert_eq!(policy["properties"]["thresholds"]["type"], "object");
+}
+
+#[test]
+fn schema_validates_no_target_and_ncbi_submission_policy_reports() {
+    let temp_dir = TempDir::new().unwrap();
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let validator =
+        jsonschema::validator_for(&schema).expect("schema/fastaguard.schema.json should compile");
+
+    let no_target = generated_report(&temp_dir, "no_target", &[]);
+    assert_eq!(
+        no_target["gate"]["submission_policy"],
+        serde_json::json!(null)
+    );
+    assert_eq!(
+        no_target["provenance"]["submission_policy"],
+        serde_json::json!(null)
+    );
+    assert_validates(&validator, &no_target, "no-target report");
+
+    let ncbi = generated_report(
+        &temp_dir,
+        "ncbi",
+        &["--gate", "submission", "--submission-target", "ncbi"],
+    );
+    assert_eq!(ncbi["gate"]["submission_policy"]["id"], "ncbi_genome");
+    assert_eq!(
+        ncbi["provenance"]["submission_policy"],
+        ncbi["gate"]["submission_policy"]
+    );
+    assert_validates(&validator, &ncbi, "NCBI submission report");
+}
+
+#[test]
 fn schema_supports_compare_reports() {
     let schema: serde_json::Value =
         serde_json::from_str(fastaguard::contract::schema_json()).unwrap();
@@ -304,6 +368,41 @@ fn golden_report_paths() -> Vec<&'static Path> {
 fn read_json(path: &Path) -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap())
         .unwrap_or_else(|error| panic!("failed to parse {}: {error}", path.display()))
+}
+
+fn generated_report(temp_dir: &TempDir, name: &str, extra_args: &[&str]) -> Value {
+    let html = temp_dir.path().join(format!("{name}.html"));
+    let json = temp_dir.path().join(format!("{name}.json"));
+    let tsv = temp_dir.path().join(format!("{name}.tsv"));
+    let multiqc = temp_dir.path().join(format!("{name}_multiqc.json"));
+    let mut cmd = assert_cmd::Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("testdata/valid_assembly.fa")
+        .arg("--min-contig-length")
+        .arg("1")
+        .args(extra_args)
+        .arg("--out")
+        .arg(html)
+        .arg("--json")
+        .arg(&json)
+        .arg("--tsv")
+        .arg(tsv)
+        .arg("--multiqc")
+        .arg(multiqc)
+        .assert()
+        .success();
+    read_json(&json)
+}
+
+fn assert_validates(validator: &jsonschema::Validator, report: &Value, label: &str) {
+    let errors = validator
+        .iter_errors(report)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        errors.is_empty(),
+        "{label} did not validate:\n{}",
+        errors.join("\n")
+    );
 }
 
 fn balanced_sequence(length: usize) -> String {

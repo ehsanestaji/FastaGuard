@@ -97,7 +97,9 @@
           "required": [
             "mode",
             "submission_target",
+            "submission_policy",
             "status",
+            "can_continue",
             "blocking_findings",
             "advisory_findings",
             "fail_on"
@@ -122,6 +124,16 @@
                 "ncbi"
               ]
             },
+            "submission_policy": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/submission_policy"
+                }
+              ]
+            },
             "status": {
               "type": "string",
               "enum": [
@@ -129,6 +141,9 @@
                 "WARN",
                 "FAIL"
               ]
+            },
+            "can_continue": {
+              "type": "boolean"
             },
             "blocking_findings": {
               "type": "array",
@@ -227,6 +242,7 @@
           "required": [
             "profile",
             "submission_target",
+            "submission_policy",
             "threads",
             "fail_on",
             "thresholds",
@@ -250,6 +266,16 @@
                 null,
                 "generic",
                 "ncbi"
+              ]
+            },
+            "submission_policy": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/submission_policy"
+                }
               ]
             },
             "threads": {
@@ -914,6 +940,64 @@
             "type": "string"
           },
           "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "submission_policy": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "source_url",
+        "scope",
+        "limitations",
+        "thresholds"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "limitations": {
+          "type": "string"
+        },
+        "thresholds": {
+          "type": "object",
+          "required": [
+            "seqid_max_bytes",
+            "min_record_length_bases",
+            "terminal_n_prohibited"
+          ],
+          "properties": {
+            "seqid_max_bytes": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "min_record_length_bases": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "terminal_n_prohibited": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

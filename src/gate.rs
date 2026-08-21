@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
 use crate::models::{Finding, GateDecision, Severity, VerdictStatus};
-use crate::submission::SubmissionTarget;
+use crate::submission::{policy_for_option, SubmissionTarget};
 
 pub const PIPELINE_FAIL_ON: &[&str] = &[
     "duplicate_first_token_ids",
@@ -95,10 +95,14 @@ pub fn decision(
         }
     }
 
+    let can_continue = blocking_findings.is_empty();
+
     GateDecision {
         mode: mode.as_str().to_string(),
         submission_target,
+        submission_policy: policy_for_option(submission_target),
         status,
+        can_continue,
         blocking_findings,
         advisory_findings,
         fail_on: fail_on.iter().cloned().collect(),

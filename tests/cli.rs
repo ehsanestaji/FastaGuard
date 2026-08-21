@@ -1262,6 +1262,14 @@ fn submission_target_ncbi_is_serialized_when_requested() {
     let report = read_json(&outputs.json);
     assert_eq!(report["gate"]["submission_target"], json!("ncbi"));
     assert_eq!(report["provenance"]["submission_target"], json!("ncbi"));
+    assert_eq!(
+        report["gate"]["submission_policy"]["id"],
+        json!("ncbi_genome")
+    );
+    assert_eq!(
+        report["provenance"]["submission_policy"],
+        report["gate"]["submission_policy"]
+    );
     assert!(array_contains_string(
         &report["scope"]["can_conclude"],
         "FASTA-level submission readiness"

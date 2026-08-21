@@ -18,7 +18,9 @@
   "gate": {
     "mode": "none",
     "submission_target": null,
+    "submission_policy": null,
     "status": "FAIL",
+    "can_continue": false,
     "blocking_findings": [
       "invalid_fasta_structure"
     ],
@@ -135,6 +137,7 @@
   "provenance": {
     "profile": "assembly",
     "submission_target": null,
+    "submission_policy": null,
     "threads": 1,
     "fail_on": [],
     "thresholds": {

@@ -14,7 +14,7 @@ use crate::metrics::AssemblyMetrics;
 use crate::profile::ProfileConfig;
 use crate::readiness::{self, ReadinessReport, ReadinessScope};
 use crate::stats::composition::percent;
-use crate::submission::SubmissionTarget;
+use crate::submission::{policy_for_option, SubmissionPolicy, SubmissionTarget};
 
 pub const SCHEMA_VERSION: &str = "0.5.0";
 pub const TOOL_NAME: &str = "FastaGuard";
@@ -128,7 +128,9 @@ pub struct Verdict {
 pub struct GateDecision {
     pub mode: String,
     pub submission_target: Option<SubmissionTarget>,
+    pub submission_policy: Option<SubmissionPolicy>,
     pub status: VerdictStatus,
+    pub can_continue: bool,
     pub blocking_findings: Vec<String>,
     pub advisory_findings: Vec<String>,
     pub fail_on: Vec<String>,
@@ -167,6 +169,7 @@ pub struct Scope {
 pub struct Provenance {
     pub profile: String,
     pub submission_target: Option<SubmissionTarget>,
+    pub submission_policy: Option<SubmissionPolicy>,
     pub threads: usize,
     pub fail_on: Vec<String>,
     pub thresholds: ProvenanceThresholds,
@@ -930,6 +933,7 @@ fn build_provenance(
     Ok(Provenance {
         profile: profile.name.clone(),
         submission_target: config.submission_target,
+        submission_policy: policy_for_option(config.submission_target),
         threads: config.threads,
         fail_on: config.rules.fail_on.iter().cloned().collect(),
         thresholds: ProvenanceThresholds {
