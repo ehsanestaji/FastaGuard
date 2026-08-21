@@ -311,6 +311,30 @@ class BenchmarkManifestValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(BenchmarkManifestError, "HTTPS"):
             validate_manifest(manifest)
 
+    def test_manifest_rejects_noncanonical_public_source_urls(self):
+        unsafe_urls = {
+            "credentials": "https://user:secret@example.org/assembly.fa.gz",
+            "query": "https://example.org/assembly.fa.gz?token=secret",
+            "fragment": "https://example.org/assembly.fa.gz#secret",
+        }
+
+        for label, unsafe_url in unsafe_urls.items():
+            with self.subTest(label=label):
+                manifest = self.valid_manifest()
+                manifest["cases"][0]["source_url"] = unsafe_url
+
+                with self.assertRaisesRegex(BenchmarkManifestError, "source_url"):
+                    validate_manifest(manifest)
+
+    def test_publishable_summary_rejects_source_url_with_credentials(self):
+        summary = self.valid_summary()
+        summary["cases"] = [
+            {"source_url": "https://user:secret@example.org/assembly.fa.gz"}
+        ]
+
+        with self.assertRaisesRegex(BenchmarkManifestError, "credentials"):
+            validate_publishable_summary(summary)
+
     def test_manifest_rejects_missing_required_category(self):
         manifest = self.valid_manifest()
         manifest["cases"] = [
@@ -404,6 +428,48 @@ class BenchmarkManifestValidationTests(unittest.TestCase):
                     baseline,
                 )
             self.assertFalse((Path(directory) / "runs").exists())
+
+    def test_baseline_rejects_invalid_elapsed_seconds_before_running(self):
+        invalid_elapsed_values = {
+            "missing": None,
+            "zero": 0.0,
+            "malformed": "1.0",
+            "infinite": float("inf"),
+            "not-a-number": float("nan"),
+        }
+        args = SimpleNamespace(local_synthetic_only=True, download=False)
+        synthetic_case = self.valid_manifest()["cases"][-1]
+
+        for label, elapsed_seconds in invalid_elapsed_values.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                baseline = self.valid_summary(baseline_supplied=True)
+                baseline.update(
+                    {
+                        "platform_system": platform.system(),
+                        "platform_release": platform.release(),
+                        "platform_machine": platform.machine(),
+                        "python_version": platform.python_version(),
+                    }
+                )
+                prior = self.baseline_case(synthetic_case)
+                if label == "missing":
+                    del prior["elapsed_seconds"]
+                else:
+                    prior["elapsed_seconds"] = elapsed_seconds
+                baseline["cases"] = [prior]
+
+                with self.assertRaisesRegex(
+                    BenchmarkManifestError,
+                    "synthetic-many-records elapsed_seconds must be a positive finite number",
+                ):
+                    run_manifest(
+                        self.valid_manifest(),
+                        Path(directory) / "unused-fastaguard",
+                        Path(directory),
+                        args,
+                        baseline,
+                    )
+                self.assertFalse((Path(directory) / "runs").exists())
 
     def test_scale_comparison_reports_observed_deltas_without_a_verdict(self):
         case = self.valid_manifest()["cases"][0]

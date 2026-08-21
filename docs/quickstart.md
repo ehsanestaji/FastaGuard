@@ -59,10 +59,12 @@ if jq -e '.gate.can_continue == true' reports/sample-01.fastaguard.json >/dev/nu
 fi
 ```
 
-The single-file TSV carries `input_path`, `verdict`, and `gate_status` columns:
+The single-file TSV is a two-column `metric`/`value` table, not a columnar
+per-sample table. Names such as `input_path`, `verdict`, and `gate_status`
+appear as values in the `metric` rows:
 
 ```bash
-python3 -c 'import csv; print(next(csv.DictReader(open("reports/sample-01.fastaguard.tsv"))))'
+python3 -c 'import csv; rows = {row["metric"]: row["value"] for row in csv.DictReader(open("reports/sample-01.fastaguard.tsv"), delimiter="\t")}; print({key: rows[key] for key in ("input_path", "verdict", "gate_status", "gate_can_continue")})'
 ```
 
 See [report interpretation](report-interpretation.md) before turning findings

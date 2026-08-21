@@ -7,6 +7,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import os
 import platform
 import re
@@ -251,9 +252,21 @@ def validate_public_case(case_id: str, case: dict) -> None:
     for field in ("accession", "assembly_version", "source_url"):
         if not isinstance(case[field], str) or not case[field].strip():
             raise BenchmarkManifestError(f"{case_id} {field} must be non-empty")
-    parsed = urlparse(case["source_url"])
+    validate_public_source_url(case_id, case["source_url"])
+
+
+def validate_public_source_url(label: str, source_url: object) -> None:
+    if not isinstance(source_url, str):
+        raise BenchmarkManifestError(f"{label} source_url must be a string")
+    parsed = urlparse(source_url)
     if parsed.scheme != "https" or not parsed.netloc:
-        raise BenchmarkManifestError(f"{case_id} source_url must use HTTPS")
+        raise BenchmarkManifestError(f"{label} source_url must use HTTPS")
+    if parsed.username is not None or parsed.password is not None:
+        raise BenchmarkManifestError(f"{label} source_url must not include credentials")
+    if parsed.query:
+        raise BenchmarkManifestError(f"{label} source_url must not include a query string")
+    if parsed.fragment:
+        raise BenchmarkManifestError(f"{label} source_url must not include a fragment")
 
 
 def validate_publishable_summary(summary: dict) -> dict:
@@ -320,6 +333,8 @@ def validate_publishable_summary(summary: dict) -> dict:
                     "publishable summary contains forbidden fields: "
                     + ", ".join(sorted(overlap))
                 )
+            if value.get("source_url") is not None:
+                validate_public_source_url("publishable summary", value["source_url"])
             pending.extend(value.values())
         elif isinstance(value, list):
             pending.extend(value)
@@ -354,6 +369,16 @@ def validate_baseline_case(case: dict, prior: dict) -> dict:
             raise BenchmarkManifestError(
                 f"prior baseline {case['id']} {field} differs from the current case"
             )
+    elapsed_seconds = prior.get("elapsed_seconds")
+    if (
+        isinstance(elapsed_seconds, bool)
+        or not isinstance(elapsed_seconds, (int, float))
+        or not math.isfinite(elapsed_seconds)
+        or elapsed_seconds <= 0
+    ):
+        raise BenchmarkManifestError(
+            f"prior baseline {case['id']} elapsed_seconds must be a positive finite number"
+        )
     return prior
 
 
@@ -399,6 +424,8 @@ def run_manifest(
                 + ", ".join(missing_prior_cases)
                 + "; capture a baseline with the same selected cases"
             )
+        for case in selected:
+            validate_baseline_case(case, prior_by_id[case["id"]])
 
     if not args.local_synthetic_only and not args.download:
         public = [case["id"] for case in selected if case["category"] in PUBLIC_CATEGORIES]
@@ -411,8 +438,6 @@ def run_manifest(
     cases = []
     for case in selected:
         prior = prior_by_id.get(case["id"])
-        if prior is not None:
-            validate_baseline_case(case, prior)
         case_dir = out_dir / "runs" / case["id"]
         case_dir.mkdir(parents=True, exist_ok=True)
         input_path = prepare_input(case, out_dir, case_dir, args.download)

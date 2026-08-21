@@ -52,7 +52,15 @@ repository acceptance.
 
 ## TSV and MultiQC
 
-Use TSV for simple row-oriented handoffs, including its `verdict` and
-`gate_status` columns. Use JSON for nested evidence and the actual continuation
-boolean. The MultiQC-compatible file is for cohort visibility; the detailed
-FastaGuard JSON and HTML remain the evidence to inspect.
+The single-file TSV is a two-column `metric`/`value` table for simple
+row-oriented handoffs. `verdict`, `gate_status`, and `gate_can_continue` are
+metric-row names, not TSV column headers; retrieve their values by selecting
+the corresponding `metric` rows:
+
+```bash
+python3 -c 'import csv; rows = {row["metric"]: row["value"] for row in csv.DictReader(open("reports/sample-01.fastaguard.tsv"), delimiter="\t")}; print({key: rows[key] for key in ("verdict", "gate_status", "gate_can_continue")})'
+```
+
+Use JSON for nested evidence and the actual continuation boolean. The
+MultiQC-compatible file is for cohort visibility; the detailed FastaGuard JSON
+and HTML remain the evidence to inspect.
