@@ -37,6 +37,38 @@ pub fn nx_lx(lengths: &[u64], fraction: f64) -> Nx {
     }
 }
 
+pub(crate) fn nx_lx_ratio(lengths: &[u64], numerator: u64, denominator: u64) -> Nx {
+    if lengths.is_empty() || numerator == 0 || denominator == 0 || numerator > denominator {
+        return Nx { nx: 0, lx: 0 };
+    }
+
+    let mut sorted = lengths.to_vec();
+    sorted.sort_unstable_by(|a, b| b.cmp(a));
+
+    let total: u128 = sorted.iter().map(|length| *length as u128).sum();
+    let numerator = u128::from(numerator);
+    let denominator = u128::from(denominator);
+    let whole = (total / denominator) * numerator;
+    let remainder_product = (total % denominator) * numerator;
+    let target = whole + ((remainder_product + denominator - 1) / denominator);
+    let mut cumulative = 0_u128;
+
+    for (index, length) in sorted.iter().enumerate() {
+        cumulative += *length as u128;
+        if cumulative >= target {
+            return Nx {
+                nx: *length,
+                lx: (index + 1) as u64,
+            };
+        }
+    }
+
+    Nx {
+        nx: *sorted.last().unwrap_or(&0),
+        lx: sorted.len() as u64,
+    }
+}
+
 fn fraction_as_binary_ratio(fraction: f64) -> Option<(u64, u32)> {
     if !fraction.is_finite() || fraction <= 0.0 || fraction > 1.0 {
         return None;
@@ -180,6 +212,15 @@ mod tests {
         let lengths = vec![10, 80, 20, 40];
         let result = nx_lx(&lengths, 0.90);
         assert_eq!(result, Nx { nx: 20, lx: 3 });
+    }
+
+    #[test]
+    fn computes_n90_at_exact_decimal_boundary() {
+        let lengths = vec![108, 103, 77, 23, 9];
+
+        let result = nx_lx_ratio(&lengths, 9, 10);
+
+        assert_eq!(result, Nx { nx: 77, lx: 3 });
     }
 
     #[test]

@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "ecoli-k12-mg1655",
+      "accession": "GCF_000005845.2",
+      "assembly_version": "ASM584v2",
+      "source_url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz",
+      "sha256": "a96d3cfa58c88d477013c768f90a11d2386d42a70d566abfb6d9013dcbd24255",
+      "category": "bacterial",
+      "expected_scale": {
+        "bases": 4641652,
+        "records": 1
+      }
+    },
+    {
+      "id": "grch38-p14",
+      "accession": "GCF_000001405.40",
+      "assembly_version": "GRCh38.p14",
+      "source_url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_genomic.fna.gz",
+      "sha256": "11912a45a545bf01a10b2a7f10eb7a42924436b4d19b476b1899834fb7ba74a3",
+      "category": "human-scale",
+      "expected_scale": {
+        "bases": 3099441038,
+        "records": 996
+      }
+    },
+    {
+      "id": "neurospora-crassa-or74a",
+      "accession": "GCF_000182925.2",
+      "assembly_version": "NC12",
+      "source_url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/182/925/GCF_000182925.2_NC12/GCF_000182925.2_NC12_genomic.fna.gz",
+      "sha256": "e185edd2512275e000c22ab22158b34a4bce4ed40970ea37fbcaf5ab03a5f947",
+      "category": "fungal",
+      "expected_scale": {
+        "bases": 41037538,
+        "records": 411
+      }
+    },
+    {
+      "id": "synthetic-10000x1000",
+      "accession": null,
+      "assembly_version": null,
+      "source_url": null,
+      "sha256": "845415e67442e64ee318b57c3519eb9173baeb6641e530d428495bb192280165",
+      "category": "high-record-count-synthetic",
+      "expected_scale": {
+        "bases": 10000000,
+        "records": 10000,
+        "record_length": 1000
+      }
+    },
+    {
+      "id": "t2t-chm13-v2",
+      "accession": "GCF_009914755.1",
+      "assembly_version": "T2T-CHM13v2.0",
+      "source_url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/914/755/GCF_009914755.1_T2T-CHM13v2.0/GCF_009914755.1_T2T-CHM13v2.0_genomic.fna.gz",
+      "sha256": "4bd19ff56f5e3d60c800386d43ad0ed94e3e67429f07b89e5015a5742ecbf362",
+      "category": "human-scale",
+      "expected_scale": {
+        "bases": 3117275501,
+        "records": 24
+      }
+    }
+  ]
+}

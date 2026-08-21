@@ -71,6 +71,12 @@ The script prints a JSON timing summary with:
 - FastaGuard verdict
 - output artifact paths
 
+The summary records the observed release/debug binary version and checksum plus
+the local platform and Python runtime. Output references are normalized file
+names rather than absolute paths. The benchmark command continues to pass
+`--force` for its owned report files, so repeating the same command replaces
+the prior generated benchmark bundle deterministically.
+
 ## Keeping Generated FASTA
 
 The generated FASTA is removed after the run by default to avoid leaving large files in `target/`. Keep it for inspection with:
@@ -109,6 +115,70 @@ measured local frame is:
 Frame timings as evidence, not formal universal benchmark claims. Use them to
 show that FastaGuard is cheap enough to run before QUAST, BUSCO, BlobToolKit,
 CheckM, official validators, annotation, or other heavier follow-up tools.
+
+## v0.7 Qualification And Performance Manifests
+
+Clean policy qualification and performance evidence answer different questions.
+The synthetic fixtures in `testdata/clean_corpus/clean_cases.json` prove that
+known-good FASTA records have no NCBI submission blockers. They are not timing
+baselines. Conversely, `docs/evidence/benchmark-inputs.json` identifies
+checksum-pinned inputs for runtime observations; it does not claim that a public
+assembly is submission-ready or biologically complete.
+
+Build the release binary before a benchmark run:
+
+```bash
+cargo build --release --locked
+```
+
+Run only the deterministic 10,000-record local case, without network access:
+
+```bash
+python3 scripts/benchmark_manifest.py \
+  --manifest docs/evidence/benchmark-inputs.json \
+  --binary target/release/fastaguard \
+  --out-dir target/benchmarks/v0.7-manifest \
+  --local-synthetic-only
+```
+
+Public assembly downloads never happen implicitly. The operator must opt in,
+and the runner verifies the compressed input SHA-256 before starting FastaGuard:
+
+```bash
+python3 scripts/benchmark_manifest.py \
+  --manifest docs/evidence/benchmark-inputs.json \
+  --binary target/release/fastaguard \
+  --out-dir target/benchmarks/v0.7-public \
+  --download
+```
+
+The bacterial, fungal, GRCh38, and T2T FASTA files remain under the ignored
+benchmark output directory and must never be committed. Only the small synthetic
+fixtures in `testdata/` belong in Git.
+
+The runner writes `benchmark_summary.json` and `benchmark_summary.tsv` with the
+observed build commit, binary checksum/version, platform/runtime context, input
+checksum and scale, runtime, verdict, and core metrics. A `source_tree_dirty`
+flag prevents a local build from being presented as an exact clean-commit build.
+Publishable summaries contain no absolute paths, commands, FASTA sequence data,
+or time/memory
+pass-fail thresholds.
+
+To compare with a prior observation, pass its captured JSON summary:
+
+```bash
+python3 scripts/benchmark_manifest.py \
+  --manifest docs/evidence/benchmark-inputs.json \
+  --binary target/release/fastaguard \
+  --out-dir target/benchmarks/v0.7-repeat \
+  --local-synthetic-only \
+  --baseline target/benchmarks/v0.7-manifest/benchmark_summary.json
+```
+
+Baseline comparison is accepted only when the recorded system, release,
+architecture, and Python runtime match the current pinned runner. The elapsed
+ratio is contextual evidence; it is not a universal performance guarantee and
+does not produce a performance pass/fail verdict.
 
 ## Evidence Targets
 

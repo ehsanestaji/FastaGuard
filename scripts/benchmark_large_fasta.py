@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import platform
 import subprocess
 import time
 from pathlib import Path
@@ -13,6 +15,10 @@ from pathlib import Path
 BASES = "ACGT"
 LINE_WIDTH = 80
 INDEX_TAG_WIDTH = 32
+RUNTIME_CONTEXT = (
+    "Elapsed seconds are contextual measurements from one local run, "
+    "not universal performance guarantees."
+)
 
 
 def main() -> int:
@@ -65,6 +71,11 @@ def main() -> int:
 
     report = json.loads(json_path.read_text())
     summary = {
+        "fastaguard_version": fastaguard_version(binary),
+        "binary_sha256": sha256_path(binary),
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "runtime_context": RUNTIME_CONTEXT,
         "records": args.records,
         "length_per_record": args.length,
         "total_bases": args.records * args.length,
@@ -78,11 +89,11 @@ def main() -> int:
         "reported_total_length": report["summary"]["total_length"],
         "fasta_removed_after_run": not args.keep_fasta,
         "outputs": {
-            "fasta": str(fasta_path) if args.keep_fasta else None,
-            "json": str(json_path),
-            "html": str(html_path),
-            "tsv": str(tsv_path),
-            "multiqc": str(multiqc_path),
+            "fasta": fasta_path.name if args.keep_fasta else None,
+            "json": json_path.name,
+            "html": html_path.name,
+            "tsv": tsv_path.name,
+            "multiqc": multiqc_path.name,
         },
     }
 
@@ -174,6 +185,23 @@ def ensure_unique_capacity(records: int, length: int) -> None:
             f"Cannot generate {records} unique records with length {length}. "
             f"Increase --length or reduce --records below {unique_capacity}."
         )
+
+
+def fastaguard_version(binary: Path) -> str:
+    completed = subprocess.run(
+        [str(binary), "--version"], capture_output=True, text=True, check=False
+    )
+    if completed.returncode != 0:
+        raise SystemExit("Failed to read the FastaGuard benchmark binary version.")
+    return completed.stdout.strip()
+
+
+def sha256_path(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "clean_bacterial",
+    "fixture": "clean_bacterial.fa",
+    "expected_ncbi_blocking_findings": []
+  },
+  {
+    "id": "clean_fragmented",
+    "fixture": "clean_fragmented.fa",
+    "expected_ncbi_blocking_findings": []
+  }
+]

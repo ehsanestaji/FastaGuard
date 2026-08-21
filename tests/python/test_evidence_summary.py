@@ -2,8 +2,14 @@ import csv
 import gzip
 import json
 import re
+import unittest
 from pathlib import Path
 
+from scripts.benchmark_manifest import (
+    BenchmarkManifestError,
+    validate_manifest,
+    validate_publishable_summary,
+)
 from scripts.collect_evidence import gzip_fasta
 
 
@@ -209,3 +215,71 @@ def test_gzip_evidence_fixture_has_a_reproducible_timestamp(tmp_path):
     assert destination.read_bytes()[4:8] == b"\x00\x00\x00\x00"
     with gzip.open(destination, "rt", encoding="utf-8") as handle:
         assert handle.read() == ">record\nACGT\n"
+
+
+class BenchmarkManifestValidationTests(unittest.TestCase):
+    def valid_manifest(self):
+        cases = []
+        for category in ("bacterial", "fungal", "human-scale"):
+            cases.append(
+                {
+                    "id": f"{category}-case",
+                    "accession": "GCF_000005845.2",
+                    "assembly_version": "ASM584v2",
+                    "source_url": "https://example.org/assembly.fa.gz",
+                    "sha256": "a" * 64,
+                    "category": category,
+                    "expected_scale": {"bases": 1000, "records": 1},
+                }
+            )
+        cases.append(
+            {
+                "id": "synthetic-many-records",
+                "accession": None,
+                "assembly_version": None,
+                "source_url": None,
+                "sha256": "b" * 64,
+                "category": "high-record-count-synthetic",
+                "expected_scale": {"bases": 320, "records": 10, "record_length": 32},
+            }
+        )
+        return {"schema_version": 1, "cases": cases}
+
+    def test_manifest_rejects_duplicate_ids(self):
+        manifest = self.valid_manifest()
+        manifest["cases"][1]["id"] = manifest["cases"][0]["id"]
+
+        with self.assertRaisesRegex(BenchmarkManifestError, "duplicate id"):
+            validate_manifest(manifest)
+
+    def test_manifest_rejects_missing_sha256(self):
+        manifest = self.valid_manifest()
+        del manifest["cases"][0]["sha256"]
+
+        with self.assertRaisesRegex(BenchmarkManifestError, "sha256"):
+            validate_manifest(manifest)
+
+    def test_manifest_rejects_non_https_public_source_url(self):
+        manifest = self.valid_manifest()
+        manifest["cases"][0]["source_url"] = "http://example.org/assembly.fa.gz"
+
+        with self.assertRaisesRegex(BenchmarkManifestError, "HTTPS"):
+            validate_manifest(manifest)
+
+    def test_manifest_rejects_missing_required_category(self):
+        manifest = self.valid_manifest()
+        manifest["cases"] = [
+            case for case in manifest["cases"] if case["category"] != "fungal"
+        ]
+
+        with self.assertRaisesRegex(BenchmarkManifestError, "missing categories.*fungal"):
+            validate_manifest(manifest)
+
+    def test_publishable_summary_rejects_universal_performance_claim(self):
+        summary = {
+            "runtime_context": "FastaGuard guarantees this runtime on every machine.",
+            "cases": [],
+        }
+
+        with self.assertRaisesRegex(BenchmarkManifestError, "universal performance"):
+            validate_publishable_summary(summary)

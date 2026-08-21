@@ -6,7 +6,7 @@ use std::path::Path;
 use crate::parser::{self, FastaEvent, FastaRecord};
 use crate::profile::ProfileConfig;
 use crate::stats::composition::{fraction, percent, round2};
-use crate::stats::nxx::nx_lx;
+use crate::stats::nxx::nx_lx_ratio;
 use crate::stats::outliers::{iqr_outlier_indices, zscore_outlier_indices};
 
 #[derive(Debug, Clone)]
@@ -262,8 +262,8 @@ impl<'a> MetricsAccumulator<'a> {
             round2(total_length_u128 as f64 / sequence_count as f64)
         };
         let median_length = median(&self.lengths);
-        let n50 = nx_lx(&self.lengths, 0.50);
-        let n90 = nx_lx(&self.lengths, 0.90);
+        let n50 = nx_lx_ratio(&self.lengths, 1, 2);
+        let n90 = nx_lx_ratio(&self.lengths, 9, 10);
 
         AssemblyMetrics {
             sequence_count,
@@ -611,6 +611,25 @@ mod tests {
         assert_eq!(metrics.n50, 6);
         assert_eq!(metrics.gc_percent, 60.0);
         assert_eq!(metrics.n_percent, 20.0);
+    }
+
+    #[test]
+    fn n90_uses_an_exact_ninety_percent_boundary() {
+        let records = [108, 103, 77, 23, 9]
+            .into_iter()
+            .enumerate()
+            .map(|(index, length)| FastaRecord {
+                id: format!("record_{index}"),
+                header: format!("record_{index}"),
+                sequence: vec![b'A'; length],
+            })
+            .collect();
+
+        let metrics = AssemblyMetrics::from_records(records, &profile());
+
+        assert_eq!(metrics.total_length, 320);
+        assert_eq!(metrics.n90, 77);
+        assert_eq!(metrics.l90, 3);
     }
 
     #[test]
