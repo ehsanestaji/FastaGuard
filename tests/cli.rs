@@ -948,6 +948,39 @@ fn fail_on_rejects_unknown_finding_ids_before_writing_reports() {
 }
 
 #[test]
+fn fail_on_reports_all_unknown_ids_once_in_lexical_order() {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, "multiple_unknown_fail_on");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.args([
+        "testdata/valid_assembly.fa",
+        "--fail-on",
+        "z_rule,a_rule,z_rule",
+        "--fail-on",
+        "m_rule,a_rule",
+        "--json",
+    ])
+    .arg(&outputs.json)
+    .arg("--out")
+    .arg(&outputs.html)
+    .arg("--tsv")
+    .arg(&outputs.tsv)
+    .arg("--multiqc")
+    .arg(&outputs.multiqc)
+    .assert()
+    .code(3)
+    .stderr(predicate::eq(
+        "fastaguard error: unknown finding id 'a_rule'; unknown finding id 'm_rule'; unknown finding id 'z_rule'\n",
+    ));
+
+    assert!(!outputs.json.exists());
+    assert!(!outputs.html.exists());
+    assert!(!outputs.tsv.exists());
+    assert!(!outputs.multiqc.exists());
+}
+
+#[test]
 fn fail_on_warn_report_distinguishes_pass_only_safety_from_gate_continuation() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "warn_continuation");
@@ -1010,7 +1043,7 @@ fn expected_size_serializes_thresholds_evidence_and_tsv_metrics() {
         "--expected-size",
         "5mb",
         "--expected-size-tolerance",
-        "0.1",
+        "0.13",
         "--json",
     ])
     .arg(&outputs.json)
@@ -1031,15 +1064,15 @@ fn expected_size_serializes_thresholds_evidence_and_tsv_metrics() {
     );
     assert_eq!(
         report["provenance"]["thresholds"]["expected_size_tolerance"],
-        json!(0.1)
+        json!(0.13)
     );
 
     let evidence = &finding_by_id(&report, "expected_size_outlier")["evidence"];
     assert_eq!(evidence["observed_ungapped_length"], json!(46));
     assert_eq!(evidence["expected_size_bases"], json!(5_000_000));
-    assert_eq!(evidence["expected_size_tolerance"], json!(0.1));
-    assert_eq!(evidence["expected_size_lower_bound"], json!(4_500_000));
-    assert_eq!(evidence["expected_size_upper_bound"], json!(5_500_000));
+    assert_eq!(evidence["expected_size_tolerance"], json!(0.13));
+    assert_eq!(evidence["expected_size_lower_bound"], json!(4_350_000));
+    assert_eq!(evidence["expected_size_upper_bound"], json!(5_650_000));
     assert_eq!(
         evidence["expected_size_deviation_bases"],
         json!(-4_999_954_i64)
@@ -1048,10 +1081,10 @@ fn expected_size_serializes_thresholds_evidence_and_tsv_metrics() {
     let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
     for metric in [
         "expected_size_bases\t5000000\n",
-        "expected_size_tolerance\t0.1\n",
+        "expected_size_tolerance\t0.13\n",
         "expected_size_observed_ungapped_length\t46\n",
-        "expected_size_lower_bound\t4500000\n",
-        "expected_size_upper_bound\t5500000\n",
+        "expected_size_lower_bound\t4350000\n",
+        "expected_size_upper_bound\t5650000\n",
         "expected_size_deviation_bases\t-4999954\n",
     ] {
         assert!(tsv.contains(metric), "missing {metric:?} in {tsv}");

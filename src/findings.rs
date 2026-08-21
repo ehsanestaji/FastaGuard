@@ -916,18 +916,61 @@ fn expected_size_outlier(ungapped_total_length: u64, profile: &ProfileConfig) ->
         return false;
     };
     let tolerance = profile.expected_size_tolerance.unwrap_or(0.0);
-    let lower_bound = expected_size as f64 * (1.0 - tolerance);
-    let upper_bound = expected_size as f64 * (1.0 + tolerance);
-    let observed = ungapped_total_length as f64;
+    let (lower_bound, upper_bound) = expected_size_bounds(expected_size, tolerance);
 
-    observed < lower_bound || observed > upper_bound
+    ungapped_total_length < lower_bound || ungapped_total_length > upper_bound
 }
 
 fn expected_size_bounds(expected_size: u64, tolerance: f64) -> (u64, u64) {
-    let lower_bound = (expected_size as f64 * (1.0 - tolerance)).max(0.0);
-    let upper_bound = expected_size as f64 * (1.0 + tolerance);
+    let tolerance_bases = decimal_product_floor(expected_size, tolerance);
+    let lower_bound = if tolerance >= 1.0 {
+        0
+    } else {
+        expected_size - tolerance_bases
+    };
+    let upper_bound = expected_size.saturating_add(tolerance_bases);
 
-    (lower_bound.ceil() as u64, upper_bound.floor() as u64)
+    (lower_bound, upper_bound)
+}
+
+fn decimal_product_floor(value: u64, multiplier: f64) -> u64 {
+    let scientific = format!("{multiplier:e}");
+    let (mantissa, exponent) = scientific
+        .split_once('e')
+        .expect("finite float scientific format includes an exponent");
+    let fractional_digits = mantissa
+        .split_once('.')
+        .map(|(_, fraction)| fraction.len())
+        .unwrap_or(0);
+    let coefficient = mantissa
+        .chars()
+        .filter(|character| character.is_ascii_digit())
+        .collect::<String>()
+        .parse::<u128>()
+        .expect("finite float scientific mantissa fits in u128");
+    let decimal_exponent = exponent
+        .parse::<i32>()
+        .expect("finite float scientific exponent fits in i32")
+        - fractional_digits as i32;
+    let product = value as u128 * coefficient;
+
+    if decimal_exponent < 0 {
+        let denominator_exponent = decimal_exponent.unsigned_abs();
+        if denominator_exponent > 38 {
+            return 0;
+        }
+        return (product / 10_u128.pow(denominator_exponent)).min(u64::MAX as u128) as u64;
+    }
+
+    let mut scaled = product;
+    for _ in 0..decimal_exponent {
+        scaled = match scaled.checked_mul(10) {
+            Some(value) if value <= u64::MAX as u128 => value,
+            _ => return u64::MAX,
+        };
+    }
+
+    scaled.min(u64::MAX as u128) as u64
 }
 
 fn composite_signals(sequence: &SequenceSummary, profile: &ProfileConfig) -> Vec<String> {
@@ -1185,6 +1228,29 @@ mod tests {
             .findings
             .iter()
             .any(|finding| finding.id == "expected_size_outlier"));
+    }
+
+    #[test]
+    fn expected_size_bounds_use_exact_decimal_inclusive_integer_limits() {
+        assert_eq!(expected_size_bounds(100, 0.13), (87, 113));
+        assert_eq!(
+            expected_size_bounds(5_000_000, 0.13),
+            (4_350_000, 5_650_000)
+        );
+        assert_eq!(expected_size_bounds(101, 0.1), (91, 111));
+        assert_eq!(
+            expected_size_bounds(10_000_000_000_000_000_000, 1.9),
+            (0, u64::MAX)
+        );
+
+        let profile = ProfileConfig::assembly(ThresholdOverrides {
+            max_n_rate: None,
+            min_contig_length: None,
+            expected_size_bases: Some(100),
+            expected_size_tolerance: Some(0.13),
+        });
+        assert!(!expected_size_outlier(113, &profile));
+        assert!(expected_size_outlier(114, &profile));
     }
 
     #[test]
