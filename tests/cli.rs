@@ -376,7 +376,7 @@ fn valid_assembly_writes_all_outputs_and_warns_for_terminal_ns() {
     .arg(&outputs.multiqc)
     .assert()
     .success()
-    .stderr(predicate::str::is_empty());
+    .stderr(predicate::str::contains("FastaGuard verdict="));
 
     assert_all_outputs_exist(&outputs);
     let json = std::fs::read_to_string(&outputs.json).unwrap();
@@ -457,7 +457,7 @@ fn outdir_rejects_prefix_with_parent_component() {
 }
 
 #[test]
-fn outdir_rejects_existing_bundle_file_without_force() {
+fn no_clobber_preserves_existing_bundle_file_without_force() {
     let temp_dir = TempDir::new().unwrap();
     let outdir = temp_dir.path().join("reports");
     std::fs::create_dir(&outdir).unwrap();
@@ -477,6 +477,61 @@ fn outdir_rejects_existing_bundle_file_without_force() {
     assert!(!outdir.join("sample-01.fastaguard.html").exists());
     assert!(!outdir.join("sample-01.fastaguard.tsv").exists());
     assert!(!outdir.join("sample-01.fastaguard_mqc.json").exists());
+}
+
+#[test]
+fn terminal_summary_is_stderr_only_and_excludes_sensitive_input_data() {
+    let temp_dir = TempDir::new().unwrap();
+    let input = temp_dir.path().join("private-input-name.fa");
+    let header = "private_header_value";
+    let sequence = "AACCGGTTAACCGGTTAACCGGTT";
+    std::fs::write(&input, format!(">{header}\n{sequence}\n")).unwrap();
+    let input_checksum = sha256_file(&input);
+    let outputs = output_paths(&temp_dir, "terminal_summary");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    let assertion = cmd
+        .arg(&input)
+        .arg("--min-contig-length")
+        .arg("1")
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--json")
+        .arg(&outputs.json)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .success()
+        .stdout(predicate::str::is_empty());
+
+    let stderr = String::from_utf8_lossy(&assertion.get_output().stderr);
+    for expected in [
+        "verdict=PASS",
+        "gate.can_continue=true",
+        "duration_ms=",
+        &format!("json={}", outputs.json.display()),
+        &format!("tsv={}", outputs.tsv.display()),
+        &format!("multiqc={}", outputs.multiqc.display()),
+        &format!("html={}", outputs.html.display()),
+    ] {
+        assert!(
+            stderr.contains(expected),
+            "missing {expected:?} in {stderr:?}"
+        );
+    }
+    for sensitive in [
+        input.display().to_string(),
+        header.to_string(),
+        input_checksum,
+        sequence.to_string(),
+    ] {
+        assert!(
+            !stderr.contains(&sensitive),
+            "terminal summary exposed sensitive input data: {stderr:?}"
+        );
+    }
 }
 
 #[test]
@@ -529,7 +584,7 @@ fn valid_report_includes_machine_summary_scope_and_provenance() {
     .arg(&outputs.multiqc)
     .assert()
     .success()
-    .stderr(predicate::str::is_empty());
+    .stderr(predicate::str::contains("FastaGuard verdict="));
 
     let report = read_json(&outputs.json);
     assert_eq!(report["machine_summary"]["verdict"], json!("WARN"));
@@ -639,7 +694,7 @@ fn valid_report_includes_plot_contract() {
     .arg(&outputs.multiqc)
     .assert()
     .success()
-    .stderr(predicate::str::is_empty());
+    .stderr(predicate::str::contains("FastaGuard verdict="));
 
     let report = read_json(&outputs.json);
     let histogram = report["plots"]["length_histogram"].as_array().unwrap();
@@ -696,7 +751,7 @@ fn gc_outlier_plot_flags_are_backed_by_warning_finding() {
         .arg(&outputs.multiqc)
         .assert()
         .success()
-        .stderr(predicate::str::is_empty());
+        .stderr(predicate::str::contains("FastaGuard verdict="));
 
     let report = read_json(&outputs.json);
     assert_eq!(report["verdict"]["status"], json!("WARN"));
@@ -749,7 +804,7 @@ fn assembly_outliers_are_promoted_to_findings_without_fail_by_default() {
         .arg(&outputs.multiqc)
         .assert()
         .success()
-        .stderr(predicate::str::is_empty());
+        .stderr(predicate::str::contains("FastaGuard verdict="));
 
     let report = read_json(&outputs.json);
     assert_eq!(report["verdict"]["status"], json!("WARN"));
@@ -845,7 +900,7 @@ fn valid_assembly_json_matches_golden_contract() {
     .arg(&paths.multiqc)
     .assert()
     .success()
-    .stderr(predicate::str::is_empty());
+    .stderr(predicate::str::contains("FastaGuard verdict="));
 
     assert_json_matches_golden(&paths.json, "tests/golden/valid_assembly.json");
 }
@@ -1128,7 +1183,7 @@ fn fail_on_warn_report_distinguishes_pass_only_safety_from_gate_continuation() {
     .arg(&outputs.multiqc)
     .assert()
     .success()
-    .stderr(predicate::str::is_empty());
+    .stderr(predicate::str::contains("FastaGuard verdict="));
 
     let report = read_json(&outputs.json);
     assert_eq!(report["verdict"]["status"], json!("WARN"));
@@ -1180,7 +1235,7 @@ fn expected_size_serializes_thresholds_evidence_and_tsv_metrics() {
     .arg(&outputs.multiqc)
     .assert()
     .success()
-    .stderr(predicate::str::is_empty());
+    .stderr(predicate::str::contains("FastaGuard verdict="));
 
     let report = read_json(&outputs.json);
     assert_eq!(
@@ -1530,7 +1585,7 @@ fn submission_gate_defaults_to_generic_target() {
     .arg(&outputs.multiqc)
     .assert()
     .success()
-    .stderr(predicate::str::is_empty());
+    .stderr(predicate::str::contains("FastaGuard verdict="));
 
     let report = read_json(&outputs.json);
     assert_eq!(report["gate"]["mode"], json!("submission"));
@@ -1563,7 +1618,7 @@ fn submission_target_ncbi_is_serialized_when_requested() {
     .arg(&outputs.multiqc)
     .assert()
     .success()
-    .stderr(predicate::str::is_empty());
+    .stderr(predicate::str::contains("FastaGuard verdict="));
 
     let report = read_json(&outputs.json);
     assert_eq!(report["gate"]["submission_target"], json!("ncbi"));

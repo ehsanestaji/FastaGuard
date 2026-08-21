@@ -8,7 +8,9 @@ pub mod tsv;
 
 use anyhow::{anyhow, Context, Result};
 use std::collections::BTreeSet;
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
+use tempfile::NamedTempFile;
 
 use crate::cli::OutputPaths;
 use crate::models::{CompareReport, FastaguardReport};
@@ -16,20 +18,64 @@ use crate::models::{CompareReport, FastaguardReport};
 pub fn write_all(report: &FastaguardReport, outputs: &OutputPaths) -> Result<()> {
     validate_output_paths(outputs)?;
 
-    json::write(report, &outputs.json)?;
-    tsv::write(report, &outputs.tsv)?;
-    multiqc::write(report, &outputs.multiqc)?;
-    html::write(report, &outputs.html)?;
-    Ok(())
+    let write_json = |path: &Path| json::write(report, path);
+    let write_tsv = |path: &Path| tsv::write(report, path);
+    let write_multiqc = |path: &Path| multiqc::write(report, path);
+    let write_html = |path: &Path| html::write(report, path);
+    write_staged_set(&[
+        (&outputs.json, &write_json),
+        (&outputs.tsv, &write_tsv),
+        (&outputs.multiqc, &write_multiqc),
+        (&outputs.html, &write_html),
+    ])
 }
 
 pub fn write_compare_all(report: &CompareReport, outputs: &OutputPaths) -> Result<()> {
     validate_output_paths(outputs)?;
 
-    json::write_compare(report, &outputs.json)?;
-    compare_tsv::write(report, &outputs.tsv)?;
-    compare_multiqc::write(report, &outputs.multiqc)?;
-    compare_html::write(report, &outputs.html)?;
+    let write_json = |path: &Path| json::write_compare(report, path);
+    let write_tsv = |path: &Path| compare_tsv::write(report, path);
+    let write_multiqc = |path: &Path| compare_multiqc::write(report, path);
+    let write_html = |path: &Path| compare_html::write(report, path);
+    write_staged_set(&[
+        (&outputs.json, &write_json),
+        (&outputs.tsv, &write_tsv),
+        (&outputs.multiqc, &write_multiqc),
+        (&outputs.html, &write_html),
+    ])
+}
+
+type StagedSerializer<'a> = (&'a Path, &'a dyn Fn(&Path) -> Result<()>);
+
+fn write_staged_set(serializers: &[StagedSerializer<'_>]) -> Result<()> {
+    let mut staged = Vec::with_capacity(serializers.len());
+
+    for (final_path, serializer) in serializers {
+        let parent = final_path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        let mut temporary = NamedTempFile::new_in(parent).with_context(|| {
+            format!(
+                "failed to create staged report for {}",
+                final_path.display()
+            )
+        })?;
+        serializer(temporary.path())?;
+        temporary.as_file_mut().flush().with_context(|| {
+            format!("failed to flush staged report for {}", final_path.display())
+        })?;
+        staged.push((temporary, *final_path));
+    }
+
+    // Publication is sequential: each file is staged before its rename, but the
+    // complete set of final filenames is not atomic as a unit.
+    for (temporary, final_path) in staged {
+        temporary
+            .persist(final_path)
+            .map_err(|error| error.error)
+            .with_context(|| format!("failed to publish report {}", final_path.display()))?;
+    }
     Ok(())
 }
 
@@ -146,6 +192,32 @@ mod tests {
         empty_plots, Artifacts, FastaguardReport, GateDecision, InputInfo, MachineSummary,
         Provenance, ProvenanceThresholds, Scope, Summary, ToolInfo, Verdict, VerdictStatus,
     };
+
+    #[test]
+    fn staged_serializer_error_removes_temporary_files_without_publishing() {
+        let temp_dir = TempDir::new().unwrap();
+        let first_final = temp_dir.path().join("first.json");
+        let second_final = temp_dir.path().join("second.tsv");
+        let first_serializer = |path: &Path| -> Result<()> {
+            fs::write(path, "complete temporary report")?;
+            Ok(())
+        };
+        let failing_serializer = |path: &Path| -> Result<()> {
+            fs::write(path, "incomplete temporary report")?;
+            Err(anyhow!("injected serializer failure"))
+        };
+        let serializers: [StagedSerializer<'_>; 2] = [
+            (&first_final, &first_serializer),
+            (&second_final, &failing_serializer),
+        ];
+
+        let error = write_staged_set(&serializers).unwrap_err();
+
+        assert!(error.to_string().contains("injected serializer failure"));
+        assert!(!first_final.exists());
+        assert!(!second_final.exists());
+        assert_eq!(fs::read_dir(temp_dir.path()).unwrap().count(), 0);
+    }
 
     #[test]
     fn duplicate_output_paths_error_before_creating_files() {

@@ -43,7 +43,25 @@ fn run_single(config: cli::RunConfig) -> Result<i32> {
     let outputs = config.outputs.clone();
     let output = build_single_report(config, run_started)?;
     report::write_all(&output, &outputs)?;
+    eprintln!(
+        "FastaGuard verdict={} gate.can_continue={} duration_ms={} json={} tsv={} multiqc={} html={}",
+        verdict_status(output.verdict.status),
+        output.gate.can_continue,
+        output.provenance.duration_ms,
+        outputs.json.display(),
+        outputs.tsv.display(),
+        outputs.multiqc.display(),
+        outputs.html.display(),
+    );
     Ok(0)
+}
+
+fn verdict_status(status: models::VerdictStatus) -> &'static str {
+    match status {
+        models::VerdictStatus::Pass => "PASS",
+        models::VerdictStatus::Warn => "WARN",
+        models::VerdictStatus::Fail => "FAIL",
+    }
 }
 
 pub(crate) fn build_single_report(

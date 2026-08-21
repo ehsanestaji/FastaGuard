@@ -6,9 +6,11 @@ use std::path::Path;
 use crate::models::{CompareReport, FastaguardReport};
 
 pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
-    let file =
+    let mut file =
         File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
-    serde_json::to_writer_pretty(file, report)
+    serde_json::to_writer_pretty(&mut file, report)
+        .with_context(|| format!("failed to write JSON report {}", path.display()))?;
+    file.flush()
         .with_context(|| format!("failed to write JSON report {}", path.display()))
 }
 
@@ -17,5 +19,7 @@ pub fn write_compare(report: &CompareReport, path: &Path) -> Result<()> {
         File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
     serde_json::to_writer_pretty(&mut file, report)
         .with_context(|| format!("failed to write JSON report {}", path.display()))?;
-    writeln!(file).with_context(|| format!("failed to write JSON report {}", path.display()))
+    writeln!(file).with_context(|| format!("failed to write JSON report {}", path.display()))?;
+    file.flush()
+        .with_context(|| format!("failed to write JSON report {}", path.display()))
 }

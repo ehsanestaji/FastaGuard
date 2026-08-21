@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::fs::File;
+use std::io::Write;
 use std::path::Path;
 
 use crate::models::{FastaguardReport, VerdictStatus};
@@ -62,7 +63,7 @@ struct MultiqcSummaryRow {
 }
 
 pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
-    let file =
+    let mut file =
         File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
     let mut data = BTreeMap::new();
     data.insert(sample_name(&report.input.path), summary_row(report));
@@ -78,7 +79,9 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
         },
         data,
     };
-    serde_json::to_writer_pretty(file, &wrapper)
+    serde_json::to_writer_pretty(&mut file, &wrapper)
+        .with_context(|| format!("failed to write MultiQC report {}", path.display()))?;
+    file.flush()
         .with_context(|| format!("failed to write MultiQC report {}", path.display()))
 }
 

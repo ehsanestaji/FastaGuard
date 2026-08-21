@@ -1,12 +1,18 @@
 use anyhow::{Context, Result};
-use std::fs;
+use std::fs::File;
+use std::io::Write;
 use std::path::Path;
 
 use crate::models::{FastaguardReport, Severity, VerdictStatus};
 
 pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
     let html = render(report)?;
-    fs::write(path, html).with_context(|| format!("failed to write HTML report {}", path.display()))
+    let mut file =
+        File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
+    file.write_all(html.as_bytes())
+        .with_context(|| format!("failed to write HTML report {}", path.display()))?;
+    file.flush()
+        .with_context(|| format!("failed to write HTML report {}", path.display()))
 }
 
 fn render(report: &FastaguardReport) -> Result<String> {
