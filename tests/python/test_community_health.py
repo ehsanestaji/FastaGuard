@@ -28,7 +28,9 @@ REQUIRED_ISSUE_DETAILS = {
 }
 PROHIBITED_ATTRIBUTION_PATTERNS = [
     re.compile(r"(?im)^co-authored-by:\s*(?:chatgpt|codex|openai)\b"),
-    re.compile(r"(?im)^generated-by:\s*\S+"),
+    re.compile(
+        r"(?im)^generated(?:-|\s+)by\s*:?\s*(?:chatgpt|codex|openai)\b"
+    ),
     re.compile(r"(?i)written with (?:chatgpt|codex|openai)"),
     re.compile(
         r"(?i)\bai[- ]assisted\s+(?:contribution|change|code|content|documentation)\b"
@@ -36,7 +38,8 @@ PROHIBITED_ATTRIBUTION_PATTERNS = [
     re.compile(r"(?im)^assistant\s+provenance\s*:"),
 ]
 ATTRIBUTION_TRACE_SAMPLES = (
-    "Generated" + "-by: automation",
+    "Generated" + "-by: Code" + "x",
+    "generated" + " by Code" + "x",
     "AI" + "-assisted contribution",
     "Assistant " + "provenance: automation",
 )
@@ -166,6 +169,16 @@ class CommunityHealthTest(unittest.TestCase):
                         for pattern in PROHIBITED_ATTRIBUTION_PATTERNS
                     )
                 )
+
+    def test_attribution_patterns_allow_non_assistant_provenance(self):
+        unrelated_provenance = "Generated-by: release tooling"
+
+        self.assertFalse(
+            any(
+                pattern.search(unrelated_provenance)
+                for pattern in PROHIBITED_ATTRIBUTION_PATTERNS
+            )
+        )
 
 
 if __name__ == "__main__":
