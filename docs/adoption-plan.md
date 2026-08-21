@@ -106,7 +106,27 @@ future releases update existing integrations after GitHub and package publicatio
 
 Keep local evidence-preserving examples verified as integrations evolve.
 
-## Phase 6: Expand
+## Phase 6: Discovery and Pilot
+
+Goal: make the current published tool discoverable and gather useful adoption
+evidence without collecting user sequence data.
+
+- Keep `docs/biotools-registration.json` as a reviewable bio.tools draft until
+  a maintainer submits it. It is pinned to the published v0.6.0 distribution
+  and uses EDAM `format_1929` (FASTA) with `operation_3180` (Sequence assembly
+  validation).
+- Run pilots in report-only mode using `docs/pilots.md` before enabling a new
+  workflow gate.
+- Never request FASTA files, raw sequences, input paths, or unreviewed reports.
+- Quote a redacted case study only after explicit consent to the exact text.
+- Use the current [bio.tools schema](https://github.com/bio-tools/biotoolsschema/blob/main/jsonschema/biotoolsj.json)
+  and [EDAM ontology](https://github.com/edamontology/edamontology) when
+  reviewing the registration draft.
+
+The draft does not claim that a bio.tools record has been registered or that a
+v0.7 package has been published.
+
+## Phase 7: Expand
 
 Goal: add profiles once the assembly preflight contract is trusted.
 

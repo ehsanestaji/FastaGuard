@@ -46,6 +46,7 @@ Current published package:
 - Version: `0.6.0`
 - Platforms: `linux-64`, `linux-aarch64`, `osx-64`, `osx-arm64`
 - Package page: [anaconda.org/bioconda/fastaguard](https://anaconda.org/bioconda/fastaguard)
+- Recipe page: [Bioconda fastaguard recipe](https://bioconda.github.io/recipes/fastaguard/README.html)
 
 ## Local Binary
 
@@ -193,10 +194,33 @@ docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
 ```
 
 That path is preferable to maintaining a separate BioContainers Dockerfile.
+The tag can be checked on the
+[BioContainers registry page](https://quay.io/repository/biocontainers/fastaguard?tab=tags).
+
+## Apptainer
+
+Apptainer can execute the published v0.6.0 BioContainers OCI image directly:
+
+```bash
+apptainer exec --bind "$PWD:/work" \
+  docker://quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0 \
+  fastaguard /work/sample.fa \
+  --out /work/fastaguard_report.html \
+  --json /work/fastaguard.json \
+  --tsv /work/fastaguard.tsv \
+  --multiqc /work/fastaguard_mqc.json
+```
+
+This follows Apptainer's documented support for `docker://` images hosted on
+Quay. See the official
+[Docker and OCI container guide](https://apptainer.org/docs/user/latest/docker_and_oci.html).
+No v0.7 container tag should be substituted until it appears in the registry.
 
 ## MultiQC
 
 FastaGuard emits MultiQC custom content as `fastaguard_mqc.json`.
+The `_mqc.json` suffix follows MultiQC's
+[custom-content discovery contract](https://docs.seqera.io/multiqc/custom_content).
 
 An unpublished local MultiQC plugin starter lives in:
 

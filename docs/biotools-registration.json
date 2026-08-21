@@ -1,0 +1,90 @@
+[
+{
+  "name": "FastaGuard",
+  "description": "FastaGuard performs local, database-free FASTA-level preflight checks on sequence assemblies and emits explainable JSON, TSV, HTML, and MultiQC-compatible reports before downstream quality-control tools. Its scope is structural and composition triage; downstream biological evaluation and official validators remain required.",
+  "homepage": "https://github.com/ehsanestaji/FastaGuard",
+  "version": [
+    "0.6.0"
+  ],
+  "toolType": [
+    "Command-line tool"
+  ],
+  "topic": [
+    {
+      "term": "Sequence assembly",
+      "uri": "http://edamontology.org/topic_0196"
+    }
+  ],
+  "operatingSystem": [
+    "Linux",
+    "Mac"
+  ],
+  "language": [
+    "Rust"
+  ],
+  "license": "MIT",
+  "function": [
+    {
+      "operation": [
+        {
+          "term": "Sequence assembly validation",
+          "uri": "http://edamontology.org/operation_3180"
+        }
+      ],
+      "input": [
+        {
+          "data": {
+            "term": "Sequence assembly",
+            "uri": "http://edamontology.org/data_0925"
+          },
+          "format": [
+            {
+              "term": "FASTA",
+              "uri": "http://edamontology.org/format_1929"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "link": [
+    {
+      "url": "https://github.com/ehsanestaji/FastaGuard",
+      "type": [
+        "Repository"
+      ]
+    },
+    {
+      "url": "https://github.com/ehsanestaji/FastaGuard/issues",
+      "type": [
+        "Issue tracker"
+      ]
+    }
+  ],
+  "download": [
+    {
+      "url": "https://github.com/ehsanestaji/FastaGuard/releases/tag/v0.6.0",
+      "type": "Binaries",
+      "version": "0.6.0"
+    },
+    {
+      "url": "https://anaconda.org/bioconda/fastaguard",
+      "type": "Software package",
+      "version": "0.6.0"
+    },
+    {
+      "url": "https://quay.io/repository/biocontainers/fastaguard?tab=tags",
+      "type": "Container file",
+      "version": "0.6.0--hfa8f182_0"
+    }
+  ],
+  "documentation": [
+    {
+      "url": "https://github.com/ehsanestaji/FastaGuard/blob/main/README.md",
+      "type": [
+        "General"
+      ]
+    }
+  ]
+}
+]

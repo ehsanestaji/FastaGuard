@@ -57,6 +57,9 @@ downstream tool.
 
 ## Install
 
+For the shortest published-version path from installation to four local
+reports, use the [five-minute quickstart](docs/quickstart.md).
+
 Published bioinformatics install:
 
 ```bash
@@ -400,6 +403,9 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 ## Documentation
 
+- [Five-minute quickstart](docs/quickstart.md)
+- [Report interpretation](docs/report-interpretation.md)
+- [Report-only pilot guide](docs/pilots.md)
 - [Example reports](examples/reports/README.md)
 - [Use cases and positioning](docs/use-cases.md)
 - [Product thesis](docs/product-thesis.md)
@@ -429,6 +435,10 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.1.1 release notes](docs/releases/v0.1.1.md)
 - [v0.1.0 release notes](docs/releases/v0.1.0.md)
 - [Roadmap](docs/roadmap.md)
+
+Citation metadata for the current published v0.6.0 distribution is provided in
+[`CITATION.cff`](CITATION.cff). The v0.7 source and package metadata remain
+release preparation until corresponding public artifacts are published.
 
 ## Status
 

@@ -19,7 +19,140 @@ from fastaguard_multiqc.parser import load_custom_content_summary
 
 class AdoptionAssetsTest(unittest.TestCase):
     def read(self, path):
-        return (ROOT / path).read_text()
+        document = ROOT / path
+        self.assertTrue(document.is_file(), document)
+        return document.read_text()
+
+    def test_quickstart_builds_and_explains_the_four_report_bundle(self):
+        quickstart = self.read("docs/quickstart.md")
+        expected_reports = [
+            "sample-01.fastaguard.html",
+            "sample-01.fastaguard.json",
+            "sample-01.fastaguard.tsv",
+            "sample-01.fastaguard_mqc.json",
+        ]
+
+        self.assertIn(
+            "fastaguard sample.fa --outdir reports --prefix sample-01",
+            " ".join(quickstart.split()),
+        )
+        for report in expected_reports:
+            with self.subTest(report=report):
+                self.assertIn(report, quickstart)
+        self.assertIn("verdict.status", quickstart)
+        self.assertIn("gate.can_continue", quickstart)
+        self.assertIn("gate_status", quickstart)
+        self.assertIn("fastaguard=0.6.0", quickstart)
+        self.assertIn("fastaguard:0.6.0--hfa8f182_0", quickstart)
+        self.assertNotIn("fastaguard=0.7.0", quickstart)
+        self.assertNotIn("fastaguard:0.7.0--", quickstart)
+
+    def test_report_interpretation_separates_verdict_from_gate_continuation(self):
+        interpretation = self.read("docs/report-interpretation.md")
+
+        self.assertIn("verdict.status", interpretation)
+        self.assertIn("machine_summary.safe_for_downstream", interpretation)
+        self.assertIn("gate.can_continue", interpretation)
+        self.assertRegex(
+            interpretation,
+            r"(?is)WARN.*?gate\.can_continue.*?true",
+        )
+        self.assertRegex(
+            interpretation,
+            r"(?is)process exit code.*?report generation.*?not.*?QC verdict",
+        )
+        self.assertIn("JSON is the source of truth", interpretation)
+
+    def test_pilot_material_is_report_only_private_and_consent_based(self):
+        pilots = self.read("docs/pilots.md")
+        lower = pilots.lower()
+
+        self.assertIn("report-only", lower)
+        self.assertRegex(
+            pilots,
+            r"(?is)do not share.*?FASTA.*?raw sequences.*?input paths",
+        )
+        self.assertIn("explicit consent", lower)
+        self.assertRegex(
+            pilots,
+            r"(?is)quoted case study.*?yes.*?no",
+        )
+        self.assertIn("redact", lower)
+        for intake_field in (
+            "FastaGuard version",
+            "Redacted findings",
+            "Workflow context",
+            "Desired follow-up",
+        ):
+            with self.subTest(intake_field=intake_field):
+                self.assertIn(intake_field, pilots)
+
+    def test_biotools_draft_has_fasta_validation_edam_contract(self):
+        registration_document = json.loads(
+            self.read("docs/biotools-registration.json")
+        )
+        self.assertIsInstance(registration_document, list)
+        self.assertEqual(len(registration_document), 1)
+        registration = registration_document[0]
+
+        self.assertEqual(registration["name"], "FastaGuard")
+        self.assertEqual(registration["version"], ["0.6.0"])
+        self.assertEqual(registration["license"], "MIT")
+        self.assertIn("Command-line tool", registration["toolType"])
+        functions = registration["function"]
+        self.assertIsInstance(functions, list)
+        self.assertTrue(functions)
+        operation_uris = {
+            operation["uri"]
+            for function in functions
+            for operation in function["operation"]
+        }
+        input_format_uris = {
+            format_entry["uri"]
+            for function in functions
+            for input_entry in function["input"]
+            for format_entry in input_entry["format"]
+        }
+        self.assertEqual(
+            operation_uris,
+            {"http://edamontology.org/operation_3180"},
+        )
+        self.assertEqual(
+            input_format_uris,
+            {"http://edamontology.org/format_1929"},
+        )
+        self.assertIn("FASTA-level", registration["description"])
+        overclaims = [
+            r"assesses? biological completeness",
+            r"confirms? contamination",
+            r"guarantees? repository acceptance",
+        ]
+        for overclaim in overclaims:
+            with self.subTest(overclaim=overclaim):
+                self.assertNotRegex(registration["description"].lower(), overclaim)
+
+    def test_public_docs_link_adoption_materials_without_published_v0_7_claims(self):
+        readme = self.read("README.md")
+        adoption = self.read("docs/adoption-plan.md")
+        packaging = self.read("docs/packaging.md")
+
+        for link in (
+            "docs/quickstart.md",
+            "docs/report-interpretation.md",
+            "docs/pilots.md",
+        ):
+            with self.subTest(link=link):
+                self.assertIn(link, readme)
+        self.assertIn("Pilot", adoption)
+        self.assertIn("bio.tools", adoption)
+        self.assertIn("Apptainer", packaging)
+        for document in (readme, adoption, packaging):
+            with self.subTest(document=document[:40]):
+                self.assertNotRegex(
+                    document,
+                    r"(?i)(?:Bioconda|BioContainers).*v?0\.7(?:\.0)?.*"
+                    r"(?:published|available|live)",
+                )
 
     def test_v0_3_gate_docs_and_examples_are_present(self):
         readme = (ROOT / "README.md").read_text()

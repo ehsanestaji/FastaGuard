@@ -9,6 +9,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 REQUIRED_PATHS = [
+    "CITATION.cff",
     "CONTRIBUTING.md",
     "CODE_OF_CONDUCT.md",
     "SECURITY.md",
@@ -82,6 +83,24 @@ class CommunityHealthTest(unittest.TestCase):
         missing = [path for path in REQUIRED_PATHS if not (ROOT / path).is_file()]
 
         self.assertEqual(missing, [])
+
+    def test_citation_metadata_is_parseable_and_user_owned(self):
+        path = ROOT / "CITATION.cff"
+        self.assertTrue(path.is_file(), path)
+        citation = yaml.safe_load(path.read_text())
+
+        self.assertEqual(citation["cff-version"], "1.2.0")
+        self.assertEqual(citation["title"], "FastaGuard")
+        self.assertEqual(citation["version"], "0.6.0")
+        self.assertEqual(
+            citation["repository-code"],
+            "https://github.com/ehsanestaji/FastaGuard",
+        )
+        self.assertEqual(citation["license"], "MIT")
+        self.assertEqual(
+            citation["authors"],
+            [{"family-names": "ESTAJI", "given-names": "Ehsan"}],
+        )
 
     def test_contributing_documents_project_verification_and_dco(self):
         text = (ROOT / "CONTRIBUTING.md").read_text()
