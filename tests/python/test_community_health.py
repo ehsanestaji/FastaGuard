@@ -86,8 +86,34 @@ class CommunityHealthTest(unittest.TestCase):
         text = (ROOT / "CONTRIBUTING.md").read_text()
 
         self.assertIn("cargo test --locked", text)
-        self.assertIn("python3 -m pytest -q", text)
         self.assertRegex(text, r"(?i)signed-off-by")
+
+    def test_contributing_uses_ignored_venv_with_declared_python_dependencies(self):
+        text = (ROOT / "CONTRIBUTING.md").read_text()
+        create = re.search(
+            r"(?m)^python3\s+-m\s+venv\s+(target/[^\s]+)\s*$",
+            text,
+        )
+
+        self.assertIsNotNone(create)
+        environment = re.escape(create.group(1))
+        install = re.search(
+            rf"(?m)^{environment}/bin/python\s+-m\s+pip\s+install\s+"
+            r"--requirement\s+requirements-test\.txt\s*$",
+            text,
+        )
+        test = re.search(
+            rf"(?m)^{environment}/bin/python\s+-m\s+pytest\s+-q\s+"
+            r"tests/python\s*$",
+            text,
+        )
+
+        self.assertIsNotNone(install)
+        self.assertIsNotNone(test)
+        self.assertLess(create.start(), install.start())
+        self.assertLess(install.start(), test.start())
+        self.assertTrue((ROOT / "requirements-test.txt").is_file())
+        self.assertIn("target/", (ROOT / ".gitignore").read_text().splitlines())
 
     def test_ci_installs_dependencies_and_runs_full_python_suite(self):
         workflow = yaml.safe_load(
@@ -210,6 +236,16 @@ class CommunityHealthTest(unittest.TestCase):
         ]
 
         self.assertEqual(planning_paths, [])
+
+    def test_public_documentation_excludes_tool_specific_planning_references(self):
+        violations = []
+        for path in self.tracked_paths():
+            if path == "README.md" or path.startswith("docs/"):
+                text = (ROOT / path).read_text(errors="ignore")
+                if "docs/superpowers" in text:
+                    violations.append(path)
+
+        self.assertEqual(violations, [])
 
     def test_tracked_tree_has_no_prohibited_assistant_attribution_traces(self):
         violations = []

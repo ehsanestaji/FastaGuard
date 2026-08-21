@@ -23,10 +23,15 @@ cargo fmt --check
 cargo test --locked
 ```
 
-Run the Python contract and documentation checks:
+Create a repository-local virtual environment, install the pinned test
+dependencies, and run the Python contract and documentation checks. The
+environment lives under the ignored `target/` directory, so this does not
+modify the system Python environment.
 
 ```bash
-python3 -m pytest -q
+python3 -m venv target/contributor-venv
+target/contributor-venv/bin/python -m pip install --requirement requirements-test.txt
+target/contributor-venv/bin/python -m pytest -q tests/python
 ```
 
 Add or update focused tests when changing a behavior, report shape, or public

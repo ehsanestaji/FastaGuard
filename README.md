@@ -368,7 +368,6 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.1.1 release notes](docs/releases/v0.1.1.md)
 - [v0.1.0 release notes](docs/releases/v0.1.0.md)
 - [Roadmap](docs/roadmap.md)
-- [First-release design](docs/superpowers/specs/2026-05-18-fastaguard-first-release-design.md)
 
 ## Status
 
