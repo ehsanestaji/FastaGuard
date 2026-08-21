@@ -301,6 +301,24 @@ fn schema_supports_compare_reports() {
         compare_sample["properties"]["readiness_categories"]["items"]["$ref"],
         "#/$defs/readiness_category"
     );
+    for field in ["gate_can_continue", "submission_policy_id"] {
+        assert!(
+            compare_sample["required"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|value| value == field),
+            "compare sample schema must require {field}"
+        );
+    }
+    assert_eq!(
+        compare_sample["properties"]["gate_can_continue"]["type"],
+        "boolean"
+    );
+    assert_eq!(
+        compare_sample["properties"]["submission_policy_id"]["type"],
+        serde_json::json!(["string", "null"])
+    );
 }
 
 #[test]

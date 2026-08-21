@@ -24,7 +24,8 @@ fn render(report: &CompareReport) -> Result<String> {
     let charts = render_charts(&report.samples);
     let cohort_findings = render_cohort_findings(&report.cohort_findings)?;
     let suggested_tools = render_suggested_tools(&report.samples);
-    let json = serde_json::to_string_pretty(report).context("failed to serialize report JSON")?;
+    let json = crate::report::json::compare_to_string_pretty(report)
+        .context("failed to serialize report JSON")?;
 
     Ok(format!(
         r#"<!doctype html>
@@ -78,6 +79,7 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
 <div class="panel"><p class="label">Submission fail</p><p class="metric">{submission_fail_count}</p></div>
 </section>
 <h2>Readiness Matrix</h2>
+<p class="muted">Targets, policies, and continuation decisions are per sample. Compare does not determine cohort-level repository acceptance.</p>
 {readiness_matrix}
 <h2>Cohort Metrics</h2>
 {charts}
@@ -113,8 +115,17 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
         .map(|sample| {
             let verdict = verdict_status(sample.verdict);
             let gate_status = verdict_status(sample.gate_status);
+            let gate_can_continue = if crate::report::json::compare_gate_can_continue(sample) {
+                "Yes"
+            } else {
+                "No"
+            };
             let overall_readiness_status = readiness_status(sample.readiness_status);
             let submission_target = sample.submission_target.as_deref().unwrap_or(".");
+            let submission_policy_id = crate::report::json::compare_submission_policy_id(
+                sample.submission_target.as_deref(),
+            )
+            .unwrap_or(".");
             let submission_status = readiness_status(sample.submission_status);
             let category_cells = render_readiness_category_cells(sample);
             format!(
@@ -123,8 +134,10 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
 <td>{input_path}</td>
 <td class="status-{verdict_class}">{verdict}</td>
 <td class="status-{gate_class}">{gate_status}</td>
+<td>{gate_can_continue}</td>
 <td class="status-{readiness_class}">{readiness_status}</td>
 <td>{submission_target}</td>
+<td>{submission_policy_id}</td>
 <td class="status-{submission_class}">{submission_status}</td>
 {category_cells}
 <td>{sequence_count}</td>
@@ -134,6 +147,7 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
 <td>{gc_percent:.2}</td>
 <td>{n_percent:.2}</td>
 <td>{finding_count}</td>
+<td>{finding_ids}</td>
 <td>{readiness_blockers}</td>
 </tr>"#,
                 sample_id = escape_html(&sample.sample_id),
@@ -142,9 +156,11 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
                 verdict_class = verdict.to_ascii_lowercase(),
                 gate_status = gate_status,
                 gate_class = gate_status.to_ascii_lowercase(),
+                gate_can_continue = gate_can_continue,
                 readiness_status = overall_readiness_status,
                 readiness_class = overall_readiness_status.to_ascii_lowercase(),
                 submission_target = escape_html(submission_target),
+                submission_policy_id = escape_html(submission_policy_id),
                 submission_status = submission_status,
                 submission_class = submission_status.to_ascii_lowercase(),
                 category_cells = category_cells,
@@ -155,6 +171,7 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
                 gc_percent = sample.gc_percent,
                 n_percent = sample.n_percent,
                 finding_count = sample.finding_count,
+                finding_ids = escape_html(&sample.finding_ids.join(",")),
                 readiness_blockers = escape_html(&sample.readiness_blockers.join(",")),
             )
         })
@@ -169,7 +186,7 @@ fn render_readiness_matrix(report: &CompareReport) -> String {
     format!(
         r#"<div class="table-scroll">
 <table>
-<thead><tr><th>Sample</th><th>Input</th><th>Verdict</th><th>Gate</th><th>Readiness</th><th>Submission target</th><th>Submission status</th>{category_headers}<th>Sequences</th><th>Total length</th><th>N50</th><th>N90</th><th>GC%</th><th>N%</th><th>Findings</th><th>Blockers</th></tr></thead>
+<thead><tr><th>Sample</th><th>Input</th><th>Overall QC signal</th><th>Gate</th><th>Workflow may continue</th><th>Readiness</th><th>Submission target</th><th>Policy ID</th><th>Submission status</th>{category_headers}<th>Sequences</th><th>Total length</th><th>N50</th><th>N90</th><th>GC%</th><th>N%</th><th>Findings</th><th>Finding IDs</th><th>Blockers</th></tr></thead>
 <tbody>{rows}</tbody>
 </table>
 </div>"#
@@ -408,6 +425,12 @@ mod tests {
         assert!(output.contains("<th>Index readiness</th>"), "{output}");
         assert!(output.contains("<th>Machine readiness</th>"), "{output}");
         assert!(output.contains("<th>Submission status</th>"), "{output}");
+        assert!(output.contains("<th>Policy ID</th>"), "{output}");
+        assert!(
+            output.contains("<th>Workflow may continue</th>"),
+            "{output}"
+        );
+        assert!(output.contains("ncbi_genome"), "{output}");
         assert!(output.contains("Submission warn"), "{output}");
         assert!(
             output.contains(r#"<td class="status-warn">WARN</td>"#),
@@ -415,6 +438,10 @@ mod tests {
         );
         assert!(output.contains("Cohort Findings"), "{output}");
         assert!(output.contains("Suggested Next Tools"), "{output}");
+        assert!(
+            output.contains("does not determine cohort-level repository acceptance"),
+            "{output}"
+        );
         assert!(output.matches("<svg").count() >= 5, "{output}");
     }
 

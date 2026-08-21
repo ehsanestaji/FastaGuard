@@ -1209,7 +1209,7 @@ fn fail_on_warn_report_distinguishes_pass_only_safety_from_gate_continuation() {
 
     let html = std::fs::read_to_string(&outputs.html).unwrap();
     assert!(html.contains("PASS-only downstream safety"), "{html}");
-    assert!(html.contains("Gate can continue"), "{html}");
+    assert!(html.contains("Workflow may continue"), "{html}");
 }
 
 #[test]
@@ -1276,6 +1276,148 @@ fn expected_size_serializes_thresholds_evidence_and_tsv_metrics() {
         "{html}"
     );
     assert!(html.contains("Expected size:</span> 5000000"), "{html}");
+}
+
+#[test]
+fn report_parity_preserves_gate_policy_and_expected_size_evidence() {
+    for (stem, input, gate_args) in [
+        (
+            "ncbi_fail_parity",
+            "testdata/ncbi_genome/terminal_ns.fa",
+            vec!["--gate", "submission", "--submission-target", "ncbi"],
+        ),
+        (
+            "pipeline_warn_parity",
+            "testdata/valid_assembly.fa",
+            vec!["--gate", "pipeline", "--min-contig-length", "1"],
+        ),
+    ] {
+        let temp_dir = TempDir::new().unwrap();
+        let outputs = output_paths(&temp_dir, stem);
+        let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+        cmd.arg(input)
+            .args(gate_args)
+            .args([
+                "--expected-size",
+                "1kb",
+                "--expected-size-tolerance",
+                "0.1",
+                "--json",
+            ])
+            .arg(&outputs.json)
+            .arg("--out")
+            .arg(&outputs.html)
+            .arg("--tsv")
+            .arg(&outputs.tsv)
+            .arg("--multiqc")
+            .arg(&outputs.multiqc)
+            .assert()
+            .success();
+
+        let report = read_json(&outputs.json);
+        let tsv = read_metric_tsv(&outputs.tsv);
+        let multiqc = read_json(&outputs.multiqc);
+        let sample = multiqc["data"]
+            .as_object()
+            .unwrap()
+            .values()
+            .next()
+            .unwrap();
+        let evidence = &finding_by_id(&report, "expected_size_outlier")["evidence"];
+        let policy_id = report["gate"]["submission_policy"]["id"]
+            .as_str()
+            .unwrap_or(".");
+        let target = report["gate"]["submission_target"].as_str().unwrap_or(".");
+        let blocker_list = json_string_list(&report["gate"]["blocking_findings"]);
+        let tsv_blocker_list = if blocker_list.is_empty() {
+            "."
+        } else {
+            blocker_list.as_str()
+        };
+        let finding_ids = report["findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|finding| finding["id"].as_str().unwrap())
+            .collect::<Vec<_>>()
+            .join(",");
+
+        for (metric, expected) in [
+            ("verdict", report["verdict"]["status"].as_str().unwrap()),
+            ("gate_status", report["gate"]["status"].as_str().unwrap()),
+            (
+                "gate_can_continue",
+                if report["gate"]["can_continue"].as_bool().unwrap() {
+                    "true"
+                } else {
+                    "false"
+                },
+            ),
+            ("submission_target", target),
+            ("submission_policy_id", policy_id),
+            ("gate_blocking_findings", tsv_blocker_list),
+            ("finding_ids", finding_ids.as_str()),
+        ] {
+            assert_eq!(
+                tsv.get(metric).map(String::as_str),
+                Some(expected),
+                "{stem}"
+            );
+        }
+
+        for (metric, json_value) in [
+            (
+                "expected_size_bases",
+                &report["provenance"]["thresholds"]["expected_size_bases"],
+            ),
+            (
+                "expected_size_tolerance",
+                &report["provenance"]["thresholds"]["expected_size_tolerance"],
+            ),
+            (
+                "expected_size_observed_ungapped_length",
+                &evidence["observed_ungapped_length"],
+            ),
+            (
+                "expected_size_lower_bound",
+                &evidence["expected_size_lower_bound"],
+            ),
+            (
+                "expected_size_upper_bound",
+                &evidence["expected_size_upper_bound"],
+            ),
+            (
+                "expected_size_deviation_bases",
+                &evidence["expected_size_deviation_bases"],
+            ),
+        ] {
+            assert_eq!(
+                tsv.get(metric).map(String::as_str),
+                Some(json_scalar(json_value).as_str()),
+                "{stem}: {metric}"
+            );
+            assert_eq!(&sample[metric], json_value, "{stem}: {metric}");
+        }
+
+        assert_eq!(sample["verdict"], report["verdict"]["status"], "{stem}");
+        assert_eq!(sample["gate_status"], report["gate"]["status"], "{stem}");
+        assert_eq!(
+            sample["gate_can_continue"], report["gate"]["can_continue"],
+            "{stem}"
+        );
+        assert_eq!(sample["submission_target"], json!(target), "{stem}");
+        assert_eq!(sample["submission_policy_id"], json!(policy_id), "{stem}");
+        assert_eq!(
+            sample["gate_blocking_findings"],
+            json!(blocker_list),
+            "{stem}"
+        );
+        assert_eq!(sample["finding_ids"], json!(finding_ids), "{stem}");
+
+        let html = std::fs::read_to_string(&outputs.html).unwrap();
+        assert!(html.contains("Overall QC signal"), "{stem}: {html}");
+        assert!(html.contains("Workflow may continue"), "{stem}: {html}");
+    }
 }
 
 #[test]
@@ -2000,7 +2142,11 @@ fn compare_submission_gate_aggregates_submission_status() {
         .find(|sample| sample["sample_id"] == "submission_ids")
         .unwrap();
     assert_eq!(failing["submission_target"], json!("ncbi"));
+    assert_eq!(failing["submission_policy_id"], json!("ncbi_genome"));
+    assert_eq!(failing["gate_can_continue"], json!(false));
     assert_eq!(failing["submission_status"], json!("FAIL"));
+    assert!(report["summary"].get("submission_policy_id").is_none());
+    assert!(report["summary"].get("repository_acceptance").is_none());
 
     let tsv = std::fs::read_to_string(&outputs.tsv).unwrap();
     let mut tsv_lines = tsv.lines();
@@ -2012,6 +2158,18 @@ fn compare_submission_gate_aggregates_submission_status() {
     assert_eq!(
         tsv_value(&headers, &failing_row, "submission_target"),
         "ncbi"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "submission_policy_id"),
+        "ncbi_genome"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "gate_can_continue"),
+        "false"
+    );
+    assert_eq!(
+        tsv_value(&headers, &failing_row, "finding_ids"),
+        json_string_list(&failing["finding_ids"])
     );
     assert_eq!(
         tsv_value(&headers, &failing_row, "submission_status"),
@@ -2036,6 +2194,18 @@ fn compare_submission_gate_aggregates_submission_status() {
         json!("FAIL")
     );
     assert_eq!(
+        multiqc["data"]["submission_ids"]["submission_policy_id"],
+        json!("ncbi_genome")
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["gate_can_continue"],
+        json!(false)
+    );
+    assert_eq!(
+        multiqc["data"]["submission_ids"]["finding_ids"],
+        json!(json_string_list(&failing["finding_ids"]))
+    );
+    assert_eq!(
         multiqc["data"]["submission_ids"]["submission_ready_count"],
         json!(1)
     );
@@ -2047,6 +2217,11 @@ fn compare_submission_gate_aggregates_submission_status() {
         multiqc["data"]["submission_ids"]["submission_fail_count"],
         json!(1)
     );
+
+    let html = std::fs::read_to_string(&outputs.html).unwrap();
+    assert!(html.contains("<th>Policy ID</th>"), "{html}");
+    assert!(html.contains("<th>Workflow may continue</th>"), "{html}");
+    assert!(html.contains("ncbi_genome"), "{html}");
 }
 
 fn tsv_value<'a>(headers: &[&str], row: &'a [&str], name: &str) -> &'a str {
@@ -2055,6 +2230,39 @@ fn tsv_value<'a>(headers: &[&str], row: &'a [&str], name: &str) -> &'a str {
         .position(|header| *header == name)
         .unwrap_or_else(|| panic!("missing TSV column {name}"));
     row[index]
+}
+
+fn read_metric_tsv(path: &Path) -> std::collections::BTreeMap<String, String> {
+    std::fs::read_to_string(path)
+        .unwrap()
+        .lines()
+        .skip(1)
+        .map(|line| {
+            let (metric, value) = line
+                .split_once('\t')
+                .unwrap_or_else(|| panic!("invalid metric TSV line: {line:?}"));
+            (metric.to_string(), value.to_string())
+        })
+        .collect()
+}
+
+fn json_string_list(value: &Value) -> String {
+    value
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item.as_str().unwrap())
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn json_scalar(value: &Value) -> String {
+    match value {
+        Value::Number(value) => value.to_string(),
+        Value::String(value) => value.clone(),
+        Value::Bool(value) => value.to_string(),
+        _ => panic!("expected scalar JSON value, got {value}"),
+    }
 }
 
 #[test]

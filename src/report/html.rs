@@ -72,7 +72,7 @@ pre {{ overflow-x: auto; background: #202124; color: #f7f7f4; padding: 16px; }}
 <body>
 <main>
 <h1>FastaGuard Report</h1>
-<div class="verdict">Verdict: {verdict}</div>
+<div class="verdict">Overall QC signal: {verdict}</div>
 <p class="positioning">Before QUAST. Before BUSCO. Before BlobToolKit. Run FastaGuard first.</p>
 <h2>Gate Decision</h2>
 {gate}
@@ -133,7 +133,7 @@ fn render_gate(report: &FastaguardReport) -> String {
 <h3>Gate</h3>
 <p><span class="label">Mode:</span> {mode}</p>
 <p><span class="label">Status:</span> {status}</p>
-<p><span class="label">Gate can continue:</span> {can_continue}</p>
+<p><span class="label">Workflow may continue:</span> {can_continue}</p>
 </section>
 <section class="panel">
 <h3>Blocking</h3>
@@ -166,6 +166,12 @@ fn render_submission_readiness(report: &FastaguardReport) -> String {
     let status = category
         .map(|category| readiness_status(category.status))
         .unwrap_or("PASS");
+    let policy_id = report
+        .gate
+        .submission_policy
+        .as_ref()
+        .map(|policy| policy.id.as_str())
+        .unwrap_or(".");
     let findings = category
         .map(|category| render_string_list_or_none(&category.findings))
         .unwrap_or_else(|| "None".to_string());
@@ -175,6 +181,7 @@ fn render_submission_readiness(report: &FastaguardReport) -> String {
 <section class="panel">
 <h3>Target</h3>
 <p>{target}</p>
+<p><span class="label">Policy ID:</span> {policy_id}</p>
 </section>
 <section class="panel">
 <h3>Status</h3>
@@ -187,6 +194,7 @@ fn render_submission_readiness(report: &FastaguardReport) -> String {
 </div>
 <p class="muted">Official validators are still required. FastaGuard reports FASTA-level preflight risks only.</p>"#,
         target = escape_html(target),
+        policy_id = escape_html(policy_id),
         status = escape_html(status),
         findings = findings,
     )

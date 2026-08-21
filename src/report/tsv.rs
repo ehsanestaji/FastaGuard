@@ -42,6 +42,16 @@ pub fn write(report: &FastaguardReport, path: &Path) -> Result<()> {
     )?;
     write_metric(
         &mut writer,
+        "finding_ids",
+        report
+            .findings
+            .iter()
+            .map(|finding| finding.id.as_str())
+            .collect::<Vec<_>>()
+            .join(","),
+    )?;
+    write_metric(
+        &mut writer,
         "readiness_status",
         readiness_status(report.readiness.overall.status),
     )?;

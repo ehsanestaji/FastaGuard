@@ -24,8 +24,10 @@
       "input_path": "target/fastaguard-golden-runtime/clean_alpha.fa",
       "verdict": "PASS",
       "gate_status": "PASS",
+      "gate_can_continue": true,
       "readiness_status": "PASS",
       "submission_target": null,
+      "submission_policy_id": null,
       "submission_status": "PASS",
       "readiness_categories": [
         {
@@ -106,8 +108,10 @@
       "input_path": "target/fastaguard-golden-runtime/clean_beta.fa",
       "verdict": "PASS",
       "gate_status": "PASS",
+      "gate_can_continue": true,
       "readiness_status": "PASS",
       "submission_target": null,
+      "submission_policy_id": null,
       "submission_status": "PASS",
       "readiness_categories": [
         {

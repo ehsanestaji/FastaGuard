@@ -33,8 +33,10 @@ struct MultiqcHeader {
 struct MultiqcSummaryRow {
     verdict: &'static str,
     gate_status: &'static str,
+    gate_can_continue: bool,
     readiness_status: &'static str,
     submission_target: String,
+    submission_policy_id: String,
     submission_status: &'static str,
     submission_ready_count: u64,
     submission_warn_count: u64,
@@ -53,6 +55,7 @@ struct MultiqcSummaryRow {
     gc_outlier_count: u64,
     length_outlier_count: u64,
     finding_count: u64,
+    finding_ids: String,
     readiness_blockers: String,
     recommended_next_tools: String,
 }
@@ -87,11 +90,17 @@ fn summary_row(report: &CompareReport, sample: &CompareSample) -> MultiqcSummary
     MultiqcSummaryRow {
         verdict: verdict_status(sample.verdict),
         gate_status: verdict_status(sample.gate_status),
+        gate_can_continue: crate::report::json::compare_gate_can_continue(sample),
         readiness_status: readiness_status(sample.readiness_status),
         submission_target: sample
             .submission_target
             .clone()
             .unwrap_or_else(|| ".".to_string()),
+        submission_policy_id: crate::report::json::compare_submission_policy_id(
+            sample.submission_target.as_deref(),
+        )
+        .unwrap_or(".")
+        .to_string(),
         submission_status: readiness_status(sample.submission_status),
         submission_ready_count: report.summary.submission_ready_count,
         submission_warn_count: report.summary.submission_warn_count,
@@ -110,6 +119,7 @@ fn summary_row(report: &CompareReport, sample: &CompareSample) -> MultiqcSummary
         gc_outlier_count: sample.gc_outlier_count,
         length_outlier_count: sample.length_outlier_count,
         finding_count: sample.finding_count,
+        finding_ids: sample.finding_ids.join(","),
         readiness_blockers: sample.readiness_blockers.join(","),
         recommended_next_tools: sample.recommended_next_tools.join(","),
     }
@@ -119,8 +129,10 @@ fn summary_headers() -> BTreeMap<&'static str, MultiqcHeader> {
     [
         ("verdict", "Verdict"),
         ("gate_status", "Gate"),
+        ("gate_can_continue", "Workflow May Continue"),
         ("readiness_status", "Readiness"),
         ("submission_target", "Submission Target"),
+        ("submission_policy_id", "Submission Policy ID"),
         ("submission_status", "Submission Status"),
         ("submission_ready_count", "Submission Ready"),
         ("submission_warn_count", "Submission Warn"),
@@ -139,6 +151,7 @@ fn summary_headers() -> BTreeMap<&'static str, MultiqcHeader> {
         ("gc_outlier_count", "GC Outliers"),
         ("length_outlier_count", "Length Outliers"),
         ("finding_count", "Findings"),
+        ("finding_ids", "Finding IDs"),
         ("readiness_blockers", "Readiness Blockers"),
         ("recommended_next_tools", "Recommended Next Tools"),
     ]
@@ -219,7 +232,12 @@ mod tests {
             "Duplicate IDs"
         );
         assert_eq!(output["data"]["sample_a"]["verdict"], "PASS");
+        assert_eq!(output["data"]["sample_a"]["gate_can_continue"], false);
         assert_eq!(output["data"]["sample_a"]["submission_target"], "ncbi");
+        assert_eq!(
+            output["data"]["sample_a"]["submission_policy_id"],
+            "ncbi_genome"
+        );
         assert_eq!(output["data"]["sample_a"]["submission_status"], "WARN");
         assert_eq!(output["data"]["sample_a"]["submission_ready_count"], 1);
         assert_eq!(output["data"]["sample_a"]["submission_warn_count"], 1);
@@ -227,6 +245,7 @@ mod tests {
         assert_eq!(output["data"]["sample_a"]["duplicate_id_count"], 3);
         assert_eq!(output["data"]["sample_a"]["invalid_sequence_count"], 4);
         assert_eq!(output["data"]["sample_a"]["gc_outlier_count"], 8);
+        assert_eq!(output["data"]["sample_a"]["finding_ids"], "duplicate_ids");
         assert_eq!(
             output["data"]["sample_a"]["recommended_next_tools"],
             "seqkit,QUAST"

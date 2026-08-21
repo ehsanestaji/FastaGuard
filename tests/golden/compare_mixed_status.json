@@ -24,8 +24,10 @@
       "input_path": "testdata/valid_assembly.fa",
       "verdict": "WARN",
       "gate_status": "WARN",
+      "gate_can_continue": true,
       "readiness_status": "WARN",
       "submission_target": null,
+      "submission_policy_id": null,
       "submission_status": "WARN",
       "readiness_categories": [
         {
@@ -114,8 +116,10 @@
       "input_path": "testdata/problem_assembly.fa",
       "verdict": "FAIL",
       "gate_status": "FAIL",
+      "gate_can_continue": false,
       "readiness_status": "FAIL",
       "submission_target": null,
+      "submission_policy_id": null,
       "submission_status": "FAIL",
       "readiness_categories": [
         {

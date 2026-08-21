@@ -36,11 +36,18 @@ struct MultiqcSummaryRow {
     gate_status: &'static str,
     gate_can_continue: bool,
     gate_blocking_findings: String,
+    finding_ids: String,
     readiness_status: String,
     readiness_blockers: String,
     submission_target: String,
     submission_status: String,
     submission_policy_id: String,
+    expected_size_bases: Option<u64>,
+    expected_size_tolerance: Option<f64>,
+    expected_size_observed_ungapped_length: Option<u64>,
+    expected_size_lower_bound: Option<u64>,
+    expected_size_upper_bound: Option<u64>,
+    expected_size_deviation_bases: Option<i128>,
     unsafe_identifier_count: u64,
     long_identifier_count: u64,
     duplicate_first_token_id_count: u64,
@@ -101,12 +108,24 @@ fn sample_name(path: &str) -> String {
 }
 
 fn summary_row(report: &FastaguardReport) -> MultiqcSummaryRow {
+    let expected_size_evidence = report
+        .findings
+        .iter()
+        .find(|finding| finding.id == "expected_size_outlier")
+        .map(|finding| &finding.evidence);
+
     MultiqcSummaryRow {
         verdict: verdict_status(report.verdict.status),
         gate_mode: report.gate.mode.clone(),
         gate_status: verdict_status(report.gate.status),
         gate_can_continue: report.gate.can_continue,
         gate_blocking_findings: report.gate.blocking_findings.join(","),
+        finding_ids: report
+            .findings
+            .iter()
+            .map(|finding| finding.id.as_str())
+            .collect::<Vec<_>>()
+            .join(","),
         readiness_status: readiness_status(report.readiness.overall.status).to_string(),
         readiness_blockers: report.readiness.overall.blockers.join(","),
         submission_target: report
@@ -122,6 +141,16 @@ fn summary_row(report: &FastaguardReport) -> MultiqcSummaryRow {
             .as_ref()
             .map(|policy| policy.id.clone())
             .unwrap_or_else(|| ".".to_string()),
+        expected_size_bases: report.provenance.thresholds.expected_size_bases,
+        expected_size_tolerance: report.provenance.thresholds.expected_size_tolerance,
+        expected_size_observed_ungapped_length: expected_size_evidence
+            .and_then(|evidence| evidence.observed_ungapped_length),
+        expected_size_lower_bound: expected_size_evidence
+            .and_then(|evidence| evidence.expected_size_lower_bound),
+        expected_size_upper_bound: expected_size_evidence
+            .and_then(|evidence| evidence.expected_size_upper_bound),
+        expected_size_deviation_bases: expected_size_evidence
+            .and_then(|evidence| evidence.expected_size_deviation_bases),
         unsafe_identifier_count: report.summary.unsafe_id_count,
         long_identifier_count: report.summary.long_header_count,
         duplicate_first_token_id_count: report.summary.duplicate_first_token_id_count,
@@ -152,6 +181,16 @@ fn summary_headers() -> BTreeMap<&'static str, MultiqcHeader> {
         ("submission_status", "Submission Status"),
         ("gate_can_continue", "Gate Can Continue"),
         ("submission_policy_id", "Submission Policy ID"),
+        ("finding_ids", "Finding IDs"),
+        ("expected_size_bases", "Expected Size"),
+        ("expected_size_tolerance", "Expected Size Tolerance"),
+        (
+            "expected_size_observed_ungapped_length",
+            "Observed Ungapped Length",
+        ),
+        ("expected_size_lower_bound", "Expected Size Lower Bound"),
+        ("expected_size_upper_bound", "Expected Size Upper Bound"),
+        ("expected_size_deviation_bases", "Expected Size Deviation"),
         ("unsafe_identifier_count", "Unsafe IDs"),
         ("long_identifier_count", "Long Headers"),
         (

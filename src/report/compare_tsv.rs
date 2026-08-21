@@ -5,7 +5,7 @@ use std::path::Path;
 
 use crate::models::{CompareReport, CompareSample, VerdictStatus};
 
-const HEADER: &str = "sample_id\tinput_path\tverdict\tgate_status\treadiness_status\tsubmission_target\tsubmission_status\tsubmission_ready_count\tsubmission_warn_count\tsubmission_fail_count\tsequence_count\ttotal_length\tn50\tn90\tgc_percent\tn_percent\tduplicate_id_count\tinvalid_sequence_count\thigh_n_sequence_count\ttiny_contig_count\tmax_gap_run\tgc_outlier_count\tlength_outlier_count\tfinding_count\treadiness_blockers\trecommended_next_tools\tinput_sha256";
+const HEADER: &str = "sample_id\tinput_path\tverdict\tgate_status\tgate_can_continue\treadiness_status\tsubmission_target\tsubmission_policy_id\tsubmission_status\tsubmission_ready_count\tsubmission_warn_count\tsubmission_fail_count\tsequence_count\ttotal_length\tn50\tn90\tgc_percent\tn_percent\tduplicate_id_count\tinvalid_sequence_count\thigh_n_sequence_count\ttiny_contig_count\tmax_gap_run\tgc_outlier_count\tlength_outlier_count\tfinding_count\tfinding_ids\treadiness_blockers\trecommended_next_tools\tinput_sha256";
 
 pub fn write(report: &CompareReport, path: &Path) -> Result<()> {
     let file =
@@ -29,37 +29,41 @@ fn write_sample(
     report: &CompareReport,
     sample: &CompareSample,
 ) -> std::io::Result<()> {
-    writeln!(
-        writer,
-        "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+    let fields = [
         sanitize_tsv_value(&sample.sample_id),
         sanitize_tsv_value(&sample.input_path),
-        verdict_status(sample.verdict),
-        verdict_status(sample.gate_status),
-        readiness_status(sample.readiness_status),
+        verdict_status(sample.verdict).to_string(),
+        verdict_status(sample.gate_status).to_string(),
+        crate::report::json::compare_gate_can_continue(sample).to_string(),
+        readiness_status(sample.readiness_status).to_string(),
         sanitize_tsv_value(sample.submission_target.as_deref().unwrap_or(".")),
-        readiness_status(sample.submission_status),
-        report.summary.submission_ready_count,
-        report.summary.submission_warn_count,
-        report.summary.submission_fail_count,
-        sample.sequence_count,
-        sample.total_length,
-        sample.n50,
-        sample.n90,
-        sample.gc_percent,
-        sample.n_percent,
-        sample.duplicate_id_count,
-        sample.invalid_sequence_count,
-        sample.high_n_sequence_count,
-        sample.tiny_contig_count,
-        sample.max_gap_run,
-        sample.gc_outlier_count,
-        sample.length_outlier_count,
-        sample.finding_count,
+        crate::report::json::compare_submission_policy_id(sample.submission_target.as_deref())
+            .unwrap_or(".")
+            .to_string(),
+        readiness_status(sample.submission_status).to_string(),
+        report.summary.submission_ready_count.to_string(),
+        report.summary.submission_warn_count.to_string(),
+        report.summary.submission_fail_count.to_string(),
+        sample.sequence_count.to_string(),
+        sample.total_length.to_string(),
+        sample.n50.to_string(),
+        sample.n90.to_string(),
+        sample.gc_percent.to_string(),
+        sample.n_percent.to_string(),
+        sample.duplicate_id_count.to_string(),
+        sample.invalid_sequence_count.to_string(),
+        sample.high_n_sequence_count.to_string(),
+        sample.tiny_contig_count.to_string(),
+        sample.max_gap_run.to_string(),
+        sample.gc_outlier_count.to_string(),
+        sample.length_outlier_count.to_string(),
+        sample.finding_count.to_string(),
+        sanitize_tsv_value(&sample.finding_ids.join(",")),
         sanitize_tsv_value(&sample.readiness_blockers.join(",")),
         sanitize_tsv_value(&sample.recommended_next_tools.join(",")),
         sanitize_tsv_value(&sample.input_sha256),
-    )
+    ];
+    writeln!(writer, "{}", fields.join("\t"))
 }
 
 fn sanitize_tsv_value(value: &str) -> String {
@@ -106,16 +110,18 @@ mod tests {
         let output = fs::read_to_string(file.path()).unwrap();
         assert!(
             output.starts_with(
-                "sample_id\tinput_path\tverdict\tgate_status\treadiness_status\tsubmission_target\tsubmission_status\tsubmission_ready_count\tsubmission_warn_count\tsubmission_fail_count"
+                "sample_id\tinput_path\tverdict\tgate_status\tgate_can_continue\treadiness_status\tsubmission_target\tsubmission_policy_id\tsubmission_status\tsubmission_ready_count\tsubmission_warn_count\tsubmission_fail_count"
             ),
             "{output}"
         );
         assert!(
-            output.contains("sample_a\tsample_a.fa\tPASS\tPASS\tPASS\tncbi\tWARN\t1\t1\t0"),
+            output.contains(
+                "sample_a\tsample_a.fa\tPASS\tPASS\tfalse\tPASS\tncbi\tncbi_genome\tWARN\t1\t1\t0"
+            ),
             "{output}"
         );
         assert!(
-            output.contains("\tduplicate_ids\tseqkit,QUAST\t"),
+            output.contains("\tduplicate_ids\tduplicate_ids\tseqkit,QUAST\t"),
             "{output}"
         );
         assert!(!output.lines().any(|line| line.ends_with(' ')), "{output}");
