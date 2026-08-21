@@ -2,6 +2,7 @@ import re
 import subprocess
 import unittest
 from pathlib import Path
+from urllib.parse import urlparse
 
 import yaml
 
@@ -27,9 +28,18 @@ REQUIRED_ISSUE_DETAILS = {
 }
 PROHIBITED_ATTRIBUTION_PATTERNS = [
     re.compile(r"(?im)^co-authored-by:\s*(?:chatgpt|codex|openai)\b"),
-    re.compile(r"(?im)^generated-by:\s*(?:chatgpt|codex|openai)\b"),
+    re.compile(r"(?im)^generated-by:\s*\S+"),
     re.compile(r"(?i)written with (?:chatgpt|codex|openai)"),
+    re.compile(
+        r"(?i)\bai[- ]assisted\s+(?:contribution|change|code|content|documentation)\b"
+    ),
+    re.compile(r"(?im)^assistant\s+provenance\s*:"),
 ]
+ATTRIBUTION_TRACE_SAMPLES = (
+    "Generated" + "-by: automation",
+    "AI" + "-assisted contribution",
+    "Assistant " + "provenance: automation",
+)
 
 
 class CommunityHealthTest(unittest.TestCase):
@@ -37,6 +47,26 @@ class CommunityHealthTest(unittest.TestCase):
         return subprocess.check_output(
             ["git", "ls-files"], cwd=ROOT, text=True
         ).splitlines()
+
+    @staticmethod
+    def has_private_security_advisory_contact(config):
+        for contact in config.get("contact_links", []):
+            if not isinstance(contact, dict):
+                continue
+
+            destination = urlparse(contact.get("url", ""))
+            context = " ".join(
+                str(contact.get(field, "")) for field in ("name", "about")
+            ).lower()
+            if (
+                destination.scheme == "https"
+                and destination.netloc.lower() == "github.com"
+                and destination.path.endswith("/security/advisories/new")
+                and "security" in context
+            ):
+                return True
+
+        return False
 
     def test_required_community_files_exist(self):
         missing = [path for path in REQUIRED_PATHS if not (ROOT / path).is_file()]
@@ -82,6 +112,20 @@ class CommunityHealthTest(unittest.TestCase):
         self.assertIsInstance(config, dict)
         self.assertIs(config.get("blank_issues_enabled"), False)
         self.assertIsInstance(config.get("contact_links"), list)
+        self.assertTrue(self.has_private_security_advisory_contact(config))
+
+    def test_security_contact_rejects_public_issue_destination(self):
+        inadequate_config = {
+            "contact_links": [
+                {
+                    "name": "Security vulnerability report",
+                    "url": "https://github.com/ehsanestaji/FastaGuard/issues/new",
+                    "about": "Use this link for security reports.",
+                }
+            ]
+        }
+
+        self.assertFalse(self.has_private_security_advisory_contact(inadequate_config))
 
     def test_pull_request_template_covers_review_mechanisms(self):
         text = (ROOT / ".github/pull_request_template.md").read_text()
@@ -112,6 +156,16 @@ class CommunityHealthTest(unittest.TestCase):
                 violations.append(path)
 
         self.assertEqual(violations, [])
+
+    def test_attribution_trace_patterns_cover_common_provenance_forms(self):
+        for trace in ATTRIBUTION_TRACE_SAMPLES:
+            with self.subTest(trace=trace):
+                self.assertTrue(
+                    any(
+                        pattern.search(trace)
+                        for pattern in PROHIBITED_ATTRIBUTION_PATTERNS
+                    )
+                )
 
 
 if __name__ == "__main__":
