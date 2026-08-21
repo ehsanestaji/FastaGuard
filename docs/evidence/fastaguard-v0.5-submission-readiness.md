@@ -31,6 +31,11 @@ Passing `--gate submission` means the FASTA passed FastaGuard's local
 FASTA-level checks for the selected `--submission-target`. It does not mean
 NCBI, ENA, DDBJ, or other official validators will accept the submission.
 
+The optional v0.7 table2asn differential described in
+[`fastaguard-v0.7-ncbi-genome-policy.md`](fastaguard-v0.7-ncbi-genome-policy.md)
+checks only the explicitly shared FASTA-level boundaries. It does not expand
+this evidence into a repository-acceptance or submission-readiness guarantee.
+
 ## Expected Follow-Up
 
 After FASTA-level blockers are fixed, users should continue to official

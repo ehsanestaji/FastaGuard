@@ -5,8 +5,93 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+    inputs:
+      table2asn_url:
+        description: HTTPS URL of the Linux x86_64 table2asn gzip binary from NCBI
+        required: true
+        type: string
+      table2asn_sha256:
+        description: SHA-256 digest that pins the downloaded table2asn gzip binary
+        required: true
+        type: string
 
 jobs:
+  ncbi-policy-manifest:
+    name: NCBI policy manifest (offline)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate optional differential verifier
+        run: python3 -m unittest tests.python.test_ncbi_genome_policy -v
+
+  ncbi-policy-table2asn:
+    name: NCBI policy differential (manual)
+    if: github.event_name == 'workflow_dispatch'
+    needs: ncbi-policy-manifest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build FastaGuard
+        run: cargo build --locked --bin fastaguard
+
+      - name: Install digest-pinned table2asn source
+        env:
+          TABLE2ASN_URL: ${{ inputs.table2asn_url }}
+          TABLE2ASN_SHA256: ${{ inputs.table2asn_sha256 }}
+        run: |
+          case "$TABLE2ASN_URL" in
+            https://ftp.ncbi.nlm.nih.gov/*) ;;
+            *) echo "table2asn_url must use the official NCBI FTP HTTPS origin"; exit 1 ;;
+          esac
+          if [[ ! "$TABLE2ASN_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "table2asn_sha256 must be a 64-character hexadecimal digest"
+            exit 1
+          fi
+          mkdir -p target/ncbi-policy-tools
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            "$TABLE2ASN_URL" \
+            --output target/ncbi-policy-tools/table2asn.gz
+          echo "$TABLE2ASN_SHA256  target/ncbi-policy-tools/table2asn.gz" \
+            | sha256sum --check --strict
+          gzip --decompress target/ncbi-policy-tools/table2asn.gz
+          chmod 0755 target/ncbi-policy-tools/table2asn
+
+      - name: Run required table2asn differential
+        run: |
+          python3 scripts/verify_ncbi_genome_policy.py \
+            --fastaguard target/debug/fastaguard \
+            --table2asn target/ncbi-policy-tools/table2asn \
+            --require-table2asn \
+            --manifest docs/evidence/ncbi-genome-policy.json \
+            --out target/ncbi-policy.json
+
+      - name: Upload normalized differential result
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: ncbi-genome-policy
+          path: target/ncbi-policy.json
+          if-no-files-found: error
+
   multiqc-plugin:
     name: MultiQC plugin (Python ${{ matrix.python }}, MultiQC ${{ matrix.multiqc }})
     runs-on: ubuntu-latest

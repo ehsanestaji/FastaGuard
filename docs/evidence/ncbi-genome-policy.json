@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0.0",
+  "source_manifest": "testdata/ncbi_genome/policy_cases.json",
+  "policy_scope": {
+    "id": "ncbi_genome_fasta_overlap",
+    "included": [
+      "minimum_record_length",
+      "sequence_identifier_syntax",
+      "terminal_ambiguity"
+    ],
+    "excluded": [
+      "annotation",
+      "contamination",
+      "submission_metadata"
+    ]
+  },
+  "cases": [
+    {
+      "id": "contig_199",
+      "fixture": "contig_199.fa",
+      "expected_table2asn_result": "rejected"
+    },
+    {
+      "id": "contig_200",
+      "fixture": "contig_200.fa",
+      "expected_table2asn_result": "accepted"
+    },
+    {
+      "id": "contig_201",
+      "fixture": "contig_201.fa",
+      "expected_table2asn_result": "accepted"
+    },
+    {
+      "id": "seqid_49",
+      "fixture": "seqid_49.fa",
+      "expected_table2asn_result": "accepted"
+    },
+    {
+      "id": "seqid_50",
+      "fixture": "seqid_50.fa",
+      "expected_table2asn_result": "rejected"
+    },
+    {
+      "id": "seqid_51",
+      "fixture": "seqid_51.fa",
+      "expected_table2asn_result": "rejected"
+    },
+    {
+      "id": "seqid_allowed_ascii",
+      "fixture": "seqid_allowed_ascii.fa",
+      "expected_table2asn_result": "accepted"
+    },
+    {
+      "id": "seqid_allowed_chars",
+      "fixture": "seqid_allowed_chars.fa",
+      "expected_table2asn_result": "accepted"
+    },
+    {
+      "id": "seqid_disallowed_ascii",
+      "fixture": "seqid_disallowed_ascii.fa",
+      "expected_table2asn_result": "rejected"
+    },
+    {
+      "id": "seqid_invalid_chars",
+      "fixture": "seqid_invalid_chars.fa",
+      "expected_table2asn_result": "rejected"
+    },
+    {
+      "id": "seqid_unicode",
+      "fixture": "seqid_unicode.fa",
+      "expected_table2asn_result": "rejected"
+    },
+    {
+      "id": "terminal_n_prefix",
+      "fixture": "terminal_n_prefix.fa",
+      "expected_table2asn_result": "rejected"
+    },
+    {
+      "id": "terminal_n_suffix",
+      "fixture": "terminal_n_suffix.fa",
+      "expected_table2asn_result": "rejected"
+    },
+    {
+      "id": "terminal_ns",
+      "fixture": "terminal_ns.fa",
+      "expected_table2asn_result": "rejected"
+    }
+  ]
+}
