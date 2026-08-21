@@ -7,6 +7,9 @@ use crate::models::{
 };
 use crate::profile::ProfileConfig;
 use crate::stats::composition::round2;
+use crate::submission::SubmissionTarget;
+
+pub const NCBI_GENOME_MIN_RECORD_LENGTH: u64 = 200;
 
 #[derive(Debug, Clone)]
 pub struct Analysis {
@@ -15,8 +18,13 @@ pub struct Analysis {
     pub findings: Vec<Finding>,
 }
 
-pub fn analyze(metrics: &AssemblyMetrics, profile: &ProfileConfig, rules: &RuleConfig) -> Analysis {
-    let findings = build_findings(metrics, profile);
+pub fn analyze(
+    metrics: &AssemblyMetrics,
+    profile: &ProfileConfig,
+    rules: &RuleConfig,
+    submission_target: Option<SubmissionTarget>,
+) -> Analysis {
+    let findings = build_findings(metrics, profile, submission_target);
     let status = verdict_status(&findings, rules);
     let reasons = verdict_reasons(&findings, rules, status);
 
@@ -27,7 +35,11 @@ pub fn analyze(metrics: &AssemblyMetrics, profile: &ProfileConfig, rules: &RuleC
     }
 }
 
-fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Finding> {
+fn build_findings(
+    metrics: &AssemblyMetrics,
+    profile: &ProfileConfig,
+    submission_target: Option<SubmissionTarget>,
+) -> Vec<Finding> {
     let mut findings = Vec::new();
 
     if metrics.duplicate_id_count > 0 {
@@ -172,6 +184,40 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
         ));
     }
 
+    if submission_target == Some(SubmissionTarget::Ncbi)
+        && metrics.ncbi_genome_seqid_invalid_count > 0
+    {
+        findings.push(finding(
+            "ncbi_genome_seqid",
+            Severity::Major,
+            profile,
+            metrics.ncbi_genome_seqid_invalid_count,
+            affected_fraction(
+                metrics.ncbi_genome_seqid_invalid_count,
+                metrics.sequence_count,
+            ),
+            evidence_for_sequences(
+                metrics.ncbi_genome_seqid_invalid_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.ncbi_genome_seqid_invalid),
+                "NCBI genome SeqID must be 1-49 ASCII characters from [A-Za-z0-9_.:*#-]",
+                EvidenceKind::NcbiGenomeSeqId,
+            ),
+            FindingText {
+                message: format!(
+                    "{} records have SeqIDs outside the NCBI genome FASTA policy.",
+                    metrics.ncbi_genome_seqid_invalid_count
+                ),
+                why_it_matters:
+                    "NCBI genome submission workflows require short, portable first-token SeqIDs.",
+                suggested_next_step:
+                    "Rename affected first-token SeqIDs to 1-49 ASCII characters from the supported set before submission validation.",
+            },
+        ));
+    }
+
     if metrics.invalid_sequence_count > 0 {
         findings.push(finding(
             "invalid_chars",
@@ -264,6 +310,42 @@ fn build_findings(metrics: &AssemblyMetrics, profile: &ProfileConfig) -> Vec<Fin
                     "Filter or review tiny contigs before using the assembly in production workflows.",
             },
         ));
+    }
+
+    if submission_target == Some(SubmissionTarget::Ncbi) {
+        let short_contig_count = metrics
+            .sequences
+            .iter()
+            .filter(|sequence| sequence.length < NCBI_GENOME_MIN_RECORD_LENGTH)
+            .count() as u64;
+        if short_contig_count > 0 {
+            findings.push(finding(
+                "ncbi_genome_short_contigs",
+                Severity::Major,
+                profile,
+                short_contig_count,
+                affected_fraction(short_contig_count, metrics.sequence_count),
+                evidence_for_sequences(
+                    short_contig_count,
+                    metrics
+                        .sequences
+                        .iter()
+                        .filter(|sequence| sequence.length < NCBI_GENOME_MIN_RECORD_LENGTH),
+                    "record is shorter than the fixed 200-base NCBI genome minimum",
+                    EvidenceKind::TinyContig,
+                ),
+                FindingText {
+                    message: format!(
+                        "{} records are shorter than the fixed {} bp NCBI genome minimum.",
+                        short_contig_count, NCBI_GENOME_MIN_RECORD_LENGTH
+                    ),
+                    why_it_matters:
+                        "NCBI genome submission policy excludes records shorter than 200 bases.",
+                    suggested_next_step:
+                        "Review affected records and correct, combine, or remove them before submission validation.",
+                },
+            ));
+        }
     }
 
     if metrics.max_gap_run > profile.max_gap_run {
@@ -552,13 +634,13 @@ fn finding_metadata(id: &str) -> FindingMetadata {
         "duplicate_ids" | "duplicate_sequences" | "duplicate_first_token_ids" => {
             (Duplication, High)
         }
-        "invalid_chars" | "invalid_fasta_structure" => (Validity, High),
+        "invalid_chars" | "invalid_fasta_structure" | "ncbi_genome_seqid" => (Validity, High),
         "unsafe_ids" | "long_headers" | "reserved_header_chars" => (Validity, Moderate),
         "high_n_rate" => (Composition, High),
         "tiny_contigs" | "terminal_ns" | "gap_pattern_warnings" | "expected_size_outlier" => {
             (Structure, Moderate)
         }
-        "gap_runs" => (Structure, High),
+        "gap_runs" | "ncbi_genome_short_contigs" => (Structure, High),
         "gc_outliers" => (Composition, Moderate),
         "length_outliers" => (Structure, Moderate),
         "composite_anomalies" => (Composition, Moderate),
@@ -652,6 +734,7 @@ enum EvidenceKind {
     GapRun,
     UnsafeId,
     HeaderCompatibility,
+    NcbiGenomeSeqId,
     TerminalN,
     GapPattern,
     #[allow(dead_code)]
@@ -789,6 +872,7 @@ fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind)
                 record.signals.push("reserved_header_chars".to_string());
             }
         }
+        EvidenceKind::NcbiGenomeSeqId => {}
         EvidenceKind::CompositionOutlier | EvidenceKind::AssemblyOutlier => {
             record.gc_percent = Some(sequence.gc_percent);
             record.gc_zscore = sequence.gc_zscore;
@@ -923,6 +1007,7 @@ mod tests {
             unsafe_id_count: 0,
             long_header_count: 0,
             reserved_header_char_count: 0,
+            ncbi_genome_seqid_invalid_count: 0,
             invalid_sequence_count: 0,
             high_n_sequence_count: 0,
             tiny_contig_count: 0,
@@ -969,6 +1054,7 @@ mod tests {
             unsafe_id: false,
             long_header: false,
             reserved_header_chars: false,
+            ncbi_genome_seqid_invalid: false,
             length,
             gc_count: 0,
             at_count: length.saturating_sub(n_count),
@@ -1005,7 +1091,7 @@ mod tests {
         let mut metrics = clean_metrics();
         metrics.duplicate_id_count = 1;
 
-        let analysis = analyze(&metrics, &profile(), &rules(&["duplicate_ids"]));
+        let analysis = analyze(&metrics, &profile(), &rules(&["duplicate_ids"]), None);
 
         assert_eq!(analysis.status, VerdictStatus::Fail);
         assert_eq!(analysis.reasons, ["duplicate_ids"]);
@@ -1022,7 +1108,7 @@ mod tests {
         ];
         metrics.sequences[1].duplicate_first_token_id = true;
 
-        let analysis = analyze(&metrics, &profile(), &rules(&[]));
+        let analysis = analyze(&metrics, &profile(), &rules(&[]), None);
 
         assert_eq!(analysis.status, VerdictStatus::Fail);
         assert_eq!(analysis.reasons, ["duplicate_first_token_ids"]);
@@ -1039,7 +1125,7 @@ mod tests {
         metrics.sequences[0].terminal_n_prefix = 1;
         metrics.sequences[0].terminal_n_suffix = 1;
 
-        let analysis = analyze(&metrics, &profile(), &rules(&[]));
+        let analysis = analyze(&metrics, &profile(), &rules(&[]), None);
 
         assert_eq!(analysis.status, VerdictStatus::Warn);
         let finding = analysis
@@ -1063,7 +1149,7 @@ mod tests {
             expected_size_tolerance: Some(0.10),
         });
 
-        let analysis = analyze(&metrics, &profile, &rules(&[]));
+        let analysis = analyze(&metrics, &profile, &rules(&[]), None);
 
         assert!(analysis
             .findings
@@ -1076,7 +1162,7 @@ mod tests {
         let mut metrics = clean_metrics();
         metrics.high_n_sequence_count = 1;
 
-        let analysis = analyze(&metrics, &profile(), &rules(&[]));
+        let analysis = analyze(&metrics, &profile(), &rules(&[]), None);
 
         assert_eq!(analysis.status, VerdictStatus::Warn);
         assert_eq!(analysis.reasons, ["high_n_rate"]);
@@ -1084,7 +1170,7 @@ mod tests {
 
     #[test]
     fn clean_metrics_pass_without_reasons() {
-        let analysis = analyze(&clean_metrics(), &profile(), &rules(&[]));
+        let analysis = analyze(&clean_metrics(), &profile(), &rules(&[]), None);
 
         assert_eq!(analysis.status, VerdictStatus::Pass);
         assert!(analysis.reasons.is_empty());
@@ -1096,7 +1182,7 @@ mod tests {
         let mut metrics = clean_metrics();
         metrics.tiny_contig_count = 1;
 
-        let analysis = analyze(&metrics, &profile(), &rules(&["tiny_contigs"]));
+        let analysis = analyze(&metrics, &profile(), &rules(&["tiny_contigs"]), None);
 
         assert_eq!(analysis.status, VerdictStatus::Fail);
         assert_eq!(analysis.reasons, ["tiny_contigs"]);
@@ -1110,7 +1196,7 @@ mod tests {
         metrics.n_percent = 5.0;
         metrics.sequences = vec![sequence_summary(100_001, 5_000)];
 
-        let analysis = analyze(&metrics, &profile_with_max_n_rate(0.05), &rules(&[]));
+        let analysis = analyze(&metrics, &profile_with_max_n_rate(0.05), &rules(&[]), None);
 
         assert_eq!(analysis.status, VerdictStatus::Pass);
         assert!(analysis.findings.is_empty());
@@ -1118,7 +1204,12 @@ mod tests {
 
     #[test]
     fn clean_metrics_with_zero_max_n_rate_passes() {
-        let analysis = analyze(&clean_metrics(), &profile_with_max_n_rate(0.0), &rules(&[]));
+        let analysis = analyze(
+            &clean_metrics(),
+            &profile_with_max_n_rate(0.0),
+            &rules(&[]),
+            None,
+        );
 
         assert_eq!(analysis.status, VerdictStatus::Pass);
         assert!(analysis.reasons.is_empty());
@@ -1131,7 +1222,7 @@ mod tests {
         metrics.n_percent = 6.0;
         metrics.sequences = vec![sequence_summary(500, 30), sequence_summary(500, 30)];
 
-        let analysis = analyze(&metrics, &profile_with_max_n_rate(0.05), &rules(&[]));
+        let analysis = analyze(&metrics, &profile_with_max_n_rate(0.05), &rules(&[]), None);
         let finding = analysis
             .findings
             .iter()
@@ -1147,7 +1238,7 @@ mod tests {
         let mut metrics = clean_metrics();
         metrics.max_gap_run = 101;
 
-        let analysis = analyze(&metrics, &profile(), &rules(&[]));
+        let analysis = analyze(&metrics, &profile(), &rules(&[]), None);
         let finding = analysis
             .findings
             .iter()

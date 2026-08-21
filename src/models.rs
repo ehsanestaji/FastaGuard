@@ -549,6 +549,13 @@ pub fn finding_actions(id: &str) -> Vec<FindingAction> {
             "seqkit",
             false,
         )],
+        "ncbi_genome_seqid" => vec![action(
+            "normalize_ncbi_seqids",
+            "records with NCBI-incompatible SeqIDs",
+            "NCBI genome SeqIDs must use 1-49 ASCII characters from the supported set.",
+            "seqkit",
+            false,
+        )],
         "invalid_chars" => vec![action(
             "correct_symbols",
             "records with invalid sequence symbols",
@@ -576,6 +583,13 @@ pub fn finding_actions(id: &str) -> Vec<FindingAction> {
             "filter_or_review_records",
             "tiny contigs",
             "Short records may be noise, but should be reviewed before automatic removal.",
+            "seqkit",
+            false,
+        )],
+        "ncbi_genome_short_contigs" => vec![action(
+            "review_or_remove_short_records",
+            "NCBI genome records shorter than 200 bases",
+            "NCBI genome submission policy excludes records shorter than 200 bases.",
             "seqkit",
             false,
         )],

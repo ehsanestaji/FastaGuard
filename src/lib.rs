@@ -63,7 +63,7 @@ pub(crate) fn build_single_report(
         }
         Err(error) => return Err(error),
     };
-    let analysis = findings::analyze(&metrics, &profile, &config.rules);
+    let analysis = findings::analyze(&metrics, &profile, &config.rules, config.submission_target);
     let duration_ms = measured_duration_ms(&config, started);
     models::FastaguardReport::from_analysis(
         config.clone(),

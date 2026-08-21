@@ -1281,6 +1281,116 @@ fn submission_target_ncbi_is_serialized_when_requested() {
 }
 
 #[test]
+fn ncbi_genome_seqid_boundaries_use_ascii_byte_lengths() {
+    for (fixture, expected_blocking) in [
+        ("seqid_49.fa", false),
+        ("seqid_50.fa", true),
+        ("seqid_51.fa", true),
+    ] {
+        let report = run_submission_fixture(fixture, "ncbi", &[]);
+        let blocking = report["gate"]["blocking_findings"].as_array().unwrap();
+
+        assert_eq!(
+            blocking.contains(&json!("ncbi_genome_seqid")),
+            expected_blocking,
+            "unexpected SeqID policy result for {fixture}: {report}"
+        );
+        assert_eq!(
+            report["gate"]["can_continue"],
+            json!(!expected_blocking),
+            "unexpected continuation decision for {fixture}: {report}"
+        );
+    }
+}
+
+#[test]
+fn ncbi_genome_seqid_checks_only_the_first_token_and_allowed_character_set() {
+    let allowed = run_submission_fixture("seqid_allowed_chars.fa", "ncbi", &[]);
+    assert!(!array_contains_string(
+        &allowed["gate"]["blocking_findings"],
+        "ncbi_genome_seqid"
+    ));
+    assert_eq!(allowed["gate"]["can_continue"], json!(true));
+
+    let invalid = run_submission_fixture("seqid_invalid_chars.fa", "ncbi", &[]);
+    assert_eq!(invalid["verdict"]["status"], json!("FAIL"));
+    assert!(array_contains_string(
+        &invalid["gate"]["blocking_findings"],
+        "ncbi_genome_seqid"
+    ));
+    assert_eq!(invalid["gate"]["can_continue"], json!(false));
+    let finding = finding_by_id(&invalid, "ncbi_genome_seqid");
+    assert_eq!(
+        finding["evidence"]["records"][0]["reason"],
+        json!("NCBI genome SeqID must be 1-49 ASCII characters from [A-Za-z0-9_.:*#-]")
+    );
+}
+
+#[test]
+fn ncbi_genome_terminal_ns_are_submission_blockers() {
+    let report = run_submission_fixture("terminal_ns.fa", "ncbi", &[]);
+
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "terminal_ns"
+    ));
+    assert_eq!(report["gate"]["can_continue"], json!(false));
+}
+
+#[test]
+fn ncbi_genome_short_contig_boundary_is_fixed_at_200_bases() {
+    for (fixture, expected_blocking) in [
+        ("contig_199.fa", true),
+        ("contig_200.fa", false),
+        ("contig_201.fa", false),
+    ] {
+        let report = run_submission_fixture(fixture, "ncbi", &[]);
+        assert_eq!(
+            array_contains_string(
+                &report["gate"]["blocking_findings"],
+                "ncbi_genome_short_contigs"
+            ),
+            expected_blocking,
+            "unexpected short-contig policy result for {fixture}: {report}"
+        );
+        assert_eq!(
+            report["gate"]["can_continue"],
+            json!(!expected_blocking),
+            "unexpected continuation decision for {fixture}: {report}"
+        );
+    }
+
+    let overridden = run_submission_fixture("contig_199.fa", "ncbi", &["--min-contig-length", "1"]);
+    assert!(array_contains_string(
+        &overridden["gate"]["blocking_findings"],
+        "ncbi_genome_short_contigs"
+    ));
+    assert!(!array_contains_string(
+        &overridden["gate"]["advisory_findings"],
+        "tiny_contigs"
+    ));
+    assert_eq!(overridden["gate"]["can_continue"], json!(false));
+}
+
+#[test]
+fn ncbi_genome_rules_do_not_leak_into_the_generic_submission_target() {
+    for fixture in ["seqid_50.fa", "seqid_invalid_chars.fa", "contig_199.fa"] {
+        let report = run_submission_fixture(fixture, "generic", &["--min-contig-length", "1"]);
+
+        assert!(!array_contains_string(
+            &report["gate"]["blocking_findings"],
+            "ncbi_genome_seqid"
+        ));
+        assert!(!array_contains_string(
+            &report["gate"]["blocking_findings"],
+            "ncbi_genome_short_contigs"
+        ));
+        assert_eq!(report["gate"]["can_continue"], json!(true));
+    }
+}
+
+#[test]
 fn submission_gate_fails_identifier_hazards() {
     let temp_dir = TempDir::new().unwrap();
     let outputs = output_paths(&temp_dir, "submission_ids");
@@ -1314,12 +1424,41 @@ fn submission_gate_fails_identifier_hazards() {
     ));
     assert!(array_contains_string(
         &report["gate"]["blocking_findings"],
-        "unsafe_ids",
+        "ncbi_genome_seqid",
     ));
     assert!(array_contains_string(
         &report["gate"]["blocking_findings"],
-        "reserved_header_chars",
+        "ncbi_genome_short_contigs",
     ));
+    assert!(!array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "unsafe_ids"
+    ));
+    assert!(!array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "reserved_header_chars"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["advisory_findings"],
+        "unsafe_ids"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["advisory_findings"],
+        "reserved_header_chars"
+    ));
+    assert_eq!(
+        report["gate"]["fail_on"],
+        json!([
+            "duplicate_first_token_ids",
+            "duplicate_ids",
+            "invalid_chars",
+            "invalid_fasta_structure",
+            "ncbi_genome_seqid",
+            "ncbi_genome_short_contigs",
+            "terminal_ns"
+        ])
+    );
+    assert_eq!(report["gate"]["can_continue"], json!(false));
     let submission_readiness = report["readiness"]["categories"]
         .as_array()
         .unwrap()
@@ -1570,6 +1709,29 @@ fn unknown_submission_target_is_cli_error() {
     .assert()
     .code(2)
     .stderr(predicate::str::contains("invalid value 'ena'"));
+}
+
+fn run_submission_fixture(fixture: &str, target: &str, extra_args: &[&str]) -> Value {
+    let temp_dir = TempDir::new().unwrap();
+    let outputs = output_paths(&temp_dir, fixture.trim_end_matches(".fa"));
+    let input = Path::new("testdata/ncbi_genome").join(fixture);
+    let mut command = Command::cargo_bin("fastaguard").unwrap();
+    command
+        .arg(input)
+        .args(["--gate", "submission", "--submission-target", target])
+        .args(extra_args)
+        .arg("--json")
+        .arg(&outputs.json)
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc);
+
+    let assertion = command.assert().code(0);
+    assert_eq!(assertion.get_output().status.code(), Some(0));
+    read_json(&outputs.json)
 }
 
 struct OutputPaths {

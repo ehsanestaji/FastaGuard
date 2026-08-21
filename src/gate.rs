@@ -26,8 +26,9 @@ pub const SUBMISSION_FAIL_ON_NCBI: &[&str] = &[
     "duplicate_ids",
     "invalid_chars",
     "invalid_fasta_structure",
-    "reserved_header_chars",
-    "unsafe_ids",
+    "ncbi_genome_seqid",
+    "terminal_ns",
+    "ncbi_genome_short_contigs",
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]

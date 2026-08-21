@@ -35,6 +35,32 @@ fn schema_requires_emitted_finding_taxonomy_fields() {
 }
 
 #[test]
+fn schema_and_catalog_define_ncbi_genome_policy_findings() {
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let catalog = read_json(Path::new("schema/finding-catalog.json"));
+    let finding_ids = schema["$defs"]["finding"]["properties"]["id"]["enum"]
+        .as_array()
+        .expect("finding IDs should be a closed schema enum");
+
+    for id in ["ncbi_genome_seqid", "ncbi_genome_short_contigs"] {
+        assert!(
+            finding_ids.contains(&serde_json::json!(id)),
+            "schema is missing {id}"
+        );
+        let entry = catalog["findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|finding| finding["id"] == id)
+            .unwrap_or_else(|| panic!("catalog is missing {id}"));
+        assert_eq!(entry["default_severity"], "major");
+        assert_eq!(entry["confidence"], "high");
+        assert_eq!(entry["requires_followup_tool"], false);
+        assert_eq!(entry["default_verdict_effect"], "fail");
+    }
+}
+
+#[test]
 fn schema_requires_gate_and_input_sha256() {
     let schema = read_json(Path::new("schema/fastaguard.schema.json"));
     let single_report = &schema["$defs"]["single_report"];

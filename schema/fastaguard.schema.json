@@ -1146,7 +1146,28 @@
       ],
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "duplicate_ids",
+            "duplicate_first_token_ids",
+            "unsafe_ids",
+            "long_headers",
+            "reserved_header_chars",
+            "ncbi_genome_seqid",
+            "invalid_chars",
+            "high_n_rate",
+            "tiny_contigs",
+            "ncbi_genome_short_contigs",
+            "gap_runs",
+            "terminal_ns",
+            "gap_pattern_warnings",
+            "expected_size_outlier",
+            "duplicate_sequences",
+            "gc_outliers",
+            "length_outliers",
+            "composite_anomalies",
+            "invalid_fasta_structure"
+          ]
         },
         "category": {
           "type": "string",

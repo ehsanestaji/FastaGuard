@@ -177,6 +177,43 @@
       "cannot_conclude": ["sequence quality", "assembly correctness", "repository acceptance"]
     },
     {
+      "id": "ncbi_genome_seqid",
+      "category": "validity",
+      "severity": "major",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "default_severity": "major",
+      "default_verdict_effect": "fail",
+      "description": "One or more first-token SeqIDs violate the NCBI genome FASTA identifier policy.",
+      "meaning": "NCBI genome SeqIDs must be 1-49 ASCII characters from [A-Za-z0-9_.:*#-].",
+      "why_it_matters": "NCBI genome submission workflows require short, portable first-token SeqIDs.",
+      "evidence_fields": [
+        "findings[].affected_count",
+        "findings[].evidence.records[].reason"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "normalize_ncbi_seqids",
+          "target": "records with NCBI-incompatible SeqIDs",
+          "reason": "NCBI genome SeqIDs must use 1-49 ASCII characters from the supported set.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "rename records with NCBI-incompatible first-token SeqIDs"
+        },
+        {
+          "tool": "official submission validator",
+          "role": "validate repository-specific rules after SeqIDs are corrected"
+        }
+      ],
+      "cannot_conclude": ["repository acceptance", "annotation correctness"]
+    },
+    {
       "id": "invalid_chars",
       "category": "validity",
       "confidence": "high",
@@ -279,6 +316,43 @@
         }
       ],
       "cannot_conclude": ["whether a tiny contig is biologically real"]
+    },
+    {
+      "id": "ncbi_genome_short_contigs",
+      "category": "structure",
+      "severity": "major",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "assembly",
+      "default_severity": "major",
+      "default_verdict_effect": "fail",
+      "description": "One or more records are shorter than the fixed 200-base NCBI genome minimum.",
+      "meaning": "NCBI genome submission policy excludes records shorter than 200 bases.",
+      "why_it_matters": "Records below the fixed minimum must be reviewed before NCBI genome submission validation.",
+      "evidence_fields": [
+        "findings[].affected_count",
+        "findings[].evidence.records[].length"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "review_or_remove_short_records",
+          "target": "NCBI genome records shorter than 200 bases",
+          "reason": "NCBI genome submission policy excludes records shorter than 200 bases.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "inspect or remove records shorter than the fixed NCBI genome minimum"
+        },
+        {
+          "tool": "official submission validator",
+          "role": "validate repository-specific rules after short records are corrected or removed"
+        }
+      ],
+      "cannot_conclude": ["whether a short record is biologically real", "repository acceptance"]
     },
     {
       "id": "gap_runs",

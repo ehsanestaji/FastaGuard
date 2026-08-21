@@ -20,6 +20,7 @@ pub struct SequenceSummary {
     pub unsafe_id: bool,
     pub long_header: bool,
     pub reserved_header_chars: bool,
+    pub ncbi_genome_seqid_invalid: bool,
     pub length: u64,
     pub gc_count: u64,
     pub at_count: u64,
@@ -60,6 +61,7 @@ pub struct AssemblyMetrics {
     pub unsafe_id_count: u64,
     pub long_header_count: u64,
     pub reserved_header_char_count: u64,
+    pub ncbi_genome_seqid_invalid_count: u64,
     pub invalid_sequence_count: u64,
     pub high_n_sequence_count: u64,
     pub tiny_contig_count: u64,
@@ -112,6 +114,7 @@ struct MetricsAccumulator<'a> {
     unsafe_id_count: u64,
     long_header_count: u64,
     reserved_header_char_count: u64,
+    ncbi_genome_seqid_invalid_count: u64,
     invalid_sequence_count: u64,
     high_n_sequence_count: u64,
     tiny_contig_count: u64,
@@ -141,6 +144,7 @@ impl<'a> MetricsAccumulator<'a> {
             unsafe_id_count: 0,
             long_header_count: 0,
             reserved_header_char_count: 0,
+            ncbi_genome_seqid_invalid_count: 0,
             invalid_sequence_count: 0,
             high_n_sequence_count: 0,
             tiny_contig_count: 0,
@@ -177,6 +181,10 @@ impl<'a> MetricsAccumulator<'a> {
         if reserved_header_chars {
             self.reserved_header_char_count += 1;
         }
+        let ncbi_genome_seqid_invalid = !ncbi_genome_seqid_is_valid(&first_token_id);
+        if ncbi_genome_seqid_invalid {
+            self.ncbi_genome_seqid_invalid_count += 1;
+        }
 
         self.current_sequence = Some(SequenceSummaryBuilder::new(
             id,
@@ -188,6 +196,7 @@ impl<'a> MetricsAccumulator<'a> {
                 unsafe_id,
                 long_header,
                 reserved_header_chars,
+                ncbi_genome_seqid_invalid,
             },
         ));
     }
@@ -277,6 +286,7 @@ impl<'a> MetricsAccumulator<'a> {
             unsafe_id_count: self.unsafe_id_count,
             long_header_count: self.long_header_count,
             reserved_header_char_count: self.reserved_header_char_count,
+            ncbi_genome_seqid_invalid_count: self.ncbi_genome_seqid_invalid_count,
             invalid_sequence_count: self.invalid_sequence_count,
             high_n_sequence_count: self.high_n_sequence_count,
             tiny_contig_count: self.tiny_contig_count,
@@ -337,6 +347,7 @@ struct HeaderReadinessFlags {
     unsafe_id: bool,
     long_header: bool,
     reserved_header_chars: bool,
+    ncbi_genome_seqid_invalid: bool,
 }
 
 struct SequenceSummaryBuilder {
@@ -348,6 +359,7 @@ struct SequenceSummaryBuilder {
     unsafe_id: bool,
     long_header: bool,
     reserved_header_chars: bool,
+    ncbi_genome_seqid_invalid: bool,
     hasher: Sha256,
     length: u64,
     gc_count: u64,
@@ -381,6 +393,7 @@ impl SequenceSummaryBuilder {
             unsafe_id: flags.unsafe_id,
             long_header: flags.long_header,
             reserved_header_chars: flags.reserved_header_chars,
+            ncbi_genome_seqid_invalid: flags.ncbi_genome_seqid_invalid,
             hasher: Sha256::new(),
             length: 0,
             gc_count: 0,
@@ -468,6 +481,7 @@ impl SequenceSummaryBuilder {
             unsafe_id: self.unsafe_id,
             long_header: self.long_header,
             reserved_header_chars: self.reserved_header_chars,
+            ncbi_genome_seqid_invalid: self.ncbi_genome_seqid_invalid,
             length: self.length,
             gc_count: self.gc_count,
             at_count: self.at_count,
@@ -509,6 +523,13 @@ fn reserved_header_chars(header: &str) -> bool {
     header
         .chars()
         .any(|ch| matches!(ch, '|' | ';' | '"' | '\'' | '`' | '<' | '>' | '\t'))
+}
+
+pub fn ncbi_genome_seqid_is_valid(value: &str) -> bool {
+    (1..=49).contains(&value.len())
+        && value.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'.' | b':' | b'*' | b'#' | b'-')
+        })
 }
 
 fn gc_zscores(values: &[f64]) -> Vec<Option<f64>> {

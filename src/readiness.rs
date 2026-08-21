@@ -138,6 +138,8 @@ fn category_ids_for_finding(id: &str) -> &'static [&'static str] {
         "invalid_chars" => &["alphabet", "submission"],
         "duplicate_ids" | "duplicate_first_token_ids" => &["index", "submission"],
         "unsafe_ids" | "long_headers" | "reserved_header_chars" => &["index", "submission"],
+        "ncbi_genome_seqid" => &["index", "submission"],
+        "ncbi_genome_short_contigs" => &["submission"],
         "terminal_ns" | "gap_pattern_warnings" | "gap_runs" => &["assembly", "submission"],
         "high_n_rate" | "tiny_contigs" => &["assembly", "submission"],
         "gc_outliers" | "length_outliers" | "composite_anomalies" | "expected_size_outlier" => {
@@ -309,6 +311,54 @@ mod tests {
             .overall
             .blockers
             .contains(&"submission.invalid_fasta_structure".to_string()));
+    }
+
+    #[test]
+    fn ncbi_genome_seqid_fails_index_and_submission_readiness() {
+        let readiness = build_readiness(
+            VerdictStatus::Fail,
+            &["ncbi_genome_seqid".to_string()],
+            &[finding("ncbi_genome_seqid", Severity::Major)],
+            ReadinessScope::Single,
+            Some(crate::submission::SubmissionTarget::Ncbi),
+        );
+
+        assert_eq!(
+            readiness.category("index").unwrap().status,
+            ReadinessStatus::Fail
+        );
+        assert_eq!(
+            readiness.category("submission").unwrap().status,
+            ReadinessStatus::Fail
+        );
+        assert_eq!(
+            readiness.overall.blockers,
+            ["index.ncbi_genome_seqid", "submission.ncbi_genome_seqid"]
+        );
+    }
+
+    #[test]
+    fn ncbi_genome_short_contigs_fail_submission_readiness_only() {
+        let readiness = build_readiness(
+            VerdictStatus::Fail,
+            &["ncbi_genome_short_contigs".to_string()],
+            &[finding("ncbi_genome_short_contigs", Severity::Major)],
+            ReadinessScope::Single,
+            Some(crate::submission::SubmissionTarget::Ncbi),
+        );
+
+        assert_eq!(
+            readiness.category("submission").unwrap().status,
+            ReadinessStatus::Fail
+        );
+        assert_eq!(
+            readiness.category("assembly").unwrap().status,
+            ReadinessStatus::Pass
+        );
+        assert_eq!(
+            readiness.overall.blockers,
+            ["submission.ncbi_genome_short_contigs"]
+        );
     }
 
     #[test]
