@@ -1,8 +1,8 @@
 # FastaGuard v0.6 Public Evidence
 
-This evidence pack records one reproducible assembly-profile run with
-FastaGuard 0.6.0. It combines three deterministic local cases with two exact
-NCBI assembly accessions:
+This evidence pack records one assembly-profile run with an executable that
+reported FastaGuard 0.6.0. It combines three deterministic local cases with two
+exact NCBI assembly accessions:
 
 - `GCF_000005845.2`, Escherichia coli K-12 MG1655
 - `GCF_000182925.2`, Neurospora crassa OR74A
@@ -10,15 +10,20 @@ NCBI assembly accessions:
 The portable results are available as
 [JSON](results/v0.6/evidence_summary.json) and
 [TSV](results/v0.6/evidence_summary.tsv). They contain input sizes and SHA-256
-checksums, release provenance, structural metrics, verdict and gate status,
-and all finding IDs. Downloaded FASTA files and complete reports are not part
-of the repository.
+checksums, scoped source-tree and observed-executable provenance, structural
+metrics, verdict and gate status, and all finding IDs. Downloaded FASTA files
+and complete reports are not part of the repository.
 
 ## Run Method
 
-The release binary was built with the locked dependency graph. The tracked
-Rust and Cargo source was verified byte-for-byte against release commit
-`cf27295da0cb9b1a48318caa9e3b8739cfd0c104` before collection. The collector
+The executable used for the run reported version `0.6.0` and had SHA-256
+`6dec7b558d29b3e72a96f6b81f942947fc50f84e183bfe5a390c665b33d21103`.
+Separately, the tracked Rust and Cargo source tree was verified byte-for-byte
+against release-tag commit
+`cf27295da0cb9b1a48318caa9e3b8739cfd0c104`. These are independent checks:
+binary-to-source reproducibility was not independently attested.
+
+The locked release build command completed before collection. The collector
 then downloaded only the two manifest accessions with the NCBI Datasets CLI
 and ran each case with the assembly profile, pipeline gate, and a one-base
 minimum contig length:

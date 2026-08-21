@@ -20,6 +20,7 @@ EXPECTED_CASES = {
 }
 EXPECTED_ACCESSIONS = {"GCF_000005845.2", "GCF_000182925.2"}
 EXPECTED_SOURCE_COMMIT = "cf27295da0cb9b1a48318caa9e3b8739cfd0c104"
+EXPECTED_BINARY_SHA256 = "6dec7b558d29b3e72a96f6b81f942947fc50f84e183bfe5a390c665b33d21103"
 VALID_STATUSES = {"PASS", "WARN", "FAIL"}
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 STABLE_CASE_FIELDS = (
@@ -79,6 +80,34 @@ def test_portable_summaries_have_expected_cases_and_release_provenance():
         assert SHA256.fullmatch(row["input_sha256"])
         assert row["verdict"] in VALID_STATUSES
         assert row["gate_status"] in VALID_STATUSES
+
+
+def test_portable_provenance_distinguishes_observed_binary_from_source_check():
+    summary, rows = load_summaries()
+
+    assert summary["binary_sha256"] == EXPECTED_BINARY_SHA256
+    assert summary["binary_to_source_reproducibility_attested"] is False
+    scope = summary["provenance_scope"].lower()
+    assert "source-tree" in scope
+    assert "observed executable" in scope
+    assert "not independently attested" in scope
+
+    for row in rows:
+        assert row["binary_sha256"] == EXPECTED_BINARY_SHA256
+        assert row["binary_to_source_reproducibility_attested"] == "false"
+        assert row["provenance_scope"] == summary["provenance_scope"]
+
+
+def test_standalone_tsv_carries_runtime_interpretation_context():
+    _, rows = load_summaries()
+
+    assert rows
+    for row in rows:
+        assert row["platform"] == "macOS-26.5.1-arm64-arm-64bit-Mach-O"
+        assert row["python"] == "3.14.5"
+        runtime_context = row["runtime_context"].lower()
+        assert "contextual" in runtime_context
+        assert "not cross-platform performance guarantees" in runtime_context
 
 
 def test_json_and_tsv_agree_on_stable_case_data():

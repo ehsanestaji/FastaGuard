@@ -844,6 +844,9 @@ import sys
 from pathlib import Path
 
 args = sys.argv[1:]
+if args == ["--version"]:
+    print("fastaguard 9.8.7 test-build")
+    raise SystemExit(0)
 input_path = Path(args[0])
 if "--gate" not in args or args[args.index("--gate") + 1] != "pipeline":
     raise SystemExit("unexpected gate mode")
@@ -906,6 +909,18 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
             summary_path = out_dir / "evidence_summary.json"
             self.assertTrue(summary_path.exists())
             summary = json.loads(summary_path.read_text())
+            expected_git_commit = subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+            self.assertEqual(
+                summary["fastaguard_version"], "fastaguard 9.8.7 test-build"
+            )
+            self.assertEqual(summary["git_commit"], expected_git_commit)
+            self.assertNotIn("source_commit", summary)
             case_ids = {case["id"] for case in summary["cases"]}
             self.assertEqual(
                 case_ids,

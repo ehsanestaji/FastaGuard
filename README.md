@@ -308,6 +308,9 @@ records three local contract cases and two exact NCBI reference assemblies.
 Portable results are committed as
 [JSON](docs/evidence/results/v0.6/evidence_summary.json) and
 [TSV](docs/evidence/results/v0.6/evidence_summary.tsv).
+They record the observed executable version and SHA-256 separately from the
+verified release-tag/source-tree commit; binary-to-source reproducibility was
+not independently attested.
 
 | Public assembly | Scale | Pipeline gate | Finding IDs |
 | --- | ---: | --- | --- |

@@ -1,4 +1,6 @@
 {
+  "binary_sha256": "6dec7b558d29b3e72a96f6b81f942947fc50f84e183bfe5a390c665b33d21103",
+  "binary_to_source_reproducibility_attested": false,
   "cases": [
     {
       "accession": null,
@@ -143,6 +145,7 @@
   "fastaguard_version": "0.6.0",
   "generated_at": "2026-08-21T08:11:21+00:00",
   "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+  "provenance_scope": "source_commit records verified release-tag and source-tree equality. fastaguard_version and binary_sha256 record the observed executable. Binary-to-source reproducibility was not independently attested.",
   "python": "3.14.5",
   "runtime_context": "Elapsed seconds are contextual measurements from one local run, not cross-platform performance guarantees.",
   "schema_version": 1,

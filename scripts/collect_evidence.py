@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import gzip
+import hashlib
 import json
 import platform
 import shutil
@@ -20,6 +21,15 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_SUCCESS_CODES = {0, 1, 2}
+RUNTIME_CONTEXT = (
+    "Elapsed seconds are contextual measurements from one local run, "
+    "not cross-platform performance guarantees."
+)
+PROVENANCE_SCOPE = (
+    "source_commit records verified release-tag and source-tree equality. "
+    "fastaguard_version and binary_sha256 record the observed executable. "
+    "Binary-to-source reproducibility was not independently attested."
+)
 SUMMARY_COLUMNS = [
     "id",
     "label",
@@ -50,8 +60,12 @@ PORTABLE_METADATA_COLUMNS = [
     "generated_at",
     "fastaguard_version",
     "source_commit",
+    "binary_sha256",
+    "provenance_scope",
+    "binary_to_source_reproducibility_attested",
     "platform",
     "python",
+    "runtime_context",
 ]
 PORTABLE_CASE_COLUMNS = [
     "id",
@@ -103,19 +117,24 @@ def main() -> int:
     if not args.local_only:
         cases.extend(public_cases(manifest_path, out_dir))
 
-    version = fastaguard_version(binary)
+    version_output = fastaguard_version(binary)
     summary = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "fastaguard_version": version,
+        "fastaguard_version": version_output,
+        "git_commit": git_commit(),
         "platform": platform.platform(),
         "python": platform.python_version(),
         "command": " ".join(sys.argv),
         "local_only": args.local_only,
         "cases": [],
     }
+    portable_source_commit = None
+    portable_binary_sha256 = None
     if portable_summary_dir is not None:
-        summary["source_commit"] = release_source_commit(version)
+        version = portable_fastaguard_version(version_output)
+        portable_source_commit = release_source_commit(version)
+        portable_binary_sha256 = sha256_file(binary)
 
     for case in cases:
         if case["source"] == "public_ncbi":
@@ -125,7 +144,12 @@ def main() -> int:
 
     write_summary(out_dir, summary)
     if portable_summary_dir is not None:
-        write_portable_summary(portable_summary_dir, summary)
+        write_portable_summary(
+            portable_summary_dir,
+            summary,
+            source_commit=portable_source_commit,
+            binary_sha256=portable_binary_sha256,
+        )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
@@ -461,19 +485,27 @@ def write_summary(out_dir: Path, summary: dict[str, Any]) -> None:
             writer.writerow(row)
 
 
-def write_portable_summary(out_dir: Path, summary: dict[str, Any]) -> None:
+def write_portable_summary(
+    out_dir: Path,
+    summary: dict[str, Any],
+    *,
+    source_commit: str,
+    binary_sha256: str,
+) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     portable = {
         "schema_version": summary["schema_version"],
         "generated_at": summary["generated_at"],
-        "fastaguard_version": summary["fastaguard_version"],
-        "source_commit": summary["source_commit"],
+        "fastaguard_version": portable_fastaguard_version(
+            summary["fastaguard_version"]
+        ),
+        "source_commit": source_commit,
+        "binary_sha256": binary_sha256,
+        "provenance_scope": PROVENANCE_SCOPE,
+        "binary_to_source_reproducibility_attested": False,
         "platform": summary["platform"],
         "python": summary["python"],
-        "runtime_context": (
-            "Elapsed seconds are contextual measurements from one local run, "
-            "not cross-platform performance guarantees."
-        ),
+        "runtime_context": RUNTIME_CONTEXT,
         "cases": [portable_case(case) for case in summary["cases"]],
     }
     json_path = out_dir / "evidence_summary.json"
@@ -491,6 +523,7 @@ def write_portable_summary(out_dir: Path, summary: dict[str, Any]) -> None:
         writer.writeheader()
         for case in portable["cases"]:
             row = {**metadata, **case}
+            row["binary_to_source_reproducibility_attested"] = "false"
             row["finding_ids"] = ",".join(case["finding_ids"])
             writer.writerow(row)
 
@@ -505,10 +538,38 @@ def fastaguard_version(binary: Path) -> str:
     )
     if completed.returncode != 0:
         return "unknown"
-    output = completed.stdout.strip()
-    if not output:
+    return completed.stdout.strip() or "unknown"
+
+
+def portable_fastaguard_version(version_output: str) -> str:
+    fields = version_output.split()
+    if len(fields) < 2 or fields[0].lower() != "fastaguard":
+        raise SystemExit(
+            "Portable evidence requires `fastaguard --version` output beginning "
+            "with 'fastaguard '"
+        )
+    return fields[1]
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def git_commit() -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "--short", "HEAD"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
         return "unknown"
-    return output.rsplit(maxsplit=1)[-1]
+    return completed.stdout.strip() or "unknown"
 
 
 def release_source_commit(version: str) -> str:
