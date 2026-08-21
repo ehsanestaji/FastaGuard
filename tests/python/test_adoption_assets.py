@@ -8,6 +8,8 @@ from tempfile import TemporaryDirectory
 
 
 ROOT = Path(__file__).resolve().parents[2]
+NFCORE_PR = "https://github.com/nf-core/modules/pull/12239"
+SNAKEMAKE_PR = "https://github.com/snakemake/snakemake-wrappers/pull/5436"
 sys.path.insert(0, str(ROOT / "integrations" / "multiqc" / "src"))
 
 import fastaguard_multiqc.parser as multiqc_parser
@@ -555,8 +557,12 @@ class AdoptionAssetsTest(unittest.TestCase):
 
         self.assertIn("[Workflow readiness](docs/workflow-readiness.md)", readme)
         self.assertIn("Phase 5: Upstream workflow readiness", adoption)
-        self.assertIn("not yet an upstream nf-core module", readiness)
-        self.assertIn("not yet an official Snakemake wrapper", readiness)
+        self.assertIn(NFCORE_PR, adoption)
+        self.assertIn(SNAKEMAKE_PR, adoption)
+        self.assertIn(NFCORE_PR, readiness)
+        self.assertIn(SNAKEMAKE_PR, readiness)
+        self.assertNotIn("not yet an upstream nf-core module", readiness)
+        self.assertNotIn("not yet an official Snakemake wrapper", readiness)
         self.assertIn("collect-then-gate", readiness)
         self.assertIn("nf-core modules lint", readiness)
         self.assertIn("nf-core modules test", readiness)
@@ -564,7 +570,7 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("environment.linux-64.pin.txt", readiness)
         self.assertIn("test_wrappers.py", readiness)
         self.assertIn("--gate submission", readiness)
-        self.assertIn("quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0", readiness)
+        self.assertIn("quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0", readiness)
         self.assertIn("docs/workflow-readiness.md", nfcore_readme)
         self.assertIn("docs/workflow-readiness.md", snakemake_readme)
         self.assertIn("fastaguard=0.5.0", nfcore_environment)
@@ -668,10 +674,22 @@ class AdoptionAssetsTest(unittest.TestCase):
 
         self.assertIn("Safe Order", readiness)
         self.assertIn("local repository tests first", readiness)
-        self.assertIn("external upstream PRs last", readiness)
         self.assertIn("check_fastaguard_gate.py", readiness)
-        self.assertIn("nf-core module PR ready", adoption)
-        self.assertIn("Snakemake wrapper PR ready", adoption)
+        self.assertIn(NFCORE_PR, readiness)
+        self.assertIn(SNAKEMAKE_PR, readiness)
+        self.assertIn("merged 2026-08-21", readiness)
+        self.assertIn("2026-07-27", readiness)
+
+    def test_workflow_docs_record_merged_upstream_integrations(self):
+        adoption = (ROOT / "docs" / "adoption-plan.md").read_text()
+        readiness = (ROOT / "docs" / "workflow-readiness.md").read_text()
+
+        for text in (adoption, readiness):
+            self.assertIn(NFCORE_PR, text)
+            self.assertIn(SNAKEMAKE_PR, text)
+            self.assertNotIn("prepare external PR branches", text)
+            self.assertNotIn("Before an upstream nf-core module submission", text)
+            self.assertNotIn("Before an official Snakemake wrapper submission", text)
 
     def test_benchmarking_docs_include_v0_2_evidence_topics(self):
         text = (ROOT / "docs" / "benchmarking.md").read_text()

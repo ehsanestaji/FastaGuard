@@ -49,10 +49,10 @@ downstream tool.
 
 | Channel | Status |
 | --- | --- |
-| Source/package metadata | This branch prepares `v0.6.0`; `v0.5.0` remains the latest tag |
-| GitHub release | v0.5 GitHub release binaries are built from the `v0.5.0` tag |
-| Bioconda | `v0.5.0` is live for Linux and macOS x86_64/ARM64 |
-| BioContainers | `v0.5.0` is live as a pinned workflow image |
+| Source/package metadata | `v0.6.0` |
+| GitHub release | `v0.6.0` release binaries are published |
+| Bioconda | `v0.6.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
+| BioContainers | `0.6.0--hfa8f182_0` is the published pinned workflow image |
 | Source build | local checkout builds report the package version from `Cargo.toml` |
 
 ## Install
@@ -60,41 +60,41 @@ downstream tool.
 Published bioinformatics install:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.5.0
+mamba install -c conda-forge -c bioconda fastaguard=0.6.0
 ```
 
 Published containerized workflow install:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
 ```
 
 Run through BioContainers:
 
 ```bash
-docker run --rm quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0 fastaguard --version
+docker run --rm quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0 fastaguard --version
 ```
 
 GitHub release binary for Linux x86_64:
 
 ```bash
-curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.5.0/fastaguard-v0.5.0-x86_64-unknown-linux-gnu.tar.gz
-tar -xzf fastaguard-v0.5.0-x86_64-unknown-linux-gnu.tar.gz
-./fastaguard-v0.5.0-x86_64-unknown-linux-gnu/fastaguard --version
+curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.6.0/fastaguard-v0.6.0-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf fastaguard-v0.6.0-x86_64-unknown-linux-gnu.tar.gz
+./fastaguard-v0.6.0-x86_64-unknown-linux-gnu/fastaguard --version
 ```
 
 GitHub release binary for macOS Apple Silicon:
 
 ```bash
-curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.5.0/fastaguard-v0.5.0-aarch64-apple-darwin.tar.gz
-tar -xzf fastaguard-v0.5.0-aarch64-apple-darwin.tar.gz
-./fastaguard-v0.5.0-aarch64-apple-darwin/fastaguard --version
+curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.6.0/fastaguard-v0.6.0-aarch64-apple-darwin.tar.gz
+tar -xzf fastaguard-v0.6.0-aarch64-apple-darwin.tar.gz
+./fastaguard-v0.6.0-aarch64-apple-darwin/fastaguard --version
 ```
 
 Build from the latest published Git tag:
 
 ```bash
-cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v0.5.0
+cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v0.6.0
 fastaguard --version
 ```
 
@@ -155,7 +155,7 @@ fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
 ```
 
 This command first shipped in the v0.4 GitHub release and is included in the
-published v0.5.0 Bioconda package and BioContainers image.
+published v0.6.0 Bioconda package and BioContainers image.
 
 Submission-readiness preflight:
 
@@ -192,10 +192,10 @@ docker run --rm -v "$PWD:/data" fastaguard:local /data/sample.fa \
   --multiqc /data/fastaguard_mqc.json
 ```
 
-Published BioContainers provides the v0.5 image for workflow engines:
+Published BioContainers provides the v0.6 image for workflow engines:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
 ```
 
 Starting with FastaGuard v0.6.0, exit codes are:
@@ -352,10 +352,11 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 ## Status
 
-FastaGuard v0.5.0 is the latest tagged GitHub release and the current published
-Bioconda/BioContainers release. It adds the submission-readiness gate on top of
-the v0.4 preflight readiness and compare-mode contract.
+FastaGuard v0.6.0 is the latest tagged GitHub release and the current published
+Bioconda/BioContainers release. It adds the workflow-compatible exit contract
+on top of the v0.5 submission-readiness, v0.4 preflight-readiness, and
+compare-mode contracts.
 
-Bioconda serves v0.5.0 for `linux-64`, `linux-aarch64`, `osx-64`, and
-`osx-arm64`. BioContainers publishes the pinned v0.5 workflow image
-`quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0`.
+Bioconda serves v0.6.0 for `linux-64`, `linux-aarch64`, `osx-64`, and
+`osx-arm64`. BioContainers publishes the pinned v0.6 workflow image
+`quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0`.

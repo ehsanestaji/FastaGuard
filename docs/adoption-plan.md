@@ -15,9 +15,9 @@ Bioconda published -> BioContainers available -> MultiQC plugin -> public benchm
 
 Goal: make installation natural for bioinformatics users.
 
-Status: Bioconda is live for FastaGuard v0.5.0 on Linux and macOS x86_64/ARM64
-platforms. BioContainers publishes the pinned workflow image
-`quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0`.
+Status: GitHub, Bioconda, and BioContainers publish FastaGuard v0.6.0.
+Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`;
+BioContainers publishes `quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0`.
 
 - Keep GitHub release binaries working.
 - Keep Docker smoke tests passing.
@@ -27,12 +27,12 @@ platforms. BioContainers publishes the pinned workflow image
 Done when:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.5.0
+mamba install -c conda-forge -c bioconda fastaguard=0.6.0
 fastaguard --schema
 ```
 
 works in a clean environment, and workflow engines can pull the pinned
-BioContainers image. This is now true for v0.5.0; keep repeating the same
+BioContainers image. This is now true for v0.6.0; keep repeating the same
 check for future releases.
 
 ## Phase 2: Aggregate
@@ -40,11 +40,10 @@ check for future releases.
 Goal: make FastaGuard visible in standard pipeline reports.
 
 - Continue emitting `fastaguard_mqc.json` custom content.
-- Develop `integrations/multiqc/` into a packaged MultiQC plugin.
-- Test the plugin against multiple sample reports.
-- Keep v0.5 gate, readiness, and submission fields visible in the native
-  MultiQC summary table.
-- Decide whether to submit upstream to MultiQC once public adoption begins.
+- Keep the unpublished local plugin starter in `integrations/multiqc/`
+  compatible with current custom-content output.
+- Keep gate, readiness, and submission fields visible in the local summary.
+- Evaluate MultiQC publication only with adoption evidence.
 
 Done when:
 
@@ -63,23 +62,22 @@ Goal: show why FastaGuard is worth adding before expensive tools.
 - Document which findings should block downstream tools and which should only recommend deeper QC.
 - Create a concise comparison against `seqkit stats`, QUAST, BUSCO, BlobToolKit, FastQC, and MultiQC.
 
-Done when the README can show real examples rather than only promises.
+Public benchmark summaries and broader user evidence remain closeout work until
+Task 5 completes.
 
 ## Phase 4: Workflow Readiness
 
-Goal: make local workflow starters credible enough to become upstream
-submissions.
+Goal: keep the merged upstream integrations and local compatibility references
+credible for workflow users.
 
-Status: local nf-core-style and Snakemake wrapper-style starters are present,
-pinned to the v0.5.0 Bioconda package and BioContainers image, documented as
-starters rather than official upstream submissions, and validated in dedicated
-upstream-style checkouts on 2026-07-03.
+Status: the nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
+merged 2026-08-21. The Snakemake wrapper PR
+[#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436) merged
+2026-07-27, followed by autobump PR [#5737](https://github.com/snakemake/snakemake-wrappers/pull/5737)
+merged 2026-07-31. Local starters remain useful compatibility references.
 
 Next work:
 
-- prepare external PR branches for nf-core/modules and snakemake-wrappers
-- repeat nf-core lint/test and Snakemake formatting/lint/pytest immediately
-  before opening upstream PRs
 - preserve the collect-then-gate pattern so JSON, TSV, HTML, and MultiQC
   evidence survives blocking FASTA results
 - keep `examples/workflows/check_fastaguard_gate.py` aligned with the JSON gate
@@ -91,17 +89,16 @@ Detailed checklist: `docs/workflow-readiness.md`.
 
 ## Phase 5: Upstream workflow readiness
 
-Goal: submit the starter assets upstream once the package, container, examples,
-and tests are aligned with current community expectations.
+Goal: maintain the merged upstream integrations and their stable report
+contracts.
 
 Done when:
 
 ```text
-nf-core module PR ready + Snakemake wrapper PR ready + local evidence-preserving examples verified
+future releases update existing integrations after GitHub and package publication
 ```
 
-This phase should not claim official upstream status until those PRs are
-accepted.
+Keep local evidence-preserving examples verified as integrations evolve.
 
 ## Phase 6: Expand
 

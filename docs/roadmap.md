@@ -1,5 +1,12 @@
 # Roadmap
 
+## Current Release
+
+FastaGuard v0.6.0 is the current GitHub, Bioconda, and BioContainers release.
+Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`; the
+published BioContainers tag is `0.6.0--hfa8f182_0`. Future releases update
+existing integrations after GitHub and package publication.
+
 ## v0.1: Assembly Preflight
 
 Goal:
@@ -171,10 +178,9 @@ Potential additions:
 Potential additions:
 
 - publish and verify package updates for each released contract
-- upstream nf-core module submission
-- official Snakemake wrapper submission
+- maintain the merged nf-core module and Snakemake wrapper integrations
 - Galaxy wrapper
-- upstream MultiQC distribution path
+- MultiQC distribution path beyond custom content and the unpublished local plugin starter
 - BioContainers verification for each published package
 - Homebrew formula
 

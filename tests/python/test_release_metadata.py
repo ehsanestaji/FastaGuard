@@ -7,6 +7,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+CURRENT_VERSION = "0.6.0"
+CURRENT_CONTAINER = "0.6.0--hfa8f182_0"
 
 
 class ReleaseMetadataTest(unittest.TestCase):
@@ -135,13 +137,13 @@ class ReleaseMetadataTest(unittest.TestCase):
 
     def test_docs_reference_published_bioconda_install(self):
         install_command = "mamba install -c conda-forge -c bioconda fastaguard"
-        pinned_install = install_command + "=0.5.0"
-        container = "quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0"
+        pinned_install = install_command + f"={CURRENT_VERSION}"
+        container = f"quay.io/biocontainers/fastaguard:{CURRENT_CONTAINER}"
         docs = [
             ROOT / "README.md",
             ROOT / "docs" / "packaging.md",
             ROOT / "docs" / "adoption-plan.md",
-            ROOT / "packaging" / "bioconda" / "README.md",
+            ROOT / "docs" / "workflow-readiness.md",
         ]
 
         for path in docs:
@@ -156,6 +158,29 @@ class ReleaseMetadataTest(unittest.TestCase):
         packaging = (ROOT / "docs" / "packaging.md").read_text()
         self.assertNotIn("GitHub repository is private", packaging)
         self.assertNotIn("placeholder SHA256", packaging)
+
+    def test_current_release_docs_do_not_present_v0_5_as_latest(self):
+        current_docs = [
+            ROOT / "README.md",
+            ROOT / "docs" / "adoption-plan.md",
+            ROOT / "docs" / "workflow-readiness.md",
+            ROOT / "docs" / "packaging.md",
+            ROOT / "docs" / "roadmap.md",
+            ROOT / "docs" / "tool-landscape.md",
+            ROOT / "docs" / "vision-plan.md",
+        ]
+        stale_claims = [
+            "v0.5.0 remains the latest tag",
+            "v0.5.0 is the latest tagged GitHub release",
+            "until a\nv0.6 package and container are published",
+        ]
+
+        for path in current_docs:
+            with self.subTest(path=path):
+                text = path.read_text()
+                self.assertIn(CURRENT_VERSION, text)
+                for claim in stale_claims:
+                    self.assertNotIn(claim, text)
 
 
 if __name__ == "__main__":

@@ -8,9 +8,10 @@ Treat packaging as part of the product, not as a later chore. For bioinformatics
 Bioconda -> BioContainers -> GitHub release binaries -> Docker image -> Homebrew later
 ```
 
-FastaGuard v0.5.0 is published on GitHub with Linux and macOS release binaries.
-Bioconda serves v0.5.0 on Linux and macOS x86_64/ARM64 platforms.
-BioContainers provides the pinned v0.5 workflow image generated from the
+FastaGuard v0.6.0 is published on GitHub with Linux and macOS release binaries.
+Bioconda serves v0.6.0 on `linux-64`, `linux-aarch64`, `osx-64`, and
+`osx-arm64` platforms. BioContainers provides the pinned v0.6 workflow image
+`quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0` generated from the
 Bioconda package. Docker remains useful for local smoke tests.
 
 The current published package includes the `--gate submission` and
@@ -22,13 +23,13 @@ confirmed Bioconda and BioContainers versions before advertising them as live.
 Recommended install:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.5.0
+mamba install -c conda-forge -c bioconda fastaguard=0.6.0
 ```
 
 Conda equivalent:
 
 ```bash
-conda install -c conda-forge -c bioconda fastaguard=0.5.0
+conda install -c conda-forge -c bioconda fastaguard=0.6.0
 ```
 
 Verify the installed package:
@@ -41,7 +42,7 @@ fastaguard --finding-catalog
 
 Current published package:
 
-- Version: `0.5.0`
+- Version: `0.6.0`
 - Platforms: `linux-64`, `linux-aarch64`, `osx-64`, `osx-arm64`
 - Package page: [anaconda.org/bioconda/fastaguard](https://anaconda.org/bioconda/fastaguard)
 
@@ -64,7 +65,7 @@ Run it:
   --multiqc fastaguard_mqc.json
 ```
 
-Run a local v0.5 submission-readiness preflight before official validators:
+Run a local v0.6 submission-readiness preflight before official validators:
 
 ```bash
 ./target/release/fastaguard testdata/submission_ids.fa \
@@ -104,8 +105,8 @@ For a public release:
 1. Tag the release:
 
    ```bash
-   git tag v0.5.0
-   git push origin v0.5.0
+   git tag v0.6.0
+   git push origin v0.6.0
    ```
 
 2. Push the tag to trigger `.github/workflows/release.yml`.
@@ -159,7 +160,7 @@ The Bioconda recipe has merged upstream and generated a BioContainers image.
 Use the pinned tag in workflow examples:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
 ```
 
 That path is preferable to maintaining a separate BioContainers Dockerfile.
@@ -168,7 +169,7 @@ That path is preferable to maintaining a separate BioContainers Dockerfile.
 
 FastaGuard emits MultiQC custom content as `fastaguard_mqc.json`.
 
-A native MultiQC plugin starter now lives in:
+An unpublished local MultiQC plugin starter lives in:
 
 ```text
 integrations/multiqc/

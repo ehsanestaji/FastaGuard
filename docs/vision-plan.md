@@ -122,10 +122,10 @@ reports. Argument parsing errors should use code `2`; configuration,
 input-access, and runtime errors should use code `3`. JSON and TSV remain the
 source of truth for `verdict.status`, `gate.status`, and blocking findings.
 
-Single-file TSV reports should include `input_path` alongside status fields so
-workflow engines can route samples without scraping logs or HTML. Existing
-workflow examples pinned to v0.5 should retain compatibility handling until a
-v0.6 package and container are published.
+Single-file TSV reports include `input_path` alongside status fields so workflow
+engines can route samples without scraping logs or HTML. FastaGuard v0.6.0 is
+published on GitHub, Bioconda, and BioContainers; future releases update
+existing integrations after GitHub and package publication.
 
 ### v0.7: Transcriptome Profile
 
@@ -249,7 +249,10 @@ time.
 
 ## Current Recommendation
 
-The next big release should not be a huge biology expansion yet.
+FastaGuard v0.6.0 is the current GitHub, Bioconda, and BioContainers release.
+Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`, and the
+published BioContainers tag is `0.6.0--hfa8f182_0`. The next big release should
+not be a huge biology expansion yet.
 
 Recommended sequence:
 

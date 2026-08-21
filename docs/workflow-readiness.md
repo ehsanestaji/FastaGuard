@@ -2,12 +2,12 @@
 
 ## Current State
 
-FastaGuard is ready for local workflow use through the published v0.5.0
-Bioconda package and BioContainers image:
+FastaGuard is ready for workflow use through the published v0.6.0 Bioconda
+package and BioContainers image:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.5.0
-docker pull quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0
+mamba install -c conda-forge -c bioconda fastaguard=0.6.0
+docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
 ```
 
 The repository includes local starters for:
@@ -18,8 +18,12 @@ The repository includes local starters for:
 - evidence-preserving gate checks through
   `examples/workflows/check_fastaguard_gate.py`
 
-These are workflow adoption starters. They are not yet an upstream nf-core module.
-They are not yet an official Snakemake wrapper.
+The nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
+merged 2026-08-21. The Snakemake wrapper PR
+[#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436) merged
+2026-07-27, and autobump PR [#5737](https://github.com/snakemake/snakemake-wrappers/pull/5737)
+merged 2026-07-31. The repository starters remain local compatibility
+references.
 
 External upstream-style validation was run on 2026-07-03 in dedicated checkouts:
 
@@ -32,23 +36,18 @@ External upstream-style validation was run on 2026-07-03 in dedicated checkouts:
   PASS, WARN, FAIL, and invalid FASTA fixtures plus captured `exit_code`
   outputs.
 
-The v0.6 source contract removes QC-derived process failures: successfully
-written PASS, WARN, and FAIL reports all return exit code `0`. The pinned v0.5
-starters keep their compatibility capture until v0.6 packages and containers
-are published. After publication, upstream wrappers can remove that workaround
-and route directly from JSON or TSV status fields.
+The v0.6 contract removes QC-derived process failures: successfully written
+PASS, WARN, and FAIL reports all return exit code `0`. Future releases update
+existing integrations after GitHub and package publication; workflow routing
+should continue to use JSON or TSV status fields.
 
 ## Safe Order
 
 1. Run local repository tests first.
-2. Harden the nf-core starter with topic-aware versions, fixtures, and nf-test
-   starter coverage.
-3. Add collect-then-gate examples with `examples/workflows/check_fastaguard_gate.py`.
-4. Harden the Snakemake wrapper starter with metadata, fixture tests, and a
-   starter pin file.
-5. Run external `nf-core modules lint`, `nf-core modules test`, and Snakemake
-   wrapper tests in dedicated upstream checkouts.
-6. Open external upstream PRs last.
+2. Preserve collect-then-gate examples with
+   `examples/workflows/check_fastaguard_gate.py`.
+3. Verify integration updates against the current upstream test suites after a
+   GitHub and package publication.
 
 ## Integration Pattern
 
@@ -59,11 +58,10 @@ official submission validators. The default workflow pattern is:
 collect FASTA-level evidence -> apply stop/go policy -> route downstream tools
 ```
 
-With the published v0.5 runtime, `--gate pipeline` and `--gate submission` write
-JSON, TSV, HTML, and MultiQC-compatible evidence before returning a QC-derived
-exit code. The pinned local starters capture that code so the evidence remains
-available, then leave stop/go enforcement to a downstream gate step. The
-important contract fields are:
+With the published v0.6 runtime, `--gate pipeline` and `--gate submission`
+write JSON, TSV, HTML, and MultiQC-compatible evidence while successful report
+generation returns exit code `0`. Stop/go enforcement belongs to a downstream
+gate step. The important contract fields are:
 
 - `verdict.status`
 - `gate.mode`
@@ -72,20 +70,22 @@ important contract fields are:
 - `readiness.categories`
 - `provenance.input_sha256`
 
-## nf-core Readiness
+## nf-core Integration
 
-The local module already carries the expected interface shape:
+The merged nf-core module is tracked by
+[#12239](https://github.com/nf-core/modules/pull/12239). The local reference
+module carries the expected interface shape:
 
 - input channel: `tuple val(meta), path(fasta)`
 - outputs: HTML, JSON, TSV, MultiQC custom-content JSON, captured exit code,
   and versions metadata
-- runtime: `bioconda::fastaguard=0.5.0`
-- container: `quay.io/biocontainers/fastaguard:0.5.0--hfa8f182_0`
+- runtime and container pins in the local fixture retain v0.5 historical
+  compatibility coverage
 - starter nf-test fixture layout for PASS, WARN, FAIL, and invalid FASTA cases
 - topic-aware `versions.yml` output for current nf-core version collection
 
-Before an upstream nf-core module submission, repeat this checklist in a fresh
-upstream checkout:
+For future updates, repeat this checklist in a fresh upstream checkout after
+GitHub and package publication:
 
 - regenerate or validate the module against the current `nf-core/tools`
   template
@@ -99,10 +99,10 @@ upstream checkout:
 - document that FastaGuard remains a FASTA preflight gate, not a replacement
   for downstream interpretive QC
 
-The upstream submission should keep the module boring: database-free, pinned to
-Bioconda/BioContainers, and focused on stable machine-readable outputs.
+The module should remain database-free, pinned to Bioconda/BioContainers, and
+focused on stable machine-readable outputs.
 
-## Snakemake Readiness
+## Snakemake Integration
 
 The local wrapper starter already provides:
 
@@ -115,7 +115,9 @@ The local wrapper starter already provides:
 - outputs for HTML, JSON, TSV, MultiQC custom-content JSON, and captured exit
   code
 
-Before an official Snakemake wrapper submission, complete this checklist:
+The merged wrapper is tracked by
+[#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436). For future
+updates, complete this checklist after GitHub and package publication:
 
 - regenerate `environment.linux-64.pin.txt` from the wrapper environment if
   the upstream repository requires a solver-produced pin file
