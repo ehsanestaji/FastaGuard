@@ -89,6 +89,37 @@ class CommunityHealthTest(unittest.TestCase):
         self.assertIn("python3 -m pytest -q", text)
         self.assertRegex(text, r"(?i)signed-off-by")
 
+    def test_ci_installs_dependencies_and_runs_full_python_suite(self):
+        workflow = yaml.safe_load(
+            (ROOT / ".github" / "workflows" / "ci.yml").read_text()
+        )
+        steps = workflow["jobs"]["rust"]["steps"]
+        commands = [step.get("run", "") for step in steps]
+        python_setups = [
+            step
+            for step in steps
+            if step.get("uses", "").startswith("actions/setup-python@")
+        ]
+        requirements = (ROOT / "requirements-test.txt").read_text().splitlines()
+
+        self.assertIn(
+            "python3 -m pip install --requirement requirements-test.txt",
+            commands,
+        )
+        self.assertEqual(len(python_setups), 1)
+        self.assertEqual(
+            python_setups[0].get("with", {}).get("python-version"), "3.12"
+        )
+        self.assertIn("python3 -m pytest -q tests/python", commands)
+        self.assertEqual(
+            requirements,
+            [
+                "jsonschema==4.26.0",
+                "pytest==9.1.1",
+                "PyYAML==6.0.3",
+            ],
+        )
+
     def test_security_policy_uses_private_github_security_advisories(self):
         text = (ROOT / "SECURITY.md").read_text()
 

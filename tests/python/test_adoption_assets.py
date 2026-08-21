@@ -631,6 +631,55 @@ class AdoptionAssetsTest(unittest.TestCase):
             nf_test,
         )
 
+    def test_nf_core_starter_has_complete_sanitized_snapshot_baseline(self):
+        snapshot_path = (
+            ROOT
+            / "examples"
+            / "nf-core"
+            / "modules"
+            / "local"
+            / "fastaguard"
+            / "tests"
+            / "main.nf.test.snap"
+        )
+        snapshot = json.loads(snapshot_path.read_text())
+        cases = {
+            "pass FASTA emits all reports": "pass",
+            "warn FASTA preserves reports": "warn",
+            "fail FASTA preserves reports for gate review": "fail",
+            "invalid FASTA is represented in the evidence path": "invalid",
+        }
+
+        self.assertEqual(set(snapshot), set(cases))
+        for test_name, sample in cases.items():
+            with self.subTest(test_name=test_name):
+                self.assertEqual(len(snapshot[test_name]["content"]), 1)
+                outputs = snapshot[test_name]["content"][0]
+                self.assertEqual(
+                    set(outputs),
+                    {"html", "json", "mqc", "tsv", "versions_fastaguard"},
+                )
+                self.assertEqual(
+                    outputs["html"],
+                    [[{"id": sample}, f"{sample}.fastaguard.html"]],
+                )
+                self.assertEqual(
+                    outputs["json"],
+                    [[{"id": sample}, f"{sample}.fastaguard.json"]],
+                )
+                self.assertEqual(
+                    outputs["tsv"],
+                    [[{"id": sample}, f"{sample}.fastaguard.tsv"]],
+                )
+                self.assertEqual(
+                    outputs["mqc"],
+                    [[{"id": sample}, f"{sample}.fastaguard_mqc.json"]],
+                )
+                self.assertEqual(
+                    outputs["versions_fastaguard"],
+                    [["FASTAGUARD", "fastaguard", "0.6.0"]],
+                )
+
     def test_snakemake_wrapper_has_upstream_prep_test_layout(self):
         wrapper = ROOT / "examples" / "snakemake" / "wrapper"
         readme = (wrapper / "README.md").read_text()
@@ -655,6 +704,15 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("rule fastaguard_invalid", test_snakefile)
         self.assertIn("pytest", test_py)
         self.assertIn("snakemake", test_py)
+        for target in (
+            "pass/fastaguard.json",
+            "warn/fastaguard.json",
+            "fail/fastaguard.json",
+            "invalid/fastaguard.json",
+        ):
+            with self.subTest(target=target):
+                self.assertIn(f'"{target}"', test_py)
+        self.assertNotIn("fastaguard.exit_code", test_py)
         self.assertIn('extra="--profile assembly --gate pipeline"', test_snakefile)
         self.assertFalse((wrapper / "wrapper" / "fastaguard" / "wrapper.py").exists())
 
