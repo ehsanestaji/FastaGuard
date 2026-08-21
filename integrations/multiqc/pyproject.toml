@@ -13,6 +13,11 @@ dependencies = [
   "multiqc>=1.28",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ehsanestaji/FastaGuard"
+Repository = "https://github.com/ehsanestaji/FastaGuard"
+Issues = "https://github.com/ehsanestaji/FastaGuard/issues"
+
 [project.entry-points."multiqc.modules.v1"]
 fastaguard = "fastaguard_multiqc:MultiqcModule"
 
