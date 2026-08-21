@@ -11,6 +11,17 @@ staging_dir="${dist_dir}/${name}"
 if [[ -z "${binary_path}" ]]; then
   binary_path="target/${target}/release/fastaguard"
   if [[ ! -x "${binary_path}" && -x "target/release/fastaguard" ]]; then
+    host_target="$(rustc -vV | sed -n 's/^host: //p')"
+    if [[ -z "${host_target}" ]]; then
+      echo "could not detect the host target with rustc -vV" >&2
+      exit 1
+    fi
+    if [[ "${target}" != "${host_target}" ]]; then
+      echo "missing target-specific release binary: ${binary_path}; refusing to package" \
+        "target/release/fastaguard for requested target ${target} (detected host ${host_target});" \
+        "build with --target ${target} or pass its binary path as the third argument" >&2
+      exit 1
+    fi
     binary_path="target/release/fastaguard"
   fi
 fi

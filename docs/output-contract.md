@@ -72,13 +72,14 @@ reports/sample-01.fastaguard_mqc.json
 Without `--prefix`, the stem is `fastaguard`. `--outdir` cannot be combined
 with `--out`, `--json`, `--tsv`, or `--multiqc`. Direct single-file output is
 no-clobber: FastaGuard validates every final path before writing and exits `3`
-if any path already exists. `--force` permits replacement of the exact four
-paths.
+if any path already exists. `--force` permits replacement of the exact
+requested final paths. Exact four-name guarantees apply to `--outdir` bundles;
+explicit path options customize only the requested destinations.
 
-For both bundle and explicit output paths, each report is staged to a temporary
-file before any final name is published. Only after all four serializers
-complete are the temporary files persisted to their final paths. Publication is
-not atomic across the four-file set: final renames are sequential.
+For both bundle and explicit output paths, each requested report is staged to a
+temporary file before any final name is published. Only after all requested
+serializers complete are the temporary files persisted to their final paths.
+Publication is not atomic across an output set: final renames are sequential.
 
 ## JSON Contract
 

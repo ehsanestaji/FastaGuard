@@ -231,8 +231,23 @@ class AdoptionAssetsTest(unittest.TestCase):
                     self.assertIn(name, text)
                 self.assertIn("no-clobber", text)
                 self.assertIn("--force", text)
-                self.assertIn("each report is staged to a temporary file", text)
+                if path in {
+                    "docs/output-contract.md",
+                    "docs/releases/v0.7.0.md",
+                }:
+                    self.assertIn(
+                        "each requested report is staged to a temporary file", text
+                    )
+                else:
+                    self.assertIn("each report is staged to a temporary file", text)
                 self.assertIn("final renames are sequential", text)
+
+        output_contract = " ".join(self.read("docs/output-contract.md").split())
+        release = " ".join(self.read("docs/releases/v0.7.0.md").split())
+        self.assertIn("exact requested final paths", output_contract)
+        self.assertIn("exact requested final paths", release)
+        self.assertIn("all requested serializers", output_contract)
+        self.assertIn("all requested reports", release)
 
     def test_v0_7_docs_distinguish_summary_safety_from_gate_continuation(self):
         paths = [

@@ -1,5 +1,6 @@
 import json
 import re
+import shutil
 import subprocess
 import tarfile
 import tomllib
@@ -17,6 +18,23 @@ CURRENT_SOURCE_SHA256 = (
 
 
 class ReleaseMetadataTest(unittest.TestCase):
+    def make_packaging_fixture(self, temp_path):
+        project = temp_path / "project"
+        (project / "scripts").mkdir(parents=True)
+        (project / "schema").mkdir()
+        (project / "target" / "release").mkdir(parents=True)
+        shutil.copy2(
+            ROOT / "scripts" / "package_release_artifact.sh",
+            project / "scripts" / "package_release_artifact.sh",
+        )
+        (project / "README.md").write_text("test README\n")
+        (project / "LICENSE").write_text("test license\n")
+        (project / "schema" / "fastaguard.schema.json").write_text("{}\n")
+        binary = project / "target" / "release" / "fastaguard"
+        binary.write_text("#!/usr/bin/env sh\nexit 0\n")
+        binary.chmod(0o755)
+        return project
+
     def test_package_targets_v0_7_0(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
 
@@ -83,6 +101,60 @@ class ReleaseMetadataTest(unittest.TestCase):
             ]:
                 with self.subTest(expected=expected):
                     self.assertIn(expected, names)
+
+    def test_release_archive_uses_host_binary_fallback_only_for_host_target(self):
+        with TemporaryDirectory() as temp_dir:
+            project = self.make_packaging_fixture(Path(temp_dir))
+            host = (
+                subprocess.check_output(["rustc", "-vV"], text=True)
+                .split("host: ", 1)[1]
+                .splitlines()[0]
+            )
+
+            completed = subprocess.run(
+                [
+                    str(project / "scripts" / "package_release_artifact.sh"),
+                    host,
+                    "0.7.0",
+                ],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertTrue(
+                (project / "dist" / f"fastaguard-0.7.0-{host}.tar.gz").exists()
+            )
+
+    def test_release_archive_rejects_host_fallback_for_foreign_target(self):
+        with TemporaryDirectory() as temp_dir:
+            project = self.make_packaging_fixture(Path(temp_dir))
+            host = (
+                subprocess.check_output(["rustc", "-vV"], text=True)
+                .split("host: ", 1)[1]
+                .splitlines()[0]
+            )
+            foreign_target = "definitely-foreign-target"
+
+            completed = subprocess.run(
+                [
+                    str(project / "scripts" / "package_release_artifact.sh"),
+                    foreign_target,
+                    "0.7.0",
+                ],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn(foreign_target, completed.stderr)
+            self.assertIn(host, completed.stderr)
+            self.assertIn("target-specific release binary", completed.stderr)
+            self.assertFalse((project / "dist").exists())
 
     def test_bioconda_recipe_tracks_published_v0_6_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
