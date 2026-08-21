@@ -28,14 +28,64 @@ SOURCE_CASE_KEYS = {
 RESULT_CLASSES = {"accepted", "rejected"}
 REQUIRED_EXCLUSIONS = {"annotation", "contamination", "submission_metadata"}
 FASTAGUARD_TIMEOUT_SECONDS = 30.0
+TABLE2ASN_VALIDATION_TEMPLATE = """Submit-block ::= {
+  contact {
+    contact {
+      name name {
+        last "Validation",
+        first "Local"
+      }
+    }
+  },
+  cit {
+    authors {
+      names std {
+        {
+          name name {
+            last "Validation",
+            first "Local",
+            initials "L."
+          }
+        }
+      },
+      affil std {
+        affil "Controlled local validation",
+        city "Brussels",
+        country "Belgium"
+      }
+    }
+  },
+  subtype new
+}
+
+Seqdesc ::= pub {
+  pub {
+    gen {
+      cit "unpublished",
+      authors {
+        names std {
+          {
+            name name {
+              last "Validation",
+              first "Local",
+              initials "L."
+            }
+          }
+        }
+      },
+      title "Controlled FASTA validation fixture"
+    }
+  }
+}
+"""
 VALIDATION_COUNT_PATTERN = re.compile(
     r"(?i)\b(?:errors?|reject(?:ions?)?)\s*[:=]\s*(\d+)\b"
 )
 VALIDATION_ERROR_PATTERN = re.compile(
-    r"(?i)(?:^|[\s\[])ERROR(?:\]|\s*:)|(?:^|[\s\[])REJECT(?:ED|ION)?(?:\]|\s*:)"
+    r"(?i)(?:^|[\s\[])(?:FATAL|CRITICAL|ERROR)(?:\]|\s*:)|(?:^|[\s\[])REJECT(?:ED|ION)?(?:\]|\s*:)"
 )
 VALIDATION_MESSAGE_PATTERN = re.compile(
-    r"(?i)(?:^|[\s\[])(?:INFO|WARNING|ERROR|REJECT(?:ED|ION)?)(?:\]|\s*:)"
+    r"(?i)(?:^|[\s\[])(?:INFO|WARNING|FATAL|CRITICAL|ERROR|REJECT(?:ED|ION)?)(?:\]|\s*:)"
 )
 
 
@@ -198,11 +248,6 @@ def validate_manifest(path):
         source_case = overlap[case["id"]]
         if case["fixture"] != source_case["fixture"]:
             raise VerificationError(f"{case['id']} fixture differs from source manifest")
-        expected = "accepted" if source_case["expect_can_continue"] else "rejected"
-        if case["expected_table2asn_result"] != expected:
-            raise VerificationError(
-                f"{case['id']} expected_table2asn_result differs from source classification"
-            )
         fixture_path = source_path.parent / source_case["fixture"]
         if not fixture_path.is_file():
             raise VerificationError(f"{case['id']} fixture does not exist")
@@ -275,7 +320,7 @@ def unavailable_result(manifest, args):
 
 
 def run_version(table2asn, timeout, work_dir, replacements):
-    command = [str(table2asn), "-help"]
+    command = [str(table2asn), "-version"]
     try:
         result = subprocess.run(
             command,
@@ -385,9 +430,13 @@ def classify_validation_artifact(input_path):
     return "tool_error", "missing_artifact", None
 
 
-def run_table2asn(table2asn, input_path, output_dir, timeout, replacements):
+def run_table2asn(
+    table2asn, input_path, output_dir, template_path, timeout, replacements
+):
     command = [
         str(table2asn),
+        "-t",
+        str(template_path),
         "-i",
         str(input_path),
         "-M",
@@ -397,7 +446,6 @@ def run_table2asn(table2asn, input_path, output_dir, timeout, replacements):
         "-V",
         "vb",
         "-Z",
-        str(output_dir / "table2asn.discrepancy.txt"),
     ]
     try:
         result = subprocess.run(
@@ -426,9 +474,11 @@ def run_table2asn(table2asn, input_path, output_dir, timeout, replacements):
             None,
         )
     normalized = normalized_command(command, replacements)
-    if result.returncode != 0:
-        return "tool_error", result.returncode, "nonzero_exit", normalized, None
     result_class, error_kind, artifact = classify_validation_artifact(input_path)
+    if result.returncode != 0:
+        if result.returncode == 1 and result_class == "rejected":
+            return result_class, result.returncode, error_kind, normalized, artifact
+        return "tool_error", result.returncode, "nonzero_exit", normalized, None
     return result_class, result.returncode, error_kind, normalized, artifact
 
 
@@ -440,6 +490,8 @@ def run_comparison(args, manifest, source_path, source_by_id, table2asn):
 
     with TemporaryDirectory(prefix="fastaguard-ncbi-policy-") as temporary:
         work_root = Path(temporary).resolve()
+        template_path = work_root / "table2asn-validation-template.sbt"
+        template_path.write_text(TABLE2ASN_VALIDATION_TEMPLATE, encoding="utf-8")
         replacements = [
             (fastaguard, "$FASTAGUARD"),
             (table2asn, "$TABLE2ASN"),
@@ -486,12 +538,18 @@ def run_comparison(args, manifest, source_path, source_by_id, table2asn):
                 table2asn,
                 controlled_input,
                 case_dir,
+                template_path,
                 args.timeout,
                 replacements,
             )
             expected = case["expected_table2asn_result"]
             matches_expected = (
                 result_class == expected if result_class != "tool_error" else None
+            )
+            fastaguard_policy_agreement = (
+                can_continue == (result_class == "accepted")
+                if result_class != "tool_error"
+                else None
             )
             results.append(
                 {
@@ -506,6 +564,7 @@ def run_comparison(args, manifest, source_path, source_by_id, table2asn):
                     "tool_error_kind": error_kind,
                     "validation_artifact": validation_artifact,
                     "matches_expected": matches_expected,
+                    "fastaguard_policy_agreement": fastaguard_policy_agreement,
                     "commands": {
                         "fastaguard": fastaguard_command,
                         "table2asn": table2asn_command,
@@ -516,6 +575,14 @@ def run_comparison(args, manifest, source_path, source_by_id, table2asn):
     matched = sum(case["matches_expected"] is True for case in results)
     mismatched = sum(case["matches_expected"] is False for case in results)
     tool_errors = sum(case["table2asn_result"] == "tool_error" for case in results)
+    policy_agreement_cases = sum(
+        case["fastaguard_policy_agreement"] is True for case in results
+    )
+    policy_disagreement_case_ids = [
+        case["id"]
+        for case in results
+        if case["fastaguard_policy_agreement"] is False
+    ]
     result_counts = {
         result_class: sum(
             case["table2asn_result"] == result_class for case in results
@@ -535,6 +602,9 @@ def run_comparison(args, manifest, source_path, source_by_id, table2asn):
             "matched_cases": matched,
             "mismatched_cases": mismatched,
             "tool_error_cases": tool_errors,
+            "policy_agreement_cases": policy_agreement_cases,
+            "policy_disagreement_cases": len(policy_disagreement_case_ids),
+            "policy_disagreement_case_ids": policy_disagreement_case_ids,
             "result_counts": result_counts,
         },
         "cases": results,

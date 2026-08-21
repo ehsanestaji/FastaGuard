@@ -18,7 +18,7 @@
     {
       "id": "contig_199",
       "fixture": "contig_199.fa",
-      "expected_table2asn_result": "rejected"
+      "expected_table2asn_result": "accepted"
     },
     {
       "id": "contig_200",
@@ -38,7 +38,7 @@
     {
       "id": "seqid_50",
       "fixture": "seqid_50.fa",
-      "expected_table2asn_result": "rejected"
+      "expected_table2asn_result": "accepted"
     },
     {
       "id": "seqid_51",
@@ -58,12 +58,12 @@
     {
       "id": "seqid_disallowed_ascii",
       "fixture": "seqid_disallowed_ascii.fa",
-      "expected_table2asn_result": "rejected"
+      "expected_table2asn_result": "accepted"
     },
     {
       "id": "seqid_invalid_chars",
       "fixture": "seqid_invalid_chars.fa",
-      "expected_table2asn_result": "rejected"
+      "expected_table2asn_result": "accepted"
     },
     {
       "id": "seqid_unicode",

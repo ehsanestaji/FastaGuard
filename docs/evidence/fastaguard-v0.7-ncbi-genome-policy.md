@@ -54,6 +54,15 @@ passes both values into the normalized result as `table2asn_source` provenance.
 Normal push and pull-request jobs only exercise the offline manifest and
 fake-tool tests.
 
+The controlled macOS observation for this evidence record used table2asn
+`1.29.324` from the official NCBI `mac.table2asn.gz` URL. Its compressed SHA-256
+was observed as
+`348b9d5f1b05065f4e5e61b6c2350e5ff044de2d6dc14765be6ac02c00e59341` and
+was verified against a second download before execution. The NCBI directory did
+not publish an independent digest alongside the binary, so this locally
+established value pins the repeated download but is not an independent
+authenticity attestation.
+
 ## Result Interpretation
 
 Each completed case records the FastaGuard report exit code, findings, and gate
@@ -63,23 +72,41 @@ failure. A nonzero FastaGuard exit is a verifier error even if a report file was
 written.
 
 The table2asn category is derived conservatively from both the process result
-and its documented `.val` or `.stats` validation artifact:
+and its documented `.val` or `.stats` validation artifact. The controlled run
+uses a local synthetic submission template so missing citation metadata does
+not turn every FASTA boundary case into an unrelated rejection:
 
 - `accepted` requires exit code zero and a readable artifact with no validation
   error or rejection;
-- `rejected` requires exit code zero and a readable artifact that records a
-  validation error or rejection; and
-- `tool_error` covers every nonzero exit, timeout, execution failure, missing
-  artifact, or unparseable artifact.
+- `rejected` requires a readable artifact that records a fatal, critical,
+  error, or rejection result; table2asn exit code `1` is accepted only with
+  that rejecting artifact because current binaries use it for some invalid
+  FASTA inputs; and
+- `tool_error` covers every other nonzero exit, timeout, execution failure,
+  missing artifact, or unparseable artifact.
+
+`matches_expected` compares the observed table2asn category with the pinned
+manifest expectation. `fastaguard_policy_agreement` separately compares that
+category with FastaGuard's gate decision. The summary reports both dimensions;
+a current table2asn expectation can match while its acceptance behavior remains
+stricter or looser than FastaGuard's documented policy.
+
+For table2asn `1.29.324`, all 14 observed categories match the committed
+expectations. Ten also agree with FastaGuard's gate. Four are explicit policy
+disagreements: table2asn accepts `contig_199`, `seqid_50`,
+`seqid_disallowed_ascii`, and `seqid_invalid_chars`, while FastaGuard blocks
+them under its documented NCBI FASTA preflight policy. These observations do
+not weaken the FastaGuard findings or gate and do not imply that table2asn
+enforces every FastaGuard policy rule.
 
 Optional runs preserve `tool_error` evidence without failing the verifier.
 `--require-table2asn` turns any such tool error into a verifier error. These are
 local differential categories, not repository decisions. Every table2asn run
-uses the same synthetic-organism and genomic-DNA source modifiers so that the
-comparison isolates the listed FASTA boundaries; those fixed modifiers do not
-test submission metadata. Commands use stable placeholders for executables and
-temporary paths so the JSON artifact does not expose checkout, input, or
-runner-specific absolute paths.
+uses the same local submission template plus synthetic-organism and genomic-DNA
+source modifiers so that the comparison isolates the listed FASTA boundaries;
+those fixed values do not test submission metadata. Commands use stable
+placeholders for executables and temporary paths so the JSON artifact does not
+expose checkout, input, or runner-specific absolute paths.
 
 The comparison cannot prove NCBI acceptance and cannot guarantee submission
 readiness. Continue with the complete official submission workflow and review

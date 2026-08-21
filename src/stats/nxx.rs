@@ -50,7 +50,7 @@ pub(crate) fn nx_lx_ratio(lengths: &[u64], numerator: u64, denominator: u64) -> 
     let denominator = u128::from(denominator);
     let whole = (total / denominator) * numerator;
     let remainder_product = (total % denominator) * numerator;
-    let target = whole + ((remainder_product + denominator - 1) / denominator);
+    let target = whole + remainder_product.div_ceil(denominator);
     let mut cumulative = 0_u128;
 
     for (index, length) in sorted.iter().enumerate() {

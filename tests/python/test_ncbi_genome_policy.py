@@ -103,8 +103,11 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
         table_source = (
             "#!/usr/bin/env python3\n"
             "import pathlib, sys, time\n"
-            "if '-help' in sys.argv:\n"
+            "if '-version' in sys.argv:\n"
             "    print('table2asn fake 99.1')\n"
+            "    raise SystemExit(0)\n"
+            "if '-help' in sys.argv:\n"
+            "    print('USAGE')\n"
             "    raise SystemExit(0)\n"
         )
         if table2asn_behavior == "slow":
@@ -131,6 +134,22 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
                 "input_path = pathlib.Path(sys.argv[sys.argv.index('-i') + 1])\n"
                 "input_path.with_suffix('.val').write_text('ERROR: rejected fixture\\n')\n"
                 "raise SystemExit(9)\n"
+            )
+        elif table2asn_behavior == "exit_one_rejections":
+            rejected = sorted(
+                case["fixture"]
+                for case in self.load_manifest()["cases"]
+                if case["expected_table2asn_result"] == "rejected"
+            )
+            table_source += (
+                f"rejected = {rejected!r}\n"
+                "input_path = pathlib.Path(sys.argv[sys.argv.index('-i') + 1])\n"
+                "if input_path.name in rejected:\n"
+                "    severity = 'Fatal' if input_path.name == 'seqid_unicode.fa' else 'Critical'\n"
+                "    input_path.with_suffix('.val').write_text(f'{severity}: rejected fixture\\n')\n"
+                "    raise SystemExit(1)\n"
+                "input_path.with_suffix('.stats').write_text('ERRORS: 0\\n')\n"
+                "raise SystemExit(0)\n"
             )
         elif table2asn_behavior == "missing_artifact":
             table_source += "raise SystemExit(0)\n"
@@ -273,6 +292,21 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
             )
             self.assertEqual(len(payload["cases"]), len(self.load_manifest()["cases"]))
             self.assertEqual(payload["comparison_summary"]["mismatched_cases"], 0)
+            self.assertEqual(
+                payload["comparison_summary"]["policy_agreement_cases"], 10
+            )
+            self.assertEqual(
+                payload["comparison_summary"]["policy_disagreement_cases"], 4
+            )
+            self.assertEqual(
+                payload["comparison_summary"]["policy_disagreement_case_ids"],
+                [
+                    "contig_199",
+                    "seqid_50",
+                    "seqid_disallowed_ascii",
+                    "seqid_invalid_chars",
+                ],
+            )
             for case in payload["cases"]:
                 with self.subTest(case=case["id"]):
                     self.assertIn(
@@ -289,13 +323,22 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
                     )
                     self.assertEqual(case["commands"]["fastaguard"][0], "$FASTAGUARD")
                     self.assertEqual(case["commands"]["table2asn"][0], "$TABLE2ASN")
+                    self.assertIn("-t", case["commands"]["table2asn"])
+                    template_index = case["commands"]["table2asn"].index("-t") + 1
+                    self.assertEqual(
+                        case["commands"]["table2asn"][template_index],
+                        "$WORK/table2asn-validation-template.sbt",
+                    )
+                    self.assertEqual(case["commands"]["table2asn"][-1], "-Z")
                     self.assertEqual(case["fastaguard_exit_code"], 0)
             blocking = next(case for case in payload["cases"] if case["id"] == "contig_199")
             self.assertIs(blocking["fastaguard_can_continue"], False)
-            self.assertEqual(blocking["table2asn_result"], "rejected")
+            self.assertEqual(blocking["table2asn_result"], "accepted")
+            self.assertIs(blocking["fastaguard_policy_agreement"], False)
             accepted = next(case for case in payload["cases"] if case["id"] == "contig_200")
             self.assertIs(accepted["fastaguard_can_continue"], True)
             self.assertEqual(accepted["table2asn_result"], "accepted")
+            self.assertIs(accepted["fastaguard_policy_agreement"], True)
             self.assert_output_is_normalized(payload, temp_dir, fastaguard, table2asn)
 
     def test_nonzero_table2asn_is_tool_error_even_with_reject_artifact(self):
@@ -332,6 +375,33 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
                     )
                 )
                 self.assertEqual(payload["comparison_summary"]["mismatched_cases"], 0)
+
+    def test_exit_one_with_reject_artifact_is_a_completed_rejection(self):
+        with TemporaryDirectory() as temp_dir:
+            fastaguard, table2asn = self.make_fake_tools(
+                temp_dir,
+                table2asn_behavior="exit_one_rejections",
+            )
+            output = Path(temp_dir) / "result.json"
+            result = self.run_verifier(
+                output,
+                fastaguard=fastaguard,
+                table2asn=table2asn,
+                required=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(output.read_text())
+            self.assertEqual(payload["comparison_summary"]["tool_error_cases"], 0)
+            self.assertEqual(payload["comparison_summary"]["mismatched_cases"], 0)
+            self.assertTrue(
+                all(
+                    case["matches_expected"] is True
+                    and case["table2asn_result"]
+                    == case["expected_table2asn_result"]
+                    for case in payload["cases"]
+                )
+            )
 
     def test_missing_or_unparseable_validation_artifact_is_tool_error(self):
         for behavior in ("missing_artifact", "unparseable_artifact"):
