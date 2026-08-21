@@ -54,6 +54,11 @@ class ReleaseMetadataTest(unittest.TestCase):
             "gate.can_continue",
             "--outdir",
             "--force",
+            "Release verification is complete",
+            "Publication remains blocked",
+            "those runtime gaps are\nnot publication blockers",
+            "no independent adjacent\ndigest",
+            "no single-case selector",
         ]:
             with self.subTest(expected=expected):
                 self.assertIn(expected, text)

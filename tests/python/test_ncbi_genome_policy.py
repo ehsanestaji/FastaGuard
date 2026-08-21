@@ -151,6 +151,23 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
                 "input_path.with_suffix('.stats').write_text('ERRORS: 0\\n')\n"
                 "raise SystemExit(0)\n"
             )
+        elif table2asn_behavior in {
+            "exit_one_accepted_artifact",
+            "exit_one_missing_artifact",
+            "exit_one_unparseable_artifact",
+        }:
+            table_source += (
+                "input_path = pathlib.Path(sys.argv[sys.argv.index('-i') + 1])\n"
+            )
+            if table2asn_behavior == "exit_one_accepted_artifact":
+                table_source += (
+                    "input_path.with_suffix('.stats').write_text('ERRORS: 0\\n')\n"
+                )
+            elif table2asn_behavior == "exit_one_unparseable_artifact":
+                table_source += (
+                    "input_path.with_suffix('.stats').write_text('not validation data\\n')\n"
+                )
+            table_source += "raise SystemExit(1)\n"
         elif table2asn_behavior == "missing_artifact":
             table_source += "raise SystemExit(0)\n"
         elif table2asn_behavior == "unparseable_artifact":
@@ -402,6 +419,52 @@ class NcbiGenomePolicyVerifierTest(unittest.TestCase):
                     for case in payload["cases"]
                 )
             )
+
+    def assert_exit_one_without_reject_artifact_is_tool_error(self, behavior):
+        with TemporaryDirectory() as temp_dir:
+            fastaguard, table2asn = self.make_fake_tools(
+                temp_dir,
+                table2asn_behavior=behavior,
+            )
+            output = Path(temp_dir) / "result.json"
+            result = self.run_verifier(
+                output,
+                fastaguard=fastaguard,
+                table2asn=table2asn,
+                required=True,
+            )
+
+            self.assertEqual(result.returncode, 2, result.stderr)
+            payload = json.loads(output.read_text())
+            self.assertEqual(
+                payload["comparison_summary"]["tool_error_cases"],
+                len(self.load_manifest()["cases"]),
+            )
+            self.assertTrue(
+                all(
+                    case["table2asn_result"] == "tool_error"
+                    and case["table2asn_exit_code"] == 1
+                    and case["tool_error_kind"] == "nonzero_exit"
+                    and case["validation_artifact"] is None
+                    and case["matches_expected"] is None
+                    for case in payload["cases"]
+                )
+            )
+
+    def test_exit_one_with_accepted_artifact_is_tool_error(self):
+        self.assert_exit_one_without_reject_artifact_is_tool_error(
+            "exit_one_accepted_artifact"
+        )
+
+    def test_exit_one_with_missing_artifact_is_tool_error(self):
+        self.assert_exit_one_without_reject_artifact_is_tool_error(
+            "exit_one_missing_artifact"
+        )
+
+    def test_exit_one_with_unparseable_artifact_is_tool_error(self):
+        self.assert_exit_one_without_reject_artifact_is_tool_error(
+            "exit_one_unparseable_artifact"
+        )
 
     def test_missing_or_unparseable_validation_artifact_is_tool_error(self):
         for behavior in ("missing_artifact", "unparseable_artifact"):

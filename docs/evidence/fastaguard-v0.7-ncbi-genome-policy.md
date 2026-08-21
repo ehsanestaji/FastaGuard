@@ -79,9 +79,10 @@ not turn every FASTA boundary case into an unrelated rejection:
 - `accepted` requires exit code zero and a readable artifact with no validation
   error or rejection;
 - `rejected` requires a readable artifact that records a fatal, critical,
-  error, or rejection result; table2asn exit code `1` is accepted only with
-  that rejecting artifact because current binaries use it for some invalid
-  FASTA inputs; and
+  error, or rejection result. The observed macOS arm64 table2asn `1.29.324`
+  run returned exit code `1` for some such completed rejections, so the verifier
+  accepts exit `1` only when the artifact independently records rejection;
+  accepted, missing, or unparseable artifacts remain `tool_error`; and
 - `tool_error` covers every other nonzero exit, timeout, execution failure,
   missing artifact, or unparseable artifact.
 
