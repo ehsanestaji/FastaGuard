@@ -55,7 +55,7 @@ class ReleaseMetadataTest(unittest.TestCase):
             "--outdir",
             "--force",
             "Release verification is complete",
-            "Publication remains blocked",
+            "Publication is pending release approval",
             "those runtime gaps are\nnot publication blockers",
             "no independent adjacent\ndigest",
             "no single-case selector",
