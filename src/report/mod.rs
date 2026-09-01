@@ -51,9 +51,12 @@ pub fn write_compare_all(report: &CompareReport, outputs: &OutputPaths) -> Resul
     )
 }
 
-type StagedSerializer<'a> = (&'a Path, &'a dyn Fn(&Path) -> Result<()>);
+pub(crate) type StagedSerializer<'a> = (&'a Path, &'a dyn Fn(&Path) -> Result<()>);
 
-fn write_staged_set(serializers: &[StagedSerializer<'_>], allow_overwrite: bool) -> Result<()> {
+pub(crate) fn write_staged_set(
+    serializers: &[StagedSerializer<'_>],
+    allow_overwrite: bool,
+) -> Result<()> {
     let mut staged = Vec::with_capacity(serializers.len());
 
     for (final_path, serializer) in serializers {
@@ -168,7 +171,7 @@ fn validate_output_paths(outputs: &OutputPaths) -> Result<()> {
     Ok(())
 }
 
-fn normalize_output_path(path: &Path) -> Result<PathBuf> {
+pub(crate) fn normalize_output_path(path: &Path) -> Result<PathBuf> {
     let anchored = if path.is_absolute() {
         path.to_path_buf()
     } else {

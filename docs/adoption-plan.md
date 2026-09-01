@@ -115,8 +115,8 @@ evidence without collecting user sequence data.
   a maintainer submits it. It is pinned to the published v0.6.0 distribution
   and uses EDAM `format_1929` (FASTA) with `operation_3180` (Sequence assembly
   validation).
-- Run pilots in report-only mode using `docs/pilots.md` before enabling a new
-  workflow gate.
+- Offer optional report-only feedback pilots using `docs/pilots.md` before a
+  team enables a new workflow gate.
 - Never request FASTA files, raw sequences, input paths, or unreviewed reports.
 - Quote a redacted case study only after explicit consent to the exact text.
 - Use the current [bio.tools schema](https://github.com/bio-tools/biotoolsschema/blob/main/jsonschema/biotoolsj.json)
@@ -124,7 +124,7 @@ evidence without collecting user sequence data.
   reviewing the registration draft.
 
 The draft does not claim that a bio.tools record has been registered or that a
-v0.7 package has been published.
+v1.0.0-rc.1 package has been published.
 
 ## Phase 7: Expand
 

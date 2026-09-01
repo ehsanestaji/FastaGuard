@@ -25,6 +25,84 @@ fn committed_reports_validate_against_json_schema() {
 }
 
 #[test]
+fn reference_reports_validate_against_json_schema() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+
+    let mut command = assert_cmd::Command::cargo_bin("fastaguard").unwrap();
+    command
+        .arg("reference")
+        .arg(&fasta)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let report = read_json(&report_path);
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    assert_validates(&validator, &report, "reference report");
+}
+
+#[test]
+fn invalid_reference_reports_validate_against_json_schema() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGTX\n").unwrap();
+
+    let mut command = assert_cmd::Command::cargo_bin("fastaguard").unwrap();
+    command
+        .arg("reference")
+        .arg(&fasta)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let report = read_json(&report_path);
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    assert_validates(&validator, &report, "invalid reference report");
+}
+
+#[test]
+fn reference_variant_reports_validate_against_json_schema() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let variants = temp_dir.path().join("sites.vcf");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(
+        &variants,
+        concat!(
+            "##fileformat=VCFv4.3\n",
+            "##contig=<ID=chr1,length=5>\n",
+            "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n",
+        ),
+    )
+    .unwrap();
+
+    let mut command = assert_cmd::Command::cargo_bin("fastaguard").unwrap();
+    command
+        .arg("reference")
+        .arg(&fasta)
+        .arg("--variants")
+        .arg(&variants)
+        .args(["--policy", "advisory", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let report = read_json(&report_path);
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    assert_validates(&validator, &report, "reference variant report");
+}
+
+#[test]
 fn current_schema_and_catalog_are_versioned_for_v0_7_contract_additions() {
     let schema = read_json(Path::new("schema/fastaguard.schema.json"));
     let catalog = read_json(Path::new("schema/finding-catalog.json"));

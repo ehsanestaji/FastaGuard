@@ -8,6 +8,7 @@ pub mod models;
 pub mod parser;
 pub mod profile;
 pub mod readiness;
+pub mod reference;
 pub mod report;
 pub mod stats;
 pub mod submission;
@@ -20,11 +21,16 @@ pub fn run(cli: Cli) -> Result<i32> {
     match cli.to_command_config()? {
         CommandConfig::Run(config) => run_single(config),
         CommandConfig::Compare(config) => compare::run_compare(config),
+        CommandConfig::Reference(config) => run_reference(config),
         CommandConfig::Contract => {
             print_contract(&cli)?;
             Ok(0)
         }
     }
+}
+
+fn run_reference(_config: cli::ReferenceConfig) -> Result<i32> {
+    reference::run(_config)
 }
 
 fn print_contract(cli: &Cli) -> Result<()> {

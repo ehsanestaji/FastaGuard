@@ -697,6 +697,44 @@ pub fn finding_actions(id: &str) -> Vec<FindingAction> {
             "parser-aware cleanup script",
             false,
         )],
+        "reference_required_artifact_missing" => vec![action(
+            "supply_reference_artifact",
+            "required reference companion declarations",
+            "The selected policy requires this reference companion before downstream processing can continue safely.",
+            "samtools or bcftools",
+            false,
+        )],
+        "reference_malformed_declaration" => vec![action(
+            "repair_reference_declaration",
+            "reference companion header or declaration",
+            "Malformed declarations cannot provide reliable reference identity evidence.",
+            "samtools or bcftools",
+            false,
+        )],
+        "reference_length_mismatch"
+        | "reference_digest_mismatch"
+        | "reference_contig_mismatch"
+        | "reference_declaration_mismatch" => vec![action(
+            "use_matching_reference",
+            "reference and companion inputs",
+            "Coordinate-bearing inputs must use declarations that match the selected reference.",
+            "samtools or bcftools",
+            false,
+        )],
+        "reference_canonical_reference_invalid" => vec![action(
+            "repair_canonical_reference",
+            "canonical FASTA reference",
+            "The canonical reference must be structurally valid before its identity can be used for compatibility checks.",
+            "samtools faidx",
+            false,
+        )],
+        "reference_insufficient_identity_evidence" => vec![action(
+            "supply_identity_evidence",
+            "reference companion declarations",
+            "Provide complete sequence declarations or stronger content identity evidence for the selected policy.",
+            "samtools or bcftools",
+            false,
+        )],
         _ => Vec::new(),
     }
 }

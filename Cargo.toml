@@ -1,6 +1,6 @@
 [package]
 name = "fastaguard"
-version = "0.7.0"
+version = "1.0.0-rc.1"
 edition = "2021"
 license = "MIT"
 description = "FASTA preflight QC for assembly pipelines"
@@ -8,11 +8,15 @@ repository = "https://github.com/ehsanestaji/FastaGuard"
 
 [dependencies]
 anyhow = "1"
+base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 clap = { version = "4", features = ["derive"] }
 flate2 = "1"
 hex = "0.4"
+md-5 = "0.10.6"
+noodles = { version = "0.116.0", features = ["bam", "bcf", "cram", "sam", "vcf"] }
 serde = { version = "1", features = ["derive"] }
+serde_jcs = "0.2"
 serde_json = "1"
 sha2 = "0.10"
 tempfile = "3"

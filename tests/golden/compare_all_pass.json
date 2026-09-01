@@ -3,7 +3,7 @@
   "report_type": "compare",
   "tool": {
     "name": "FastaGuard",
-    "version": "0.7.0"
+    "version": "1.0.0-rc.1"
   },
   "input": {
     "profile": "assembly",

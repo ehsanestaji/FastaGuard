@@ -140,11 +140,14 @@ class UpstreamContractTest(unittest.TestCase):
                     case, ["--profile", "assembly", "--gate", "pipeline"]
                 )
 
-    def test_version_output_is_stable_and_machine_parseable(self):
+    def test_version_output_is_stable_and_semver_parseable(self):
         result = self.run_fastaguard("--version")
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertRegex(result.stdout.strip(), r"^fastaguard [0-9]+\.[0-9]+\.[0-9]+$")
+        self.assertRegex(
+            result.stdout.strip(),
+            r"^fastaguard [0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$",
+        )
 
     def test_cli_parse_errors_exit_two(self):
         result = self.run_fastaguard("--not-a-fastaguard-option")

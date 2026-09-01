@@ -8,12 +8,12 @@ Treat packaging as part of the product, not as a later chore. For bioinformatics
 Bioconda -> BioContainers -> GitHub release binaries -> Docker image -> Homebrew later
 ```
 
-FastaGuard v0.7.0 source and package metadata prepare the operational-trust
-release. FastaGuard v0.6.0 is published on GitHub with Linux and macOS release
-binaries. Bioconda serves v0.6.0 on `linux-64`, `linux-aarch64`, `osx-64`, and
-`osx-arm64` platforms. BioContainers provides the pinned v0.6 workflow image
-`quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0` generated from the Bioconda
-package. Docker remains useful for local smoke tests.
+FastaGuard v1.0.0-rc.1 source and package metadata prepare the Reference
+Contract release candidate. FastaGuard v0.6.0 is published on GitHub with Linux
+and macOS release binaries. Bioconda serves v0.6.0 on `linux-64`,
+`linux-aarch64`, `osx-64`, and `osx-arm64` platforms. BioContainers provides
+the pinned v0.6 workflow image `quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0`
+generated from the Bioconda package. Docker remains useful for local smoke tests.
 
 The current published package includes the `--gate submission` and
 `--submission-target generic|ncbi` contract. Keep future docs pinned to
@@ -106,8 +106,8 @@ Build and inspect a host archive locally:
 
 ```bash
 cargo build --release --locked
-scripts/package_release_artifact.sh "$(rustc -vV | sed -n 's/^host: //p')" 0.7.0
-tar -tzf "dist/fastaguard-0.7.0-$(rustc -vV | sed -n 's/^host: //p').tar.gz"
+scripts/package_release_artifact.sh "$(rustc -vV | sed -n 's/^host: //p')" 1.0.0-rc.1
+tar -tzf "dist/fastaguard-1.0.0-rc.1-$(rustc -vV | sed -n 's/^host: //p').tar.gz"
 ```
 
 Each archive has one top-level directory containing `fastaguard`, `README.md`,
@@ -214,7 +214,7 @@ apptainer exec --bind "$PWD:/work" \
 This follows Apptainer's documented support for `docker://` images hosted on
 Quay. See the official
 [Docker and OCI container guide](https://apptainer.org/docs/user/latest/docker_and_oci.html).
-No v0.7 container tag should be substituted until it appears in the registry.
+No v1.0.0-rc.1 container tag should be substituted until it appears in the registry.
 
 ## MultiQC
 

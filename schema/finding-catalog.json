@@ -750,6 +750,206 @@
         }
       ],
       "cannot_conclude": ["sequence quality", "assembly quality", "biological completeness"]
+    },
+    {
+      "id": "reference_required_artifact_missing",
+      "category": "reference_compatibility",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "reference",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "A reference companion required by the selected policy was not supplied.",
+      "why_it_matters": "The selected policy cannot establish the required reference compatibility evidence without this companion.",
+      "evidence_fields": ["verdict.reasons", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "supply_reference_artifact",
+          "target": "required reference companion declarations",
+          "reason": "The selected policy requires this reference companion before downstream processing can continue safely.",
+          "recommended_tool": "samtools or bcftools",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {"tool": "samtools or bcftools", "role": "provide the required reference companion declaration"}
+      ],
+      "cannot_conclude": ["reference compatibility without the required declaration"]
+    },
+    {
+      "id": "reference_malformed_declaration",
+      "category": "reference_compatibility",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "reference",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "A supplied reference companion declaration could not be interpreted reliably.",
+      "why_it_matters": "Malformed declarations cannot support a defensible compatibility decision.",
+      "evidence_fields": ["verdict.reasons", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "repair_reference_declaration",
+          "target": "reference companion header or declaration",
+          "reason": "Malformed declarations cannot provide reliable reference identity evidence.",
+          "recommended_tool": "samtools or bcftools",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {"tool": "samtools or bcftools", "role": "inspect and repair the malformed declaration"}
+      ],
+      "cannot_conclude": ["reference compatibility from malformed metadata"]
+    },
+    {
+      "id": "reference_length_mismatch",
+      "category": "reference_compatibility",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "reference",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "A companion declaration reports a sequence length that differs from the canonical reference.",
+      "why_it_matters": "Length differences invalidate coordinate compatibility for the affected sequence.",
+      "evidence_fields": ["comparisons[].relationship", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "use_matching_reference",
+          "target": "reference and companion inputs",
+          "reason": "Coordinate-bearing inputs must use declarations that match the selected reference.",
+          "recommended_tool": "samtools or bcftools",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {"tool": "samtools or bcftools", "role": "confirm the reference used to create the companion input"}
+      ],
+      "cannot_conclude": ["coordinate compatibility for the affected sequence"]
+    },
+    {
+      "id": "reference_digest_mismatch",
+      "category": "reference_compatibility",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "reference",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "A sequence digest in a companion declaration differs from the canonical reference.",
+      "why_it_matters": "A digest mismatch is direct evidence that the sequence content does not match.",
+      "evidence_fields": ["comparisons[].relationship", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "use_matching_reference",
+          "target": "reference and companion inputs",
+          "reason": "Coordinate-bearing inputs must use declarations that match the selected reference.",
+          "recommended_tool": "samtools or bcftools",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {"tool": "samtools or bcftools", "role": "confirm the reference used to create the companion input"}
+      ],
+      "cannot_conclude": ["sequence identity for the affected declaration"]
+    },
+    {
+      "id": "reference_contig_mismatch",
+      "category": "reference_compatibility",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "reference",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "A companion declaration names a sequence that is absent from the canonical reference.",
+      "why_it_matters": "Coordinates on an unknown sequence cannot be interpreted against the selected reference.",
+      "evidence_fields": ["comparisons[].relationship", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "use_matching_reference",
+          "target": "reference and companion inputs",
+          "reason": "Coordinate-bearing inputs must use declarations that match the selected reference.",
+          "recommended_tool": "samtools or bcftools",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {"tool": "samtools or bcftools", "role": "confirm the reference used to create the companion input"}
+      ],
+      "cannot_conclude": ["coordinate interpretation for the unknown sequence"]
+    },
+    {
+      "id": "reference_declaration_mismatch",
+      "category": "reference_compatibility",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "reference",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "A companion reference declaration is incompatible with the canonical reference for a reason other than a specific length, digest, or contig mismatch.",
+      "why_it_matters": "Incompatible declarations can make downstream coordinate interpretation unreliable.",
+      "evidence_fields": ["comparisons[].relationship", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "use_matching_reference",
+          "target": "reference and companion inputs",
+          "reason": "Coordinate-bearing inputs must use declarations that match the selected reference.",
+          "recommended_tool": "samtools or bcftools",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {"tool": "samtools or bcftools", "role": "confirm the reference used to create the companion input"}
+      ],
+      "cannot_conclude": ["reference compatibility for the supplied declaration"]
+    },
+    {
+      "id": "reference_canonical_reference_invalid",
+      "category": "reference_compatibility",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "reference",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "The canonical FASTA reference could not provide valid identity information.",
+      "why_it_matters": "Compatibility checks depend on a valid canonical reference identity.",
+      "evidence_fields": ["verdict.reasons", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "repair_canonical_reference",
+          "target": "canonical FASTA reference",
+          "reason": "The canonical reference must be structurally valid before its identity can be used for compatibility checks.",
+          "recommended_tool": "samtools faidx",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {"tool": "samtools faidx", "role": "validate and index the canonical FASTA reference"}
+      ],
+      "cannot_conclude": ["reference compatibility without a valid canonical identity"]
+    },
+    {
+      "id": "reference_insufficient_identity_evidence",
+      "category": "reference_compatibility",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "reference",
+      "default_severity": "major",
+      "default_verdict_effect": "warn",
+      "meaning": "The supplied declarations do not contain enough identity evidence for the selected compatibility policy.",
+      "why_it_matters": "A compatible-looking declaration is not proof of sequence identity when required evidence is absent.",
+      "evidence_fields": ["comparisons[].evidence", "verdict.reasons", "findings[].affected_count"],
+      "suggested_actions": [
+        {
+          "action_type": "supply_identity_evidence",
+          "target": "reference companion declarations",
+          "reason": "Provide complete sequence declarations or stronger content identity evidence for the selected policy.",
+          "recommended_tool": "samtools or bcftools",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {"tool": "samtools or bcftools", "role": "supply complete declarations or verify content identity"}
+      ],
+      "cannot_conclude": ["the stronger identity relationship required by the selected policy"]
     }
   ]
 }

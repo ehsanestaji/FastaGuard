@@ -104,4 +104,22 @@ mod tests {
 
         assert_eq!(error.to_string(), "unknown finding id 'not_a_rule'");
     }
+
+    #[test]
+    fn bundled_catalog_explains_reference_contract_findings() {
+        for id in [
+            "reference_required_artifact_missing",
+            "reference_malformed_declaration",
+            "reference_length_mismatch",
+            "reference_digest_mismatch",
+            "reference_contig_mismatch",
+            "reference_declaration_mismatch",
+            "reference_canonical_reference_invalid",
+            "reference_insufficient_identity_evidence",
+        ] {
+            let finding = explain_finding_json(id).unwrap();
+            assert!(finding.contains(r#""profile": "reference""#), "{finding}");
+            assert!(finding.contains(r#""suggested_actions""#), "{finding}");
+        }
+    }
 }

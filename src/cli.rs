@@ -2,7 +2,9 @@ use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, SecondsFormat, Utc};
 use clap::error::ErrorKind;
 use clap::parser::ValueSource;
-use clap::{ArgGroup, ArgMatches, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
+use clap::{
+    ArgGroup, ArgMatches, Args, CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum,
+};
 use std::collections::BTreeSet;
 use std::env::VarError;
 use std::ffi::OsString;
@@ -51,6 +53,8 @@ pub struct ContractFlags {
 pub enum Commands {
     /// Compare two or more FASTA inputs as a cohort.
     Compare(CompareArgs),
+    /// Verify that declared reference artefacts are compatible with a canonical FASTA.
+    Reference(ReferenceArgs),
 }
 
 #[derive(Debug, Clone, Args)]
@@ -75,6 +79,109 @@ pub struct CompareArgs {
 
     #[command(flatten)]
     pub outputs: CompareOutputArgs,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct ReferenceArgs {
+    /// Canonical reference FASTA.
+    pub reference: PathBuf,
+
+    /// FASTA index declaration to compare with the canonical reference.
+    #[arg(long)]
+    pub fai: Option<PathBuf>,
+
+    /// SAM sequence dictionary declaration to compare with the canonical reference.
+    #[arg(long)]
+    pub dict: Option<PathBuf>,
+
+    /// Alignment headers to compare with the canonical reference.
+    #[arg(long)]
+    pub alignment: Vec<PathBuf>,
+
+    /// Variant headers to compare with the canonical reference.
+    #[arg(long)]
+    pub variants: Vec<PathBuf>,
+
+    /// GFF3 annotations to compare with the canonical reference.
+    #[arg(long)]
+    pub annotation: Vec<PathBuf>,
+
+    /// Exact two-column mapping from declared names to canonical reference names.
+    #[arg(long)]
+    pub alias_map: Option<PathBuf>,
+
+    /// Required declaration kinds, separated by commas.
+    #[arg(long, value_delimiter = ',')]
+    pub require: Vec<String>,
+
+    /// Report formats to publish, separated by commas. Defaults to the complete bundle.
+    #[arg(long, value_enum, value_delimiter = ',')]
+    pub format: Vec<ReferenceFormat>,
+
+    /// Write a reference manifest lock file alongside the report bundle.
+    #[arg(long)]
+    pub write_lock: bool,
+
+    /// Compatibility policy for declared reference artefacts.
+    #[arg(long, value_enum, default_value_t = ReferencePolicy::Coordinate)]
+    pub policy: ReferencePolicy,
+
+    #[command(flatten)]
+    pub outputs: ReferenceOutputArgs,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum ReferencePolicy {
+    Strict,
+    Coordinate,
+    Advisory,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+pub enum ReferenceFormat {
+    Html,
+    Json,
+    Tsv,
+    Multiqc,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct ReferenceOutputArgs {
+    /// Directory for a deterministic reference report bundle.
+    #[arg(
+        long,
+        value_name = "DIR",
+        conflicts_with_all = ["out", "json", "tsv", "multiqc", "lock"]
+    )]
+    pub outdir: Option<PathBuf>,
+
+    /// Filename stem for reports written with --outdir.
+    #[arg(long, value_name = "STEM", requires = "outdir")]
+    pub prefix: Option<String>,
+
+    /// Allow existing reference report files to be replaced.
+    #[arg(long)]
+    pub force: bool,
+
+    /// HTML reference report path.
+    #[arg(long, default_value = "reference.fastaguard.html")]
+    pub out: PathBuf,
+
+    /// JSON reference report path.
+    #[arg(long, default_value = "reference.fastaguard.json")]
+    pub json: PathBuf,
+
+    /// TSV reference report path.
+    #[arg(long, default_value = "reference.fastaguard.tsv")]
+    pub tsv: PathBuf,
+
+    /// MultiQC-compatible reference report path.
+    #[arg(long, default_value = "reference.fastaguard_mqc.json")]
+    pub multiqc: PathBuf,
+
+    /// Reference manifest lock-file path.
+    #[arg(long, default_value = "reference.fastaguard.lock.json")]
+    pub lock: PathBuf,
 }
 
 #[derive(Debug, Clone, Args)]
@@ -174,6 +281,7 @@ pub struct CompareOutputArgs {
 pub enum CommandConfig {
     Run(RunConfig),
     Compare(CompareConfig),
+    Reference(ReferenceConfig),
     Contract,
 }
 
@@ -205,6 +313,30 @@ pub struct CompareConfig {
     pub command: String,
     pub started_at: String,
     pub provenance_timestamp_override: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReferenceConfig {
+    pub reference: PathBuf,
+    pub fai: Option<PathBuf>,
+    pub dict: Option<PathBuf>,
+    pub alignments: Vec<PathBuf>,
+    pub variants: Vec<PathBuf>,
+    pub annotations: Vec<PathBuf>,
+    pub alias_map: Option<PathBuf>,
+    pub required_artifacts: BTreeSet<String>,
+    pub policy: ReferencePolicy,
+    pub outputs: ReferenceOutputPaths,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReferenceOutputPaths {
+    pub html: Option<PathBuf>,
+    pub json: Option<PathBuf>,
+    pub tsv: Option<PathBuf>,
+    pub multiqc: Option<PathBuf>,
+    pub lock: Option<PathBuf>,
+    pub allow_overwrite: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -265,6 +397,10 @@ impl Cli {
                 self.run.validate_unused_before_subcommand("compare")?;
                 args.to_compare_config()
             }
+            Some(Commands::Reference(args)) => {
+                self.run.validate_unused_before_subcommand("reference")?;
+                args.to_reference_config()
+            }
             None => self.run.to_run_config(),
         }
     }
@@ -275,6 +411,9 @@ impl Cli {
             CommandConfig::Compare(_) => Err(anyhow!(
                 "compare subcommand does not produce a single-run config"
             )),
+            CommandConfig::Reference(_) => Err(anyhow!(
+                "reference subcommand does not produce a single-run config"
+            )),
             CommandConfig::Contract => Err(anyhow!(
                 "contract discovery command does not produce a run config"
             )),
@@ -282,19 +421,125 @@ impl Cli {
     }
 }
 
+impl ReferenceArgs {
+    fn to_reference_config(&self) -> Result<CommandConfig> {
+        let formats = selected_reference_formats(&self.format)?;
+        if self.write_lock && !formats.contains(&ReferenceFormat::Json) {
+            return Err(anyhow!("--write-lock requires the json report format"));
+        }
+        let required_artifacts = self
+            .require
+            .iter()
+            .map(|kind| kind.to_ascii_lowercase())
+            .collect::<BTreeSet<_>>();
+        if required_artifacts.iter().any(|kind| {
+            !matches!(
+                kind.as_str(),
+                "fai" | "dict" | "alignment" | "variants" | "annotation"
+            )
+        }) {
+            return Err(anyhow!(
+                "--require accepts only fai, dict, alignment, variants and annotation"
+            ));
+        }
+
+        Ok(CommandConfig::Reference(ReferenceConfig {
+            reference: self.reference.clone(),
+            fai: self.fai.clone(),
+            dict: self.dict.clone(),
+            alignments: self.alignment.clone(),
+            variants: self.variants.clone(),
+            annotations: self.annotation.clone(),
+            alias_map: self.alias_map.clone(),
+            required_artifacts,
+            policy: self.policy,
+            outputs: self.outputs.output_paths(&formats, self.write_lock)?,
+        }))
+    }
+}
+
+fn selected_reference_formats(requested: &[ReferenceFormat]) -> Result<BTreeSet<ReferenceFormat>> {
+    if requested.is_empty() {
+        return Ok([
+            ReferenceFormat::Html,
+            ReferenceFormat::Json,
+            ReferenceFormat::Tsv,
+            ReferenceFormat::Multiqc,
+        ]
+        .into_iter()
+        .collect());
+    }
+
+    let selected = requested.iter().copied().collect::<BTreeSet<_>>();
+    if selected.len() != requested.len() {
+        return Err(anyhow!("--format values must not be repeated"));
+    }
+    Ok(selected)
+}
+
+impl ReferenceOutputArgs {
+    fn output_paths(
+        &self,
+        formats: &BTreeSet<ReferenceFormat>,
+        write_lock: bool,
+    ) -> Result<ReferenceOutputPaths> {
+        let (html, json, tsv, multiqc, lock) = if let Some(outdir) = &self.outdir {
+            let prefix = self.prefix.as_deref().unwrap_or("reference");
+            validate_output_prefix(prefix)?;
+            std::fs::create_dir_all(outdir).with_context(|| {
+                format!(
+                    "failed to create reference bundle output directory {}",
+                    outdir.display()
+                )
+            })?;
+            (
+                outdir.join(format!("{prefix}.fastaguard.html")),
+                outdir.join(format!("{prefix}.fastaguard.json")),
+                outdir.join(format!("{prefix}.fastaguard.tsv")),
+                outdir.join(format!("{prefix}.fastaguard_mqc.json")),
+                outdir.join(format!("{prefix}.fastaguard.lock.json")),
+            )
+        } else {
+            (
+                self.out.clone(),
+                self.json.clone(),
+                self.tsv.clone(),
+                self.multiqc.clone(),
+                self.lock.clone(),
+            )
+        };
+
+        Ok(ReferenceOutputPaths {
+            html: formats.contains(&ReferenceFormat::Html).then_some(html),
+            json: formats.contains(&ReferenceFormat::Json).then_some(json),
+            tsv: formats.contains(&ReferenceFormat::Tsv).then_some(tsv),
+            multiqc: formats
+                .contains(&ReferenceFormat::Multiqc)
+                .then_some(multiqc),
+            lock: write_lock.then_some(lock),
+            allow_overwrite: self.force,
+        })
+    }
+}
+
 fn validate_no_root_run_args_before_subcommand(
     matches: &ArgMatches,
 ) -> std::result::Result<(), clap::Error> {
-    if matches.subcommand_name().is_none() {
+    let Some(subcommand) = matches.subcommand_name() else {
         return Ok(());
-    }
+    };
 
     for arg_id in ROOT_RUN_ARG_IDS {
         if matches.value_source(arg_id) == Some(ValueSource::CommandLine) {
-            return Err(clap::Error::raw(
-                ErrorKind::ArgumentConflict,
-                "root run arguments cannot be used with subcommands; put compare inputs and options after the subcommand",
-            ));
+            let message = match subcommand {
+                "reference" => {
+                    "root run arguments cannot be used with subcommands; put reference inputs and options after reference"
+                }
+                _ => {
+                    "root run arguments cannot be used with subcommands; put compare inputs and options after the subcommand"
+                }
+            };
+            return Err(clap::Error::raw(ErrorKind::ArgumentConflict, message));
         }
     }
 
@@ -785,6 +1030,74 @@ mod tests {
     }
 
     #[test]
+    fn reference_accepts_explicit_alpha_contract_inputs() {
+        Cli::try_parse_from([
+            "fastaguard",
+            "reference",
+            "reference.fa",
+            "--fai",
+            "reference.fa.fai",
+            "--dict",
+            "reference.dict",
+            "--alias-map",
+            "aliases.tsv",
+            "--require",
+            "fai,dict",
+            "--format",
+            "json",
+            "--write-lock",
+            "--policy",
+            "strict",
+            "--outdir",
+            "reports",
+        ])
+        .unwrap();
+    }
+
+    #[test]
+    fn reference_accepts_repeatable_beta_declaration_inputs() {
+        let cli = Cli::try_parse_from([
+            "fastaguard",
+            "reference",
+            "reference.fa",
+            "--alignment",
+            "sample.sam",
+            "--alignment",
+            "sample.cram",
+            "--variants",
+            "sites.vcf.gz",
+            "--variants",
+            "sites.bcf",
+            "--annotation",
+            "genes.gff3",
+            "--require",
+            "alignment,variants,annotation",
+        ])
+        .unwrap();
+
+        assert!(matches!(
+            cli.to_command_config().unwrap(),
+            CommandConfig::Reference(_)
+        ));
+    }
+
+    #[test]
+    fn reference_rejects_unknown_declaration_kinds() {
+        let cli = Cli::parse_from([
+            "fastaguard",
+            "reference",
+            "reference.fa",
+            "--require",
+            "coverage",
+        ]);
+        let error = cli.to_command_config().unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("--require accepts only fai, dict, alignment, variants and annotation"));
+    }
+
+    #[test]
     fn compare_rejects_root_input_before_subcommand() {
         let error =
             Cli::try_parse_from(["fastaguard", "input.fa", "compare", "b.fa", "c.fa"]).unwrap_err();
@@ -792,6 +1105,22 @@ mod tests {
         assert!(error
             .to_string()
             .contains("root run arguments cannot be used with subcommands"));
+    }
+
+    #[test]
+    fn reference_rejects_root_assembly_options_before_subcommand() {
+        let error = Cli::try_parse_from([
+            "fastaguard",
+            "--gate",
+            "pipeline",
+            "reference",
+            "reference.fa",
+        ])
+        .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("put reference inputs and options after reference"));
     }
 
     #[test]

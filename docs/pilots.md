@@ -1,8 +1,9 @@
-# Report-only pilot guide
+# Optional report-only feedback guide
 
-FastaGuard pilots start in report-only mode. Run the tool locally, keep the
-FASTA under the data owner's controls, and evaluate whether its structured
-findings improve preflight decisions before changing workflow gates.
+FastaGuard feedback pilots are optional and start in report-only mode. Run the
+tool locally, keep the FASTA under the data owner's controls, and evaluate
+whether its structured findings improve preflight decisions before changing
+workflow gates. Pilot feedback is not required for a FastaGuard release.
 
 ## Privacy boundary
 

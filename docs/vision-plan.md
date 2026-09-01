@@ -245,9 +245,9 @@ time.
 
 ## Current Recommendation
 
-FastaGuard v0.7.0 is the current source release and establishes operational
-trust before a new biological profile. Published GitHub, Bioconda, and
-BioContainers artifacts remain v0.6.0 until their v0.7 updates are released.
+FastaGuard v1.0.0-rc.1 is the current source release candidate. It adds the
+Reference Contract Gate while preserving the operational-trust behaviour of
+v0.7. Published GitHub, Bioconda, and BioContainers artifacts remain v0.6.0.
 Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`, and the
 published BioContainers tag is `0.6.0--hfa8f182_0`.
 
@@ -259,6 +259,7 @@ v0.4: compare mode for many FASTA files
 v0.5: submission readiness gate
 v0.6: workflow-compatible exit contract
 v0.7: operational trust for outputs, policies, gating, and archives
+v1.0: Reference Contract Gate for explicit reference compatibility
 future: separately scoped transcriptome, protein, and reference-panel profiles
 later: MCP/tool-agent interface and optional local summaries
 ```

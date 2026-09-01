@@ -9,6 +9,9 @@
     },
     {
       "$ref": "#/$defs/compare_report"
+    },
+    {
+      "$ref": "#/$defs/reference_report"
     }
   ],
   "$defs": {
@@ -1435,6 +1438,291 @@
         },
         "reason": {
           "type": "string"
+        }
+      }
+    },
+    "reference_report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "report_type",
+        "tool",
+        "canonical_reference",
+        "reference_manifest",
+        "comparisons",
+        "verdict",
+        "gate",
+        "findings",
+        "readiness",
+        "provenance",
+        "machine_summary"
+      ],
+      "properties": {
+        "schema_version": { "const": "1.0.0" },
+        "report_type": { "const": "reference" },
+        "tool": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "version"],
+          "properties": {
+            "name": { "const": "FastaGuard" },
+            "version": { "type": "string" }
+          }
+        },
+        "canonical_reference": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["physical_sha256", "seqcol_schema", "seqcol_digest", "name_length_pairs_digest", "sorted_name_length_pairs_digest", "sequences"],
+          "properties": {
+            "physical_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "seqcol_schema": { "const": "https://w3id.org/ga4gh/seqcol/schema/extended/v1.0.0" },
+            "seqcol_digest": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_-]{32}$" },
+            "name_length_pairs_digest": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_-]{32}$" },
+            "sorted_name_length_pairs_digest": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_-]{32}$" },
+            "sequences": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "order", "length", "sam_md5", "refget_id"],
+                "properties": {
+                  "id": { "type": "string", "minLength": 1 },
+                  "order": { "type": "integer", "minimum": 0 },
+                  "length": { "type": "integer", "minimum": 1 },
+                  "sam_md5": { "type": ["string", "null"], "pattern": "^[a-f0-9]{32}$" },
+                  "refget_id": { "type": ["string", "null"], "pattern": "^ga4gh:SQ\\.[A-Za-z0-9_-]{32}$" }
+                }
+              }
+            }
+          }
+        },
+        "reference_manifest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["manifest_version", "semantic_digest", "canonical_reference", "artifacts", "comparisons", "coverage", "delegated_checks"],
+          "properties": {
+            "manifest_version": { "const": "1.0.0" },
+            "semantic_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+            "canonical_reference": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["physical_sha256", "seqcol_schema", "seqcol_digest", "name_length_pairs_digest", "sorted_name_length_pairs_digest", "sequences"],
+              "properties": {
+                "physical_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "seqcol_schema": { "const": "https://w3id.org/ga4gh/seqcol/schema/extended/v1.0.0" },
+                "seqcol_digest": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_-]{32}$" },
+                "name_length_pairs_digest": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_-]{32}$" },
+                "sorted_name_length_pairs_digest": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_-]{32}$" },
+                "sequences": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["id", "order", "length", "sam_md5", "refget_id"],
+                    "properties": {
+                      "id": { "type": "string", "minLength": 1 },
+                      "order": { "type": "integer", "minimum": 0 },
+                      "length": { "type": "integer", "minimum": 1 },
+                      "sam_md5": { "type": ["string", "null"], "pattern": "^[a-f0-9]{32}$" },
+                      "refget_id": { "type": ["string", "null"], "pattern": "^ga4gh:SQ\\.[A-Za-z0-9_-]{32}$" }
+                    }
+                  }
+                }
+              }
+            },
+            "artifacts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "declaration_digest", "declaration"],
+                "properties": {
+                  "kind": { "enum": ["fai", "dict", "alignment", "variants", "annotation"] },
+                  "declaration_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+                  "declaration": {}
+                }
+              }
+            },
+            "comparisons": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "declaration_digest", "relationship", "evidence"],
+                "properties": {
+                  "kind": { "enum": ["fai", "dict", "alignment", "variants", "annotation"] },
+                  "declaration_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+                  "relationship": { "enum": ["exact", "content_equivalent", "coordinate_compatible", "subset_compatible", "incompatible", "indeterminate"] },
+                  "evidence": { "type": "array", "items": { "enum": ["content_verified", "metadata_verified", "header_asserted", "explicit_alias_mapping", "insufficient"] }, "uniqueItems": true }
+                }
+              }
+            },
+            "coverage": { "type": "object" },
+            "delegated_checks": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "declaration_digest", "relationship", "evidence"],
+            "properties": {
+              "kind": { "enum": ["fai", "dict", "alignment", "variants", "annotation"] },
+              "declaration_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+              "relationship": { "enum": ["exact", "content_equivalent", "coordinate_compatible", "subset_compatible", "incompatible", "indeterminate"] },
+              "evidence": { "type": "array", "items": { "enum": ["content_verified", "metadata_verified", "header_asserted", "explicit_alias_mapping", "insufficient"] }, "uniqueItems": true }
+            }
+          }
+        },
+        "verdict": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "reasons"],
+          "properties": {
+            "status": { "enum": ["PASS", "WARN", "FAIL"] },
+            "reasons": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+          }
+        },
+        "gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "reference_policy", "status", "can_continue", "blocking_findings", "advisory_findings"],
+          "properties": {
+            "mode": { "const": "reference" },
+            "reference_policy": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "version", "required_kinds"],
+              "properties": {
+                "id": { "enum": ["strict", "coordinate", "advisory"] },
+                "version": { "const": "1.0.0" },
+                "required_kinds": {
+                  "type": "array",
+                  "items": { "enum": ["fai", "dict", "alignment", "variants", "annotation"] },
+                  "uniqueItems": true
+                }
+              }
+            },
+            "status": { "enum": ["PASS", "WARN", "FAIL"] },
+            "can_continue": { "type": "boolean" },
+            "blocking_findings": {
+              "type": "array",
+              "items": { "enum": ["reference_required_artifact_missing", "reference_malformed_declaration", "reference_length_mismatch", "reference_digest_mismatch", "reference_contig_mismatch", "reference_declaration_mismatch", "reference_canonical_reference_invalid", "reference_insufficient_identity_evidence"] },
+              "uniqueItems": true
+            },
+            "advisory_findings": {
+              "type": "array",
+              "items": { "enum": ["reference_required_artifact_missing", "reference_malformed_declaration", "reference_length_mismatch", "reference_digest_mismatch", "reference_contig_mismatch", "reference_declaration_mismatch", "reference_canonical_reference_invalid", "reference_insufficient_identity_evidence"] },
+              "uniqueItems": true
+            }
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "artifact_kind", "relationship", "evidence", "policy_effect", "affected_count", "original_name", "resolved_name", "expected_value", "observed_value", "examples", "message", "suggested_next_step"],
+            "properties": {
+              "id": { "enum": ["reference_required_artifact_missing", "reference_malformed_declaration", "reference_length_mismatch", "reference_digest_mismatch", "reference_contig_mismatch", "reference_declaration_mismatch", "reference_canonical_reference_invalid", "reference_insufficient_identity_evidence"] },
+              "artifact_kind": { "enum": ["reference", "fai", "dict", "alignment", "variants", "annotation"] },
+              "relationship": { "enum": ["exact", "content_equivalent", "coordinate_compatible", "subset_compatible", "incompatible", "indeterminate"] },
+              "evidence": { "type": "array", "items": { "enum": ["content_verified", "metadata_verified", "header_asserted", "explicit_alias_mapping", "insufficient"] }, "uniqueItems": true },
+              "policy_effect": { "enum": ["blocking", "advisory"] },
+              "affected_count": { "type": "integer", "minimum": 1 },
+              "original_name": { "type": ["string", "null"] },
+              "resolved_name": { "type": ["string", "null"] },
+              "expected_value": { "type": ["string", "null"] },
+              "observed_value": { "type": ["string", "null"] },
+              "examples": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["original_name", "resolved_name", "expected_value", "observed_value"],
+                  "properties": {
+                    "original_name": { "type": ["string", "null"] },
+                    "resolved_name": { "type": ["string", "null"] },
+                    "expected_value": { "type": ["string", "null"] },
+                    "observed_value": { "type": ["string", "null"] }
+                  }
+                }
+              },
+              "message": { "type": "string", "minLength": 1 },
+              "suggested_next_step": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "readiness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["overall", "categories"],
+          "properties": {
+            "overall": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["status", "blockers"],
+              "properties": {
+                "status": { "enum": ["PASS", "WARN", "FAIL"] },
+                "blockers": {
+                  "type": "array",
+                  "items": { "enum": ["reference_required_artifact_missing", "reference_malformed_declaration", "reference_length_mismatch", "reference_digest_mismatch", "reference_contig_mismatch", "reference_declaration_mismatch", "reference_canonical_reference_invalid", "reference_insufficient_identity_evidence"] },
+                  "uniqueItems": true
+                }
+              }
+            },
+            "categories": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "label", "status", "findings"],
+                "properties": {
+                  "id": { "const": "reference_compatibility" },
+                  "label": { "type": "string", "minLength": 1 },
+                  "status": { "enum": ["PASS", "WARN", "FAIL"] },
+                  "findings": {
+                    "type": "array",
+                    "items": { "enum": ["reference_required_artifact_missing", "reference_malformed_declaration", "reference_length_mismatch", "reference_digest_mismatch", "reference_contig_mismatch", "reference_declaration_mismatch", "reference_canonical_reference_invalid", "reference_insufficient_identity_evidence"] },
+                    "uniqueItems": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reference_path", "companions"],
+          "properties": {
+            "reference_path": { "type": "string", "minLength": 1 },
+            "companions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "path", "declaration_digest"],
+                "properties": {
+                  "kind": { "enum": ["fai", "dict", "alignment", "variants", "annotation"] },
+                  "path": { "type": "string", "minLength": 1 },
+                  "declaration_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+                }
+              }
+            }
+          }
+        },
+        "machine_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["safe_for_downstream"],
+          "properties": { "safe_for_downstream": { "type": "boolean" } }
         }
       }
     },

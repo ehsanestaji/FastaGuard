@@ -49,7 +49,7 @@ downstream tool.
 
 | Channel | Status |
 | --- | --- |
-| Source/package metadata | `v0.7.0` operational-trust release |
+| Source/package metadata | `v1.0.0-rc.1` Reference Contract release candidate |
 | GitHub release | `v0.6.0` release binaries are published |
 | Bioconda | `v0.6.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
 | BioContainers | `0.6.0--hfa8f182_0` is the published pinned workflow image |
@@ -266,6 +266,63 @@ if jq -e '.gate.can_continue == true' reports/sample-01.fastaguard.json >/dev/nu
 fi
 ```
 
+## Reference compatibility gate
+
+The release-candidate `reference` command checks whether explicitly supplied
+reference declarations agree with one canonical FASTA. It does not discover
+sidecar files from names or directories.
+
+```bash
+fastaguard reference reference.fa \
+  --fai reference.fa.fai \
+  --dict reference.dict \
+  --alignment sample.bam \
+  --variants known-sites.vcf.gz \
+  --annotation genes.gff3 \
+  --policy coordinate \
+  --outdir reports
+```
+
+The release candidate supports FASTA indexes (`.fai`), SAM sequence
+dictionaries (`.dict`), BAM and CRAM headers, VCF and BCF contig declarations,
+and GFF3 sequence declarations and coordinate bounds. It reads headers only for
+BAM, CRAM, VCF and BCF; it does not scan alignment or variant records. GTF is
+not accepted as an annotation declaration.
+
+Reference mode writes HTML, JSON, TSV and MultiQC-compatible JSON by default.
+Use `--format` to select a subset, `--write-lock reference.lock.json` to write a
+portable identity record, and `--require fai,dict,alignment,variants,annotation`
+to make named companion kinds mandatory. Each supplied companion receives a
+normalised declaration digest in JSON and the lockfile; TSV retains its local
+source path for workflow routing.
+
+Reference identity is based on the canonical FASTA, not its filename. An alias
+map is only applied when it is supplied explicitly:
+
+```text
+declared_name	reference_name
+```
+
+The header must be exact, and every name on both sides must be unique. Names are
+case-sensitive; implicit aliases, including SAM `AN` tags, are not used.
+
+Choose the policy for the downstream task:
+
+- `strict` accepts exact declarations only.
+- `coordinate` also accepts declarations that preserve names, lengths and
+  coordinate compatibility; this is the default.
+- `advisory` records compatibility concerns without treating optional
+  differences as blocking.
+
+Invalid canonical FASTA and missing required declarations remain blocking under
+every policy. Read `verdict.status`, `gate.status` and
+`machine_summary.safe_for_downstream` from the JSON report when routing a
+workflow. A completed reference report, including a FAIL report, exits with
+code `0`.
+
+The complete interface and evidence model are described in
+[the Reference Contract specification](docs/reference-contract-v1.md).
+
 ## Product Thesis
 
 FASTA files are everywhere, but FASTA QC is fragmented across ad hoc scripts, `seqkit stats`, assembly QC tools, completeness tools, contamination workflows, and pipeline-specific checks. Each is useful, but none is the simple default first command for:
@@ -405,7 +462,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 
 - [Five-minute quickstart](docs/quickstart.md)
 - [Report interpretation](docs/report-interpretation.md)
-- [Report-only pilot guide](docs/pilots.md)
+- [Optional report-only feedback guide](docs/pilots.md)
 - [Example reports](examples/reports/README.md)
 - [Use cases and positioning](docs/use-cases.md)
 - [Product thesis](docs/product-thesis.md)
@@ -426,6 +483,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.5 public evidence workflow](docs/evidence/fastaguard-v0.5-public-evidence.md)
 - [v0.6 public evidence](docs/evidence/fastaguard-v0.6-public-evidence.md)
 - [Packaging](docs/packaging.md)
+- [v1.0.0-rc.1 release notes](docs/releases/v1.0.0-rc.1.md)
 - [v0.7.0 release notes](docs/releases/v0.7.0.md)
 - [v0.6.0 release notes](docs/releases/v0.6.0.md)
 - [v0.5.0 release notes](docs/releases/v0.5.0.md)
@@ -437,15 +495,15 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [Roadmap](docs/roadmap.md)
 
 Citation metadata for the current published v0.6.0 distribution is provided in
-[`CITATION.cff`](CITATION.cff). The v0.7 source and package metadata remain
+[`CITATION.cff`](CITATION.cff). The v1.0.0-rc.1 source and package metadata are
 release preparation until corresponding public artifacts are published.
 
 ## Status
 
-FastaGuard v0.7.0 source and package metadata prepare the operational-trust
-release. The latest published GitHub, Bioconda, and BioContainers artifacts
-remain v0.6.0 until the v0.7 release and downstream package updates are
-published.
+FastaGuard v1.0.0-rc.1 source and package metadata prepare the Reference
+Contract release candidate. The latest published GitHub, Bioconda, and
+BioContainers artifacts remain v0.6.0 until a separately authorised release
+and downstream package updates are published.
 
 Bioconda serves v0.6.0 for `linux-64`, `linux-aarch64`, `osx-64`, and
 `osx-arm64`. BioContainers publishes the pinned v0.6 workflow image

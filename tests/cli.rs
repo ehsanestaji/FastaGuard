@@ -1,4 +1,5 @@
 use assert_cmd::Command;
+use noodles::{bam, bcf, cram, sam, vcf};
 use predicates::prelude::*;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -144,6 +145,1133 @@ fn compare_requires_at_least_two_inputs() {
         .stderr(predicate::str::contains(
             "compare requires at least two FASTA inputs",
         ));
+}
+
+#[test]
+fn reference_requires_a_canonical_fasta() {
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("Usage: fastaguard reference"));
+}
+
+#[test]
+fn reference_writes_a_coordinate_policy_json_report() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1 example\nACGT\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.env(
+        "FASTAGUARD_PROVENANCE_TIMESTAMP",
+        GOLDEN_PROVENANCE_TIMESTAMP,
+    )
+    .arg("reference")
+    .arg(&fasta)
+    .args(["--format", "json", "--json"])
+    .arg(&report_path)
+    .assert()
+    .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["schema_version"], json!("1.0.0"));
+    assert_eq!(report["report_type"], json!("reference"));
+    assert_eq!(report["gate"]["mode"], json!("reference"));
+    assert_eq!(
+        report["gate"]["reference_policy"]["id"],
+        json!("coordinate")
+    );
+    assert_eq!(
+        report["canonical_reference"]["sequences"][0]["id"],
+        json!("chr1")
+    );
+    assert_eq!(
+        report["canonical_reference"]["sequences"][0]["length"],
+        json!(4)
+    );
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert_eq!(
+        report["machine_summary"]["safe_for_downstream"],
+        json!(false)
+    );
+}
+
+#[test]
+fn reference_matching_fai_is_exact() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let fai = temp_dir.path().join("reference.fa.fai");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(&fai, "chr1\t4\t6\t4\t5\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--fai")
+        .arg(&fai)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("PASS"));
+    assert_eq!(
+        report["machine_summary"]["safe_for_downstream"],
+        json!(true)
+    );
+    assert_eq!(report["comparisons"][0]["kind"], json!("fai"));
+    assert_eq!(report["comparisons"][0]["relationship"], json!("exact"));
+}
+
+#[test]
+fn reference_rejects_duplicate_names_in_a_required_fai() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let fai = temp_dir.path().join("reference.fa.fai");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(&fai, "chr1\t4\t6\t4\t5\nchr1\t4\t6\t4\t5\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--fai")
+        .arg(&fai)
+        .args(["--require", "fai", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert!(report["verdict"]["reasons"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("required_fai_invalid")));
+}
+
+#[test]
+fn reference_matching_dictionary_md5_is_exact() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let dictionary = temp_dir.path().join("reference.dict");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(
+        &dictionary,
+        "@HD\tVN:1.6\n@SQ\tSN:chr1\tLN:4\tM5:f1f8f4bf413b16ad135722aa4591043e\n",
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--dict")
+        .arg(&dictionary)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("PASS"));
+    assert_eq!(report["comparisons"][0]["kind"], json!("dict"));
+    assert_eq!(report["comparisons"][0]["relationship"], json!("exact"));
+}
+
+#[test]
+fn reference_matching_bam_header_is_coordinate_compatible() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let bam_path = temp_dir.path().join("sample.bam");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    let header: sam::Header = "@HD\tVN:1.6\n@SQ\tSN:chr1\tLN:4\n".parse().unwrap();
+    let mut writer = bam::io::Writer::new(std::fs::File::create(&bam_path).unwrap());
+    writer.write_header(&header).unwrap();
+    writer.try_finish().unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--alignment")
+        .arg(&bam_path)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert_eq!(report["gate"]["can_continue"], json!(true));
+    assert_eq!(report["comparisons"][0]["kind"], json!("alignment"));
+    assert_eq!(
+        report["comparisons"][0]["relationship"],
+        json!("coordinate_compatible")
+    );
+    assert!(report["comparisons"][0]["evidence"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("header_asserted")));
+}
+
+#[test]
+fn reference_matching_cram_header_is_exact_when_md5_is_available() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let cram_path = temp_dir.path().join("sample.cram");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    let header: sam::Header = concat!(
+        "@HD\tVN:1.6\n",
+        "@SQ\tSN:chr1\tLN:4\tM5:f1f8f4bf413b16ad135722aa4591043e\n",
+    )
+    .parse()
+    .unwrap();
+    let mut writer = cram::io::Writer::new(std::fs::File::create(&cram_path).unwrap());
+    writer.write_header(&header).unwrap();
+    writer.try_finish(&header).unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--alignment")
+        .arg(&cram_path)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("PASS"));
+    assert_eq!(report["comparisons"][0]["kind"], json!("alignment"));
+    assert_eq!(report["comparisons"][0]["relationship"], json!("exact"));
+    assert!(report["comparisons"][0]["evidence"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("content_verified")));
+}
+
+#[test]
+fn reference_matching_vcf_header_subset_is_compatible_without_reading_records() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let vcf_path = temp_dir.path().join("sites.vcf");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n>chr2\nTGCA\n").unwrap();
+    std::fs::write(
+        &vcf_path,
+        concat!(
+            "##fileformat=VCFv4.3\n",
+            "##contig=<ID=chr1,length=4>\n",
+            "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n",
+            "this record is deliberately not valid VCF\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--variants")
+        .arg(&vcf_path)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert_eq!(report["comparisons"][0]["kind"], json!("variants"));
+    assert_eq!(
+        report["comparisons"][0]["relationship"],
+        json!("subset_compatible")
+    );
+    assert!(report["comparisons"][0]["evidence"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("header_asserted")));
+}
+
+#[test]
+fn reference_matching_bcf_header_subset_is_compatible() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let bcf_path = temp_dir.path().join("sites.bcf");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n>chr2\nTGCA\n").unwrap();
+    let header: vcf::Header = concat!(
+        "##fileformat=VCFv4.3\n",
+        "##contig=<ID=chr1,length=4>\n",
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n",
+    )
+    .parse()
+    .unwrap();
+    let mut writer = bcf::io::Writer::new(std::fs::File::create(&bcf_path).unwrap());
+    writer.write_header(&header).unwrap();
+    writer.try_finish().unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--variants")
+        .arg(&bcf_path)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert_eq!(
+        report["comparisons"][0]["relationship"],
+        json!("subset_compatible")
+    );
+}
+
+#[test]
+fn reference_advisory_policy_reports_an_incompatible_variant_without_blocking_continuation() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let vcf_path = temp_dir.path().join("mismatch.vcf");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(
+        &vcf_path,
+        concat!(
+            "##fileformat=VCFv4.3\n",
+            "##contig=<ID=chr1,length=5>\n",
+            "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--variants")
+        .arg(&vcf_path)
+        .args(["--policy", "advisory", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert_eq!(report["gate"]["status"], json!("FAIL"));
+    assert_eq!(report["gate"]["can_continue"], json!(true));
+    assert_eq!(
+        report["machine_summary"]["safe_for_downstream"],
+        json!(false)
+    );
+}
+
+#[test]
+fn reference_advisory_mismatch_has_a_stable_finding_and_provenance() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let vcf_path = temp_dir.path().join("mismatch.vcf");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(
+        &vcf_path,
+        concat!(
+            "##fileformat=VCFv4.3\n",
+            "##contig=<ID=chr1,length=5>\n",
+            "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--variants")
+        .arg(&vcf_path)
+        .args(["--policy", "advisory", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(
+        report["findings"][0]["id"],
+        json!("reference_length_mismatch")
+    );
+    assert_eq!(report["findings"][0]["original_name"], json!("chr1"));
+    assert_eq!(report["findings"][0]["resolved_name"], json!("chr1"));
+    assert_eq!(report["findings"][0]["expected_value"], json!("4"));
+    assert_eq!(report["findings"][0]["observed_value"], json!("5"));
+    assert_eq!(
+        report["findings"][0]["examples"][0]["original_name"],
+        json!("chr1")
+    );
+    assert_eq!(
+        report["gate"]["advisory_findings"],
+        json!(["reference_length_mismatch"])
+    );
+    assert_eq!(
+        report["readiness"]["categories"][0]["id"],
+        json!("reference_compatibility")
+    );
+    assert_eq!(
+        report["provenance"]["companions"][0]["path"],
+        json!(vcf_path.display().to_string())
+    );
+}
+
+#[test]
+fn reference_reports_surface_findings_without_putting_paths_in_multiqc() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let vcf_path = temp_dir.path().join("mismatch.vcf");
+    let output_dir = temp_dir.path().join("reports");
+    let html_path = output_dir.join("contract.fastaguard.html");
+    let tsv_path = output_dir.join("contract.fastaguard.tsv");
+    let multiqc_path = output_dir.join("contract.fastaguard_mqc.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(
+        &vcf_path,
+        concat!(
+            "##fileformat=VCFv4.3\n",
+            "##contig=<ID=chr1,length=5>\n",
+            "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--variants")
+        .arg(&vcf_path)
+        .args(["--policy", "advisory", "--format", "html,tsv,multiqc"])
+        .arg("--outdir")
+        .arg(&output_dir)
+        .args(["--prefix", "contract"])
+        .assert()
+        .success();
+
+    let html = std::fs::read_to_string(&html_path).unwrap();
+    assert!(html.contains("reference_length_mismatch"), "{html}");
+    assert!(html.contains("Use a companion generated"), "{html}");
+
+    let tsv = std::fs::read_to_string(&tsv_path).unwrap();
+    assert!(
+        tsv.contains("finding\tvariants\t\t\treference_length_mismatch"),
+        "{tsv}"
+    );
+    assert!(tsv.contains("Use a companion generated"), "{tsv}");
+
+    let multiqc = std::fs::read_to_string(&multiqc_path).unwrap();
+    assert!(
+        !multiqc.contains(&vcf_path.display().to_string()),
+        "{multiqc}"
+    );
+}
+
+#[test]
+fn reference_required_vcf_without_contig_declarations_is_a_reported_failure() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let vcf_path = temp_dir.path().join("sites.vcf");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(
+        &vcf_path,
+        "##fileformat=VCFv4.3\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n",
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--variants")
+        .arg(&vcf_path)
+        .args(["--require", "variants", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert!(report["verdict"]["reasons"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("required_variants_unusable")));
+    let malformed = finding_by_id(&report, "reference_malformed_declaration");
+    assert_eq!(malformed["artifact_kind"], json!("variants"));
+}
+
+#[test]
+fn reference_matching_gff3_subset_is_coordinate_compatible() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let gff3_path = temp_dir.path().join("genes.gff3");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n>chr2\nTGCA\n").unwrap();
+    std::fs::write(
+        &gff3_path,
+        concat!(
+            "##gff-version 3\n",
+            "##sequence-region chr1 1 4\n",
+            "chr1\tFastaGuard\tgene\t1\t4\t.\t+\t.\tID=gene1\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--annotation")
+        .arg(&gff3_path)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert_eq!(report["comparisons"][0]["kind"], json!("annotation"));
+    assert_eq!(
+        report["comparisons"][0]["relationship"],
+        json!("subset_compatible")
+    );
+    assert!(report["comparisons"][0]["evidence"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("metadata_verified")));
+}
+
+#[test]
+fn reference_accepts_one_origin_crossing_gff3_feature_after_an_explicit_circular_landmark() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let gff3_path = temp_dir.path().join("circular.gff3");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chrM\nACGTACGTAC\n").unwrap();
+    std::fs::write(
+        &gff3_path,
+        concat!(
+            "##gff-version 3\n",
+            "##sequence-region chrM 1 10\n",
+            "chrM\tFastaGuard\tregion\t1\t10\t.\t+\t.\tIs_circular=true\n",
+            "chrM\tFastaGuard\tgene\t8\t12\t.\t+\t.\tID=gene1\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--annotation")
+        .arg(&gff3_path)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert_eq!(
+        report["comparisons"][0]["relationship"],
+        json!("coordinate_compatible")
+    );
+}
+
+#[test]
+fn reference_rejects_gtf_as_a_required_gff3_annotation() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let gtf_path = temp_dir.path().join("genes.gtf");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(
+        &gtf_path,
+        "chr1\tFastaGuard\tgene\t1\t4\t.\t+\t.\tgene_id \"gene1\";\n",
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--annotation")
+        .arg(&gtf_path)
+        .args(["--require", "annotation", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert!(report["verdict"]["reasons"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("required_annotation_invalid")));
+}
+
+#[test]
+fn reference_rejects_gff3_features_that_cross_a_non_circular_origin() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let gff3_path = temp_dir.path().join("linear.gff3");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGTACGTAC\n").unwrap();
+    std::fs::write(
+        &gff3_path,
+        concat!(
+            "##gff-version 3\n",
+            "##sequence-region chr1 1 10\n",
+            "chr1\tFastaGuard\tgene\t8\t12\t.\t+\t.\tID=gene1\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--annotation")
+        .arg(&gff3_path)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert_eq!(
+        report["comparisons"][0]["relationship"],
+        json!("incompatible")
+    );
+}
+
+#[test]
+fn reference_reports_companion_declarations_in_the_manifest_and_report_family() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let vcf_path = temp_dir.path().join("sites.vcf");
+    let json_path = temp_dir.path().join("reference.json");
+    let tsv_path = temp_dir.path().join("reference.tsv");
+    let multiqc_path = temp_dir.path().join("reference_mqc.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n>chr2\nTGCA\n").unwrap();
+    std::fs::write(
+        &vcf_path,
+        concat!(
+            "##fileformat=VCFv4.3\n",
+            "##contig=<ID=chr1,length=4>\n",
+            "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--variants")
+        .arg(&vcf_path)
+        .args(["--format", "json,tsv,multiqc", "--json"])
+        .arg(&json_path)
+        .arg("--tsv")
+        .arg(&tsv_path)
+        .arg("--multiqc")
+        .arg(&multiqc_path)
+        .assert()
+        .success();
+
+    let report = read_json(&json_path);
+    assert_eq!(
+        report["reference_manifest"]["artifacts"][0]["kind"],
+        json!("variants")
+    );
+    assert!(
+        report["reference_manifest"]["artifacts"][0]["declaration_digest"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
+    assert_eq!(
+        report["comparisons"][0]["declaration_digest"],
+        report["reference_manifest"]["artifacts"][0]["declaration_digest"]
+    );
+    assert_eq!(
+        report["gate"]["reference_policy"]["version"],
+        json!("1.0.0")
+    );
+
+    let tsv = std::fs::read_to_string(&tsv_path).unwrap();
+    assert!(tsv.contains(vcf_path.to_str().unwrap()));
+    assert!(tsv.contains("comparison\tvariants"));
+
+    let multiqc = read_json(&multiqc_path);
+    assert_eq!(multiqc["data"].as_object().unwrap().len(), 1);
+    let summary = multiqc["data"]
+        .as_object()
+        .unwrap()
+        .values()
+        .next()
+        .unwrap();
+    assert_eq!(summary["supplied_artifact_count"], json!(1));
+    assert_eq!(summary["subset_compatible_count"], json!(1));
+}
+
+#[test]
+fn reference_strict_policy_does_not_mislabel_a_valid_subset_as_missing_declarations() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let vcf_path = temp_dir.path().join("sites.vcf");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n>chr2\nTGCA\n").unwrap();
+    std::fs::write(
+        &vcf_path,
+        concat!(
+            "##fileformat=VCFv4.3\n",
+            "##contig=<ID=chr1,length=4>\n",
+            "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--variants")
+        .arg(&vcf_path)
+        .args(["--policy", "strict", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(
+        report["comparisons"][0]["relationship"],
+        json!("subset_compatible")
+    );
+    assert_eq!(report["gate"]["can_continue"], json!(false));
+    assert!(!report["verdict"]["reasons"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("no_reference_declarations")));
+}
+
+#[test]
+fn reference_reordered_dictionary_with_matching_md5_is_content_equivalent() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let dictionary = temp_dir.path().join("reference.dict");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n>chr2\nTGCA\n").unwrap();
+    std::fs::write(
+        &dictionary,
+        concat!(
+            "@HD\tVN:1.6\n",
+            "@SQ\tSN:chr2\tLN:4\tM5:5c15f97a88433c48f8bf76745d9da437\n",
+            "@SQ\tSN:chr1\tLN:4\tM5:f1f8f4bf413b16ad135722aa4591043e\n",
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--dict")
+        .arg(&dictionary)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("WARN"));
+    assert_eq!(
+        report["comparisons"][0]["relationship"],
+        json!("content_equivalent")
+    );
+    assert_eq!(report["gate"]["can_continue"], json!(false));
+    assert_eq!(
+        report["gate"]["blocking_findings"],
+        json!(["reference_declaration_mismatch"])
+    );
+}
+
+#[test]
+fn reference_alias_map_resolves_dictionary_names_without_changing_md5_evidence() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let dictionary = temp_dir.path().join("reference.dict");
+    let aliases = temp_dir.path().join("aliases.tsv");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(
+        &dictionary,
+        "@HD\tVN:1.6\n@SQ\tSN:1\tLN:4\tM5:f1f8f4bf413b16ad135722aa4591043e\n",
+    )
+    .unwrap();
+    std::fs::write(&aliases, "declared_name\treference_name\n1\tchr1\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--dict")
+        .arg(&dictionary)
+        .arg("--alias-map")
+        .arg(&aliases)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("PASS"));
+    assert_eq!(report["comparisons"][0]["relationship"], json!("exact"));
+    assert!(report["comparisons"][0]["evidence"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("explicit_alias_mapping")));
+}
+
+#[test]
+fn reference_alias_map_resolves_fai_names_without_changing_layout_evidence() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let fai = temp_dir.path().join("reference.fa.fai");
+    let aliases = temp_dir.path().join("aliases.tsv");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(&fai, "1\t4\t6\t4\t5\n").unwrap();
+    std::fs::write(&aliases, "declared_name\treference_name\n1\tchr1\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--fai")
+        .arg(&fai)
+        .arg("--alias-map")
+        .arg(&aliases)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("PASS"));
+    assert_eq!(report["comparisons"][0]["relationship"], json!("exact"));
+}
+
+#[test]
+fn reference_missing_required_dictionary_is_a_reported_failure() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .args(["--require", "dict", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert_eq!(
+        report["machine_summary"]["safe_for_downstream"],
+        json!(false)
+    );
+    assert!(report["verdict"]["reasons"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("required_dict_missing")));
+}
+
+#[test]
+fn reference_write_lock_emits_a_manifest_with_a_semantic_digest() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let report_path = temp_dir.path().join("reference.json");
+    let lock_path = temp_dir.path().join("reference.lock.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .args(["--write-lock", "--lock"])
+        .arg(&lock_path)
+        .assert()
+        .success();
+
+    let lock = read_json(&lock_path);
+    assert_eq!(lock["manifest_version"], json!("1.0.0"));
+    assert_eq!(
+        lock["canonical_reference"]["sequences"][0]["id"],
+        json!("chr1")
+    );
+    assert!(lock["semantic_digest"]
+        .as_str()
+        .unwrap()
+        .starts_with("sha256:"));
+    assert!(lock["canonical_reference"]["physical_sha256"].is_null());
+
+    let report = read_json(&report_path);
+    assert_eq!(
+        report["reference_manifest"]["manifest_version"],
+        json!("1.0.0")
+    );
+    assert_eq!(
+        report["reference_manifest"]["canonical_reference"]["physical_sha256"],
+        report["canonical_reference"]["physical_sha256"]
+    );
+    assert_eq!(
+        report["reference_manifest"]["semantic_digest"],
+        lock["semantic_digest"]
+    );
+}
+
+#[test]
+fn reference_lock_digest_changes_when_the_policy_changes() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let fai = temp_dir.path().join("reference.fa.fai");
+    let coordinate_report = temp_dir.path().join("coordinate.json");
+    let coordinate_lock = temp_dir.path().join("coordinate.lock.json");
+    let strict_report = temp_dir.path().join("strict.json");
+    let strict_lock = temp_dir.path().join("strict.lock.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(&fai, "chr1\t4\t6\t4\t5\n").unwrap();
+
+    for (policy, report, lock) in [
+        ("coordinate", &coordinate_report, &coordinate_lock),
+        ("strict", &strict_report, &strict_lock),
+    ] {
+        let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+        cmd.arg("reference")
+            .arg(&fasta)
+            .arg("--fai")
+            .arg(&fai)
+            .args(["--policy", policy, "--format", "json", "--json"])
+            .arg(report)
+            .args(["--write-lock", "--lock"])
+            .arg(lock)
+            .assert()
+            .success();
+    }
+
+    assert_ne!(
+        read_json(&coordinate_lock)["semantic_digest"],
+        read_json(&strict_lock)["semantic_digest"]
+    );
+}
+
+#[test]
+fn reference_default_bundle_writes_html_tsv_and_one_multiqc_table() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let outdir = temp_dir.path().join("reports");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--outdir")
+        .arg(&outdir)
+        .assert()
+        .success();
+
+    let html = std::fs::read_to_string(outdir.join("reference.fastaguard.html")).unwrap();
+    assert!(html.contains("FastaGuard Reference"));
+    let tsv = std::fs::read_to_string(outdir.join("reference.fastaguard.tsv")).unwrap();
+    assert!(tsv.starts_with("record_type\t"));
+    let multiqc = read_json(&outdir.join("reference.fastaguard_mqc.json"));
+    assert_eq!(multiqc["id"], json!("fastaguard_reference"));
+    assert_eq!(multiqc["plot_type"], json!("table"));
+    assert_eq!(multiqc["data"].as_object().unwrap().len(), 1);
+    assert!(outdir.join("reference.fastaguard.json").exists());
+}
+
+#[test]
+fn reference_bundle_collision_publishes_no_partial_reports() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let outdir = temp_dir.path().join("reports");
+    std::fs::create_dir(&outdir).unwrap();
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(outdir.join("reference.fastaguard.json"), "existing report").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--outdir")
+        .arg(&outdir)
+        .assert()
+        .code(3);
+
+    assert!(!outdir.join("reference.fastaguard.html").exists());
+    assert!(!outdir.join("reference.fastaguard.tsv").exists());
+    assert!(!outdir.join("reference.fastaguard_mqc.json").exists());
+    assert_eq!(
+        std::fs::read_to_string(outdir.join("reference.fastaguard.json")).unwrap(),
+        "existing report"
+    );
+}
+
+#[test]
+fn reference_normalises_equivalent_output_paths_before_publication() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let aliases = temp_dir.path().join("aliases");
+    let json_path = temp_dir.path().join("./reference.json");
+    let lock_path = aliases.join("../reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::create_dir(&aliases).unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .args(["--format", "json", "--json"])
+        .arg(&json_path)
+        .args(["--write-lock", "--lock"])
+        .arg(&lock_path)
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("duplicate reference output path"));
+
+    assert!(!json_path.exists());
+}
+
+#[test]
+fn reference_malformed_required_fai_is_a_reported_failure() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let fai = temp_dir.path().join("reference.fa.fai");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGT\n").unwrap();
+    std::fs::write(&fai, "not a valid FAI\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .arg("--fai")
+        .arg(&fai)
+        .args(["--require", "fai", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert!(report["verdict"]["reasons"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("required_fai_invalid")));
+}
+
+#[test]
+fn reference_invalid_canonical_sequence_fails_even_with_advisory_policy() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGTX\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .args(["--policy", "advisory", "--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert_eq!(
+        report["machine_summary"]["safe_for_downstream"],
+        json!(false)
+    );
+    assert!(report["verdict"]["reasons"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("canonical_invalid_sequence_symbols")));
+    assert_eq!(
+        report["findings"][0]["id"],
+        json!("reference_canonical_reference_invalid")
+    );
+    assert_eq!(
+        report["gate"]["blocking_findings"],
+        json!(["reference_canonical_reference_invalid"])
+    );
+    assert!(report["canonical_reference"]["sequences"][0]["sam_md5"].is_null());
+    assert!(report["canonical_reference"]["sequences"][0]["refget_id"].is_null());
+}
+
+#[test]
+fn reference_seqcol_identities_are_present_and_invariant_to_fasta_rewrapping() {
+    let temp_dir = TempDir::new().unwrap();
+    let first_fasta = temp_dir.path().join("first.fa");
+    let second_fasta = temp_dir.path().join("second.fa");
+    let first_report = temp_dir.path().join("first.json");
+    let second_report = temp_dir.path().join("second.json");
+    std::fs::write(&first_fasta, ">chr1\nACGTACGT\n").unwrap();
+    std::fs::write(&second_fasta, ">chr1 rewrapped\nACGT\nACGT\n").unwrap();
+
+    for (fasta, report) in [
+        (&first_fasta, &first_report),
+        (&second_fasta, &second_report),
+    ] {
+        let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+        cmd.arg("reference")
+            .arg(fasta)
+            .args(["--format", "json", "--json"])
+            .arg(report)
+            .assert()
+            .success();
+    }
+
+    let first = read_json(&first_report);
+    let second = read_json(&second_report);
+    for field in [
+        "seqcol_digest",
+        "name_length_pairs_digest",
+        "sorted_name_length_pairs_digest",
+    ] {
+        assert_eq!(
+            first["canonical_reference"][field].as_str().unwrap().len(),
+            32
+        );
+        assert_eq!(
+            first["canonical_reference"][field],
+            second["canonical_reference"][field]
+        );
+    }
+    assert_ne!(
+        first["canonical_reference"]["physical_sha256"],
+        second["canonical_reference"]["physical_sha256"]
+    );
+}
+
+#[test]
+fn invalid_canonical_reference_does_not_claim_seqcol_digests() {
+    let temp_dir = TempDir::new().unwrap();
+    let fasta = temp_dir.path().join("reference.fa");
+    let report_path = temp_dir.path().join("reference.json");
+    std::fs::write(&fasta, ">chr1\nACGTX\n").unwrap();
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg("reference")
+        .arg(&fasta)
+        .args(["--format", "json", "--json"])
+        .arg(&report_path)
+        .assert()
+        .success();
+
+    let report = read_json(&report_path);
+    assert!(report["canonical_reference"]["seqcol_digest"].is_null());
+    assert!(report["canonical_reference"]["name_length_pairs_digest"].is_null());
+    assert!(report["canonical_reference"]["sorted_name_length_pairs_digest"].is_null());
 }
 
 #[test]

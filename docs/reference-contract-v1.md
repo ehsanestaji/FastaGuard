@@ -1,6 +1,6 @@
 # FastaGuard 1.0 Reference Contract
 
-Status: design baseline approved; written specification awaiting final review
+Status: implementation-ready; contract freeze pending release version and publication approval
 Date: 2026-08-28
 
 ## Summary
@@ -653,11 +653,12 @@ Add BAM, CRAM, VCF, BCF and GFF3 adapters; complete report parity; publish the
 fixture corpus and differential results; and distribute prerelease packages and
 containers.
 
-### Laboratory pilot
+### Optional adoption feedback
 
-Run at least three independent pilot evaluations spanning human, microbial and
-non-model work. Record time to first useful result, false or confusing
-classifications, workflow changes and whether each group would retain the gate.
+Report-only pilots are optional after the release. They may cover human,
+microbial, or non-model work and can record time to first useful result, false
+or confusing classifications, and workflow changes. They do not gate the 1.0
+release and do not alter a laboratory's workflow policy without its own review.
 
 ### 1.0 release candidate
 
@@ -678,15 +679,15 @@ FastaGuard 1.0 is ready only when:
    corpus;
 2. every documented FastaGuard 0.7 workflow remains operational;
 3. report and semantic-manifest output is deterministic;
-4. three independent groups complete pilots and at least two choose to retain
-   the gate;
+4. the accepted automated corpus covers human, microbial, and non-model
+   references, with expected compatibility outcomes for each supported
+   declaration format;
 5. a new user can install the tool and obtain an interpretable result within
    five minutes using the quickstart;
-6. public evidence covers human, microbial and non-model references;
-7. performance and memory behaviour are documented with reproducible commands;
-8. packages, containers, schema discovery and finding discovery pass release
+6. performance and memory behaviour are documented with reproducible commands;
+7. packages, containers, schema discovery and finding discovery pass release
    checks; and
-9. documentation contains no unsupported acceptance, correctness or biological
+8. documentation contains no unsupported acceptance, correctness or biological
    claims.
 
 ## Privacy and operational safety

@@ -2,11 +2,26 @@
 
 ## Current Release
 
-FastaGuard v0.7.0 is the current source release and focuses on operational
-trust. The published GitHub, Bioconda, and BioContainers artifacts remain
-v0.6.0 until their v0.7 updates are released. Bioconda serves `linux-64`,
-`linux-aarch64`, `osx-64`, and `osx-arm64`; the published BioContainers tag is
-`0.6.0--hfa8f182_0`.
+FastaGuard v1.0.0-rc.1 is the current source release candidate and introduces
+the Reference Contract Gate. The published GitHub, Bioconda, and BioContainers
+artifacts remain v0.6.0. Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`,
+and `osx-arm64`; the published BioContainers tag is `0.6.0--hfa8f182_0`.
+
+## v1.0: Reference Contract Gate
+
+Goal:
+
+```text
+Make reference compatibility explicit before a workflow consumes coordinates.
+```
+
+Release-candidate scope:
+
+- canonical FASTA identity with explicit aliases only
+- FAI, sequence dictionary, BAM, CRAM, VCF, BCF, and GFF3 declarations
+- strict, coordinate, and advisory compatibility policies
+- stable JSON, TSV, HTML, MultiQC, and portable lockfile outputs
+- preserved v0.7 report schemas and workflow integrations
 
 ## v0.1: Assembly Preflight
 

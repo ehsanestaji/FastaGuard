@@ -35,30 +35,26 @@ class ReleaseMetadataTest(unittest.TestCase):
         binary.chmod(0o755)
         return project
 
-    def test_package_targets_v0_7_0(self):
+    def test_package_targets_v1_0_0_release_candidate(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
 
-        self.assertEqual(cargo["package"]["version"], "0.7.0")
+        self.assertEqual(cargo["package"]["version"], "1.0.0-rc.1")
 
-    def test_v0_7_0_release_notes_define_operational_trust_contract(self):
-        notes = ROOT / "docs" / "releases" / "v0.7.0.md"
+    def test_v1_0_0_release_candidate_notes_define_reference_contract(self):
+        notes = ROOT / "docs" / "releases" / "v1.0.0-rc.1.md"
 
         self.assertTrue(notes.exists())
         text = notes.read_text()
         for expected in [
-            "FastaGuard v0.7.0",
-            "Operational Trust",
-            "ncbi_genome",
-            "FASTA preflight only",
-            "machine_summary.safe_for_downstream",
-            "gate.can_continue",
-            "--outdir",
-            "--force",
-            "Release verification is complete",
-            "Publication is pending release approval",
-            "those runtime gaps are\nnot publication blockers",
-            "no independent adjacent\ndigest",
-            "no single-case selector",
+            "FastaGuard v1.0.0-rc.1",
+            "Reference Contract Gate",
+            "fastaguard reference",
+            "schema version `0.7.0`",
+            "Reference Contract schema version `1.0.0`",
+            "nf-core",
+            "Snakemake",
+            "Release candidate",
+            "not a public release",
         ]:
             with self.subTest(expected=expected):
                 self.assertIn(expected, text)
@@ -75,7 +71,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(ROOT / "scripts" / "package_release_artifact.sh"),
                     "test-target",
-                    "0.7.0",
+                    "1.0.0-rc.1",
                     str(binary),
                     str(dist),
                 ],
@@ -95,8 +91,8 @@ class ReleaseMetadataTest(unittest.TestCase):
                 names = set(package.getnames())
 
             top_levels = {name.split("/", 1)[0] for name in names}
-            self.assertEqual(top_levels, {"fastaguard-0.7.0-test-target"})
-            root = "fastaguard-0.7.0-test-target"
+            self.assertEqual(top_levels, {"fastaguard-1.0.0-rc.1-test-target"})
+            root = "fastaguard-1.0.0-rc.1-test-target"
             for expected in [
                 f"{root}/fastaguard",
                 f"{root}/README.md",
@@ -120,7 +116,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(project / "scripts" / "package_release_artifact.sh"),
                     host,
-                    "0.7.0",
+                    "1.0.0-rc.1",
                 ],
                 cwd=project,
                 capture_output=True,
@@ -130,7 +126,7 @@ class ReleaseMetadataTest(unittest.TestCase):
 
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertTrue(
-                (project / "dist" / f"fastaguard-0.7.0-{host}.tar.gz").exists()
+                (project / "dist" / f"fastaguard-1.0.0-rc.1-{host}.tar.gz").exists()
             )
 
     def test_release_archive_rejects_host_fallback_for_foreign_target(self):
@@ -147,7 +143,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(project / "scripts" / "package_release_artifact.sh"),
                     foreign_target,
-                    "0.7.0",
+                    "1.0.0-rc.1",
                 ],
                 cwd=project,
                 capture_output=True,
