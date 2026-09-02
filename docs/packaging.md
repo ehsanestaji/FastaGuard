@@ -8,11 +8,11 @@ Treat packaging as part of the product, not as a later chore. For bioinformatics
 Bioconda -> BioContainers -> GitHub release binaries -> Docker image -> Homebrew later
 ```
 
-FastaGuard v1.0.0-rc.1 source and package metadata prepare the Reference
-Contract release candidate. FastaGuard v0.6.0 is published on GitHub with Linux
-and macOS release binaries. Bioconda serves v0.6.0 on `linux-64`,
+FastaGuard v1.0.0 source and package metadata prepare the Reference Contract
+release. FastaGuard v0.7.0 is published on GitHub with Linux
+and macOS release binaries. Bioconda serves v0.7.0 on `linux-64`,
 `linux-aarch64`, `osx-64`, and `osx-arm64` platforms. BioContainers provides
-the pinned v0.6 workflow image `quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0`
+the pinned v0.7 workflow image `quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0`
 generated from the Bioconda package. Docker remains useful for local smoke tests.
 
 The current published package includes the `--gate submission` and
@@ -24,13 +24,13 @@ confirmed Bioconda and BioContainers versions before advertising them as live.
 Recommended install:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.6.0
+mamba install -c conda-forge -c bioconda fastaguard=0.7.0
 ```
 
 Conda equivalent:
 
 ```bash
-conda install -c conda-forge -c bioconda fastaguard=0.6.0
+conda install -c conda-forge -c bioconda fastaguard=0.7.0
 ```
 
 Verify the installed package:
@@ -43,7 +43,7 @@ fastaguard --finding-catalog
 
 Current published package:
 
-- Version: `0.6.0`
+- Version: `0.7.0`
 - Platforms: `linux-64`, `linux-aarch64`, `osx-64`, `osx-arm64`
 - Package page: [anaconda.org/bioconda/fastaguard](https://anaconda.org/bioconda/fastaguard)
 - Recipe page: [Bioconda fastaguard recipe](https://bioconda.github.io/recipes/fastaguard/README.html)
@@ -67,7 +67,7 @@ Run it:
   --multiqc fastaguard_mqc.json
 ```
 
-Run a local v0.6 submission-readiness preflight before official validators:
+Run a local submission-readiness preflight before official validators:
 
 ```bash
 ./target/release/fastaguard testdata/submission_ids.fa \
@@ -106,8 +106,8 @@ Build and inspect a host archive locally:
 
 ```bash
 cargo build --release --locked
-scripts/package_release_artifact.sh "$(rustc -vV | sed -n 's/^host: //p')" 1.0.0-rc.1
-tar -tzf "dist/fastaguard-1.0.0-rc.1-$(rustc -vV | sed -n 's/^host: //p').tar.gz"
+scripts/package_release_artifact.sh "$(rustc -vV | sed -n 's/^host: //p')" 1.0.0
+tar -tzf "dist/fastaguard-1.0.0-$(rustc -vV | sed -n 's/^host: //p').tar.gz"
 ```
 
 Each archive has one top-level directory containing `fastaguard`, `README.md`,
@@ -190,7 +190,7 @@ The Bioconda recipe has merged upstream and generated a BioContainers image.
 Use the pinned tag in workflow examples:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
 ```
 
 That path is preferable to maintaining a separate BioContainers Dockerfile.
@@ -199,11 +199,11 @@ The tag can be checked on the
 
 ## Apptainer
 
-Apptainer can execute the published v0.6.0 BioContainers OCI image directly:
+Apptainer can execute the published v0.7.0 BioContainers OCI image directly:
 
 ```bash
 apptainer exec --bind "$PWD:/work" \
-  docker://quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0 \
+  docker://quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0 \
   fastaguard /work/sample.fa \
   --out /work/fastaguard_report.html \
   --json /work/fastaguard.json \
@@ -214,7 +214,7 @@ apptainer exec --bind "$PWD:/work" \
 This follows Apptainer's documented support for `docker://` images hosted on
 Quay. See the official
 [Docker and OCI container guide](https://apptainer.org/docs/user/latest/docker_and_oci.html).
-No v1.0.0-rc.1 container tag should be substituted until it appears in the registry.
+No v1.0.0 container tag should be substituted until it appears in the registry.
 
 ## MultiQC
 

@@ -7,11 +7,11 @@ local compatibility reference and copy-paste starter for future releases.
 
 See `../../../docs/workflow-readiness.md` for the current update checklist.
 
-Published Bioconda and BioContainers provide FastaGuard v0.6.0:
+Published Bioconda and BioContainers provide FastaGuard v0.7.0:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.6.0
-docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
+mamba install -c conda-forge -c bioconda fastaguard=0.7.0
+docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
 ```
 
 Run the local starter from this directory with a `sample.fa` input:
@@ -49,7 +49,7 @@ strict JSON boolean and returns workflow-local status `0` for `true`, `2` for
 verdict and gate context for logs; it does not run FastaGuard and never guesses
 continuation from `verdict.status` or `gate.status`.
 
-The wrapper includes a v0.6 Conda environment:
+The wrapper includes a v0.7 Conda environment:
 
 ```bash
 snakemake -s Snakefile --cores 1 --use-conda

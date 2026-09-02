@@ -88,7 +88,7 @@ class CommunityHealthTest(unittest.TestCase):
 
         self.assertEqual(citation["cff-version"], "1.2.0")
         self.assertEqual(citation["title"], "FastaGuard")
-        self.assertEqual(citation["version"], "0.6.0")
+        self.assertEqual(citation["version"], "0.7.0")
         self.assertEqual(
             citation["repository-code"],
             "https://github.com/ehsanestaji/FastaGuard",

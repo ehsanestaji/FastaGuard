@@ -8,12 +8,14 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[2]
-CURRENT_VERSION = "0.6.0"
-CURRENT_CONTAINER = "0.6.0--hfa8f182_0"
+CURRENT_VERSION = "0.7.0"
+CURRENT_CONTAINER = "0.7.0--hfa8f182_0"
 CURRENT_SOURCE_SHA256 = (
-    "b57e967ccaa03ef5e70c14b96247a644750d8bd492360633988f2f53fe84184b"
+    "80a5a350cb58c708c4c15a01cf76cb67356aa45c31f97fe3e104414de690a54c"
 )
 
 
@@ -35,26 +37,26 @@ class ReleaseMetadataTest(unittest.TestCase):
         binary.chmod(0o755)
         return project
 
-    def test_package_targets_v1_0_0_release_candidate(self):
+    def test_package_targets_v1_0_0_release(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
 
-        self.assertEqual(cargo["package"]["version"], "1.0.0-rc.1")
+        self.assertEqual(cargo["package"]["version"], "1.0.0")
 
-    def test_v1_0_0_release_candidate_notes_define_reference_contract(self):
-        notes = ROOT / "docs" / "releases" / "v1.0.0-rc.1.md"
+    def test_v1_0_0_release_notes_define_reference_contract(self):
+        notes = ROOT / "docs" / "releases" / "v1.0.0.md"
 
         self.assertTrue(notes.exists())
-        text = notes.read_text()
+        text = " ".join(notes.read_text().split())
         for expected in [
-            "FastaGuard v1.0.0-rc.1",
+            "FastaGuard v1.0.0",
             "Reference Contract Gate",
             "fastaguard reference",
             "schema version `0.7.0`",
             "Reference Contract schema version `1.0.0`",
             "nf-core",
             "Snakemake",
-            "Release candidate",
-            "not a public release",
+            "Release preparation",
+            "does not claim published GitHub, Bioconda, or BioContainers artifacts",
         ]:
             with self.subTest(expected=expected):
                 self.assertIn(expected, text)
@@ -71,7 +73,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(ROOT / "scripts" / "package_release_artifact.sh"),
                     "test-target",
-                    "1.0.0-rc.1",
+                    "1.0.0",
                     str(binary),
                     str(dist),
                 ],
@@ -91,8 +93,8 @@ class ReleaseMetadataTest(unittest.TestCase):
                 names = set(package.getnames())
 
             top_levels = {name.split("/", 1)[0] for name in names}
-            self.assertEqual(top_levels, {"fastaguard-1.0.0-rc.1-test-target"})
-            root = "fastaguard-1.0.0-rc.1-test-target"
+            self.assertEqual(top_levels, {"fastaguard-1.0.0-test-target"})
+            root = "fastaguard-1.0.0-test-target"
             for expected in [
                 f"{root}/fastaguard",
                 f"{root}/README.md",
@@ -116,7 +118,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(project / "scripts" / "package_release_artifact.sh"),
                     host,
-                    "1.0.0-rc.1",
+                    "1.0.0",
                 ],
                 cwd=project,
                 capture_output=True,
@@ -126,7 +128,7 @@ class ReleaseMetadataTest(unittest.TestCase):
 
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertTrue(
-                (project / "dist" / f"fastaguard-1.0.0-rc.1-{host}.tar.gz").exists()
+                (project / "dist" / f"fastaguard-1.0.0-{host}.tar.gz").exists()
             )
 
     def test_release_archive_rejects_host_fallback_for_foreign_target(self):
@@ -143,7 +145,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(project / "scripts" / "package_release_artifact.sh"),
                     foreign_target,
-                    "1.0.0-rc.1",
+                    "1.0.0",
                 ],
                 cwd=project,
                 capture_output=True,
@@ -157,10 +159,39 @@ class ReleaseMetadataTest(unittest.TestCase):
             self.assertIn("target-specific release binary", completed.stderr)
             self.assertFalse((project / "dist").exists())
 
-    def test_bioconda_recipe_tracks_published_v0_6_0_archive(self):
+    def test_release_workflow_collects_cross_platform_checksums(self):
+        workflow = yaml.safe_load(
+            (ROOT / ".github" / "workflows" / "release.yml").read_text()
+        )
+        job = workflow["jobs"]["checksums"]
+        steps = job["steps"]
+
+        self.assertEqual(job["needs"], "build")
+        self.assertTrue(
+            any(
+                step.get("uses") == "actions/download-artifact@v8.0.1"
+                and step.get("with", {}).get("merge-multiple") is True
+                for step in steps
+            )
+        )
+        self.assertTrue(
+            any(
+                "shasum -a 256 *.tar.gz > SHA256SUMS" in step.get("run", "")
+                for step in steps
+            )
+        )
+        self.assertTrue(
+            any(
+                step.get("uses") == "actions/upload-artifact@v7.0.1"
+                and step.get("with", {}).get("path") == "dist/SHA256SUMS"
+                for step in steps
+            )
+        )
+
+    def test_bioconda_recipe_tracks_published_v0_7_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
 
-        self.assertIn('{% set version = "0.6.0" %}', recipe)
+        self.assertIn('{% set version = "0.7.0" %}', recipe)
         self.assertIn("fastaguard --version | grep {{ version }}", recipe)
 
     def test_v0_2_0_release_notes_exist(self):
@@ -227,12 +258,12 @@ class ReleaseMetadataTest(unittest.TestCase):
                     description = text[start : start + 120]
                     self.assertIn("output-write", description, description)
 
-    def test_bioconda_recipe_has_publishable_v0_6_0_source_sha(self):
+    def test_bioconda_recipe_has_publishable_v0_7_0_source_sha(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         marker = "REPLACE" + "_WITH_"
 
         self.assertTrue((ROOT / "docs" / "releases" / "v0.6.0.md").exists())
-        self.assertIn('{% set version = "0.6.0" %}', recipe)
+        self.assertIn('{% set version = "0.7.0" %}', recipe)
         self.assertNotIn(marker, recipe)
 
         match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
@@ -280,6 +311,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 report = json.loads(path.read_text())
                 self.assertEqual(report["tool"]["version"], source_version)
                 self.assertEqual(report["schema_version"], "0.7.0")
+                self.assertEqual(report["report_type"], "assembly")
 
     def test_bioconda_recipe_avoids_unneeded_runtime_zlib(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()

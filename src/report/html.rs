@@ -830,6 +830,7 @@ mod tests {
     fn test_report() -> FastaguardReport {
         FastaguardReport {
             schema_version: "0.1.0".to_string(),
+            report_type: "assembly".to_string(),
             tool: ToolInfo {
                 name: "FastaGuard".to_string(),
                 version: "0.1.0".to_string(),

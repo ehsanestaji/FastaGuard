@@ -2,12 +2,12 @@
 
 ## Current State
 
-FastaGuard is ready for workflow use through the published v0.6.0 Bioconda
+FastaGuard is ready for workflow use through the published v0.7.0 Bioconda
 package and BioContainers image:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.6.0
-docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
+mamba install -c conda-forge -c bioconda fastaguard=0.7.0
+docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
 ```
 
 The repository includes local starters for:
@@ -58,7 +58,7 @@ official submission validators. The default workflow pattern is:
 collect FASTA-level evidence -> apply stop/go policy -> route downstream tools
 ```
 
-With the published v0.6 runtime, `--gate pipeline` and `--gate submission`
+With the published v0.7 runtime, `--gate pipeline` and `--gate submission`
 write JSON, TSV, HTML, and MultiQC-compatible evidence while successful report
 generation returns exit code `0`. Stop/go enforcement belongs to a downstream
 gate step. The important contract fields are:

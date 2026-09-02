@@ -2030,6 +2030,8 @@ fn valid_assembly_json_matches_golden_contract() {
     .success()
     .stderr(predicate::str::contains("FastaGuard verdict="));
 
+    let report = read_json(&paths.json);
+    assert_eq!(report["report_type"], json!("assembly"));
     assert_json_matches_golden(&paths.json, "tests/golden/valid_assembly.json");
 }
 

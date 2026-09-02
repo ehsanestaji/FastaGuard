@@ -15,9 +15,9 @@ Bioconda published -> BioContainers available -> MultiQC plugin -> public benchm
 
 Goal: make installation natural for bioinformatics users.
 
-Status: GitHub, Bioconda, and BioContainers publish FastaGuard v0.6.0.
+Status: GitHub, Bioconda, and BioContainers publish FastaGuard v0.7.0.
 Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`;
-BioContainers publishes `quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0`.
+BioContainers publishes `quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0`.
 
 - Keep GitHub release binaries working.
 - Keep Docker smoke tests passing.
@@ -27,12 +27,12 @@ BioContainers publishes `quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0`.
 Done when:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.6.0
+mamba install -c conda-forge -c bioconda fastaguard=0.7.0
 fastaguard --schema
 ```
 
 works in a clean environment, and workflow engines can pull the pinned
-BioContainers image. This is now true for v0.6.0; keep repeating the same
+BioContainers image. This is now true for v0.7.0; keep repeating the same
 check for future releases.
 
 ## Phase 2: Aggregate
@@ -112,7 +112,7 @@ Goal: make the current published tool discoverable and gather useful adoption
 evidence without collecting user sequence data.
 
 - Keep `docs/biotools-registration.json` as a reviewable bio.tools draft until
-  a maintainer submits it. It is pinned to the published v0.6.0 distribution
+  a maintainer submits it. It is pinned to the published v0.7.0 distribution
   and uses EDAM `format_1929` (FASTA) with `operation_3180` (Sequence assembly
   validation).
 - Offer optional report-only feedback pilots using `docs/pilots.md` before a
@@ -124,7 +124,7 @@ evidence without collecting user sequence data.
   reviewing the registration draft.
 
 The draft does not claim that a bio.tools record has been registered or that a
-v1.0.0-rc.1 package has been published.
+v1.0.0 package has been published.
 
 ## Phase 7: Expand
 

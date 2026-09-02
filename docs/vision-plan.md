@@ -245,11 +245,11 @@ time.
 
 ## Current Recommendation
 
-FastaGuard v1.0.0-rc.1 is the current source release candidate. It adds the
+FastaGuard v1.0.0 is the current source release preparation. It adds the
 Reference Contract Gate while preserving the operational-trust behaviour of
-v0.7. Published GitHub, Bioconda, and BioContainers artifacts remain v0.6.0.
+v0.7. Published GitHub, Bioconda, and BioContainers artifacts remain v0.7.0.
 Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`, and the
-published BioContainers tag is `0.6.0--hfa8f182_0`.
+published BioContainers tag is `0.7.0--hfa8f182_0`.
 
 Recommended sequence:
 

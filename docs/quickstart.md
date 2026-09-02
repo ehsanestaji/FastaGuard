@@ -1,15 +1,15 @@
 # Five-minute quickstart
 
-This path uses the current published FastaGuard distribution, v0.6.0. The
-v1.0.0-rc.1 source tree contains the Reference Contract release candidate, but
-no v1.0.0-rc.1 Bioconda package or BioContainers image is claimed here.
+This path uses the current published FastaGuard distribution, v0.7.0. The
+v1.0.0 source tree prepares the Reference Contract release, but no v1.0.0
+Bioconda package or BioContainers image is claimed here.
 
 ## 1. Install the published CLI
 
 With Bioconda:
 
 ```bash
-mamba create -n fastaguard -c conda-forge -c bioconda fastaguard=0.6.0
+mamba create -n fastaguard -c conda-forge -c bioconda fastaguard=0.7.0
 mamba activate fastaguard
 fastaguard --version
 ```
@@ -70,10 +70,10 @@ python3 -c 'import csv; rows = {row["metric"]: row["value"] for row in csv.DictR
 See [report interpretation](report-interpretation.md) before turning findings
 into workflow policy.
 
-## v1.0.0-rc.1 source preview: bundle mode
+## v1.0.0 source preview: bundle mode
 
-The shorter bundle command below belongs to the current v1.0.0-rc.1 source
-tree. It is not evidence of a published v1.0.0-rc.1 package or container:
+The shorter bundle command below belongs to the current v1.0.0 source tree. It
+is not evidence of a published v1.0.0 package or container:
 
 ```bash
 cargo install --path . --locked
@@ -83,13 +83,13 @@ fastaguard sample.fa --outdir reports --prefix sample-01
 It writes the same four names listed above. Existing outputs are protected
 unless `--force` is supplied.
 
-## Container alternatives for published v0.6.0
+## Container alternatives for published v0.7.0
 
 Docker:
 
 ```bash
 docker run --rm -v "$PWD:/work" \
-  quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0 \
+  quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0 \
   fastaguard /work/sample.fa --json /work/reports/sample-01.fastaguard.json
 ```
 
@@ -97,7 +97,7 @@ Apptainer can execute the same public OCI image from Quay:
 
 ```bash
 apptainer exec --bind "$PWD:/work" \
-  docker://quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0 \
+  docker://quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0 \
   fastaguard /work/sample.fa --json /work/reports/sample-01.fastaguard.json
 ```
 

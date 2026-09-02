@@ -49,10 +49,10 @@ downstream tool.
 
 | Channel | Status |
 | --- | --- |
-| Source/package metadata | `v1.0.0-rc.1` Reference Contract release candidate |
-| GitHub release | `v0.6.0` release binaries are published |
-| Bioconda | `v0.6.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
-| BioContainers | `0.6.0--hfa8f182_0` is the published pinned workflow image |
+| Source/package metadata | `v1.0.0` Reference Contract release preparation |
+| GitHub release | `v0.7.0` release binaries are published |
+| Bioconda | `v0.7.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
+| BioContainers | `0.7.0--hfa8f182_0` is the published pinned workflow image |
 | Source build | local checkout builds report the package version from `Cargo.toml` |
 
 ## Install
@@ -63,41 +63,41 @@ reports, use the [five-minute quickstart](docs/quickstart.md).
 Published bioinformatics install:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.6.0
+mamba install -c conda-forge -c bioconda fastaguard=0.7.0
 ```
 
 Published containerized workflow install:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
 ```
 
 Run through BioContainers:
 
 ```bash
-docker run --rm quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0 fastaguard --version
+docker run --rm quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0 fastaguard --version
 ```
 
 GitHub release binary for Linux x86_64:
 
 ```bash
-curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.6.0/fastaguard-v0.6.0-x86_64-unknown-linux-gnu.tar.gz
-tar -xzf fastaguard-v0.6.0-x86_64-unknown-linux-gnu.tar.gz
-./fastaguard-v0.6.0-x86_64-unknown-linux-gnu/fastaguard --version
+curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.7.0/fastaguard-v0.7.0-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf fastaguard-v0.7.0-x86_64-unknown-linux-gnu.tar.gz
+./fastaguard-v0.7.0-x86_64-unknown-linux-gnu/fastaguard --version
 ```
 
 GitHub release binary for macOS Apple Silicon:
 
 ```bash
-curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.6.0/fastaguard-v0.6.0-aarch64-apple-darwin.tar.gz
-tar -xzf fastaguard-v0.6.0-aarch64-apple-darwin.tar.gz
-./fastaguard-v0.6.0-aarch64-apple-darwin/fastaguard --version
+curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.7.0/fastaguard-v0.7.0-aarch64-apple-darwin.tar.gz
+tar -xzf fastaguard-v0.7.0-aarch64-apple-darwin.tar.gz
+./fastaguard-v0.7.0-aarch64-apple-darwin/fastaguard --version
 ```
 
 Build from the latest published Git tag:
 
 ```bash
-cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v0.6.0
+cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v0.7.0
 fastaguard --version
 ```
 
@@ -160,7 +160,7 @@ fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
 ```
 
 This command first shipped in the v0.4 GitHub release and is included in the
-published v0.6.0 Bioconda package and BioContainers image.
+published v0.7.0 Bioconda package and BioContainers image.
 
 Submission-readiness preflight:
 
@@ -229,10 +229,10 @@ docker run --rm -v "$PWD:/data" fastaguard:local /data/sample.fa \
   --multiqc /data/fastaguard_mqc.json
 ```
 
-Published BioContainers provides the v0.6 image for workflow engines:
+Published BioContainers provides the v0.7 image for workflow engines:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
 ```
 
 Starting with FastaGuard v0.6.0, exit codes are:
@@ -268,7 +268,7 @@ fi
 
 ## Reference compatibility gate
 
-The release-candidate `reference` command checks whether explicitly supplied
+The v1.0 `reference` command checks whether explicitly supplied
 reference declarations agree with one canonical FASTA. It does not discover
 sidecar files from names or directories.
 
@@ -283,7 +283,7 @@ fastaguard reference reference.fa \
   --outdir reports
 ```
 
-The release candidate supports FASTA indexes (`.fai`), SAM sequence
+The v1.0 source supports FASTA indexes (`.fai`), SAM sequence
 dictionaries (`.dict`), BAM and CRAM headers, VCF and BCF contig declarations,
 and GFF3 sequence declarations and coordinate bounds. It reads headers only for
 BAM, CRAM, VCF and BCF; it does not scan alignment or variant records. GTF is
@@ -483,7 +483,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.5 public evidence workflow](docs/evidence/fastaguard-v0.5-public-evidence.md)
 - [v0.6 public evidence](docs/evidence/fastaguard-v0.6-public-evidence.md)
 - [Packaging](docs/packaging.md)
-- [v1.0.0-rc.1 release notes](docs/releases/v1.0.0-rc.1.md)
+- [v1.0.0 release notes](docs/releases/v1.0.0.md)
 - [v0.7.0 release notes](docs/releases/v0.7.0.md)
 - [v0.6.0 release notes](docs/releases/v0.6.0.md)
 - [v0.5.0 release notes](docs/releases/v0.5.0.md)
@@ -494,17 +494,17 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.1.0 release notes](docs/releases/v0.1.0.md)
 - [Roadmap](docs/roadmap.md)
 
-Citation metadata for the current published v0.6.0 distribution is provided in
-[`CITATION.cff`](CITATION.cff). The v1.0.0-rc.1 source and package metadata are
+Citation metadata for the current published v0.7.0 distribution is provided in
+[`CITATION.cff`](CITATION.cff). The v1.0.0 source and package metadata are
 release preparation until corresponding public artifacts are published.
 
 ## Status
 
-FastaGuard v1.0.0-rc.1 source and package metadata prepare the Reference
-Contract release candidate. The latest published GitHub, Bioconda, and
-BioContainers artifacts remain v0.6.0 until a separately authorised release
+FastaGuard v1.0.0 source and package metadata prepare the Reference Contract
+release. The latest published GitHub, Bioconda, and
+BioContainers artifacts remain v0.7.0 until a separately authorised release
 and downstream package updates are published.
 
-Bioconda serves v0.6.0 for `linux-64`, `linux-aarch64`, `osx-64`, and
-`osx-arm64`. BioContainers publishes the pinned v0.6 workflow image
-`quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0`.
+Bioconda serves v0.7.0 for `linux-64`, `linux-aarch64`, `osx-64`, and
+`osx-arm64`. BioContainers publishes the pinned v0.7 workflow image
+`quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0`.

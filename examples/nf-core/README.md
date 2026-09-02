@@ -21,11 +21,11 @@ The module emits four QC reports plus version metadata:
 - `versions_fastaguard` on the versions topic
 
 The module assumes `fastaguard` is available on `PATH` when run without a
-container. The published v0.6 install and pinned workflow image are:
+container. The published v0.7 install and pinned workflow image are:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.6.0
-docker pull quay.io/biocontainers/fastaguard:0.6.0--hfa8f182_0
+mamba install -c conda-forge -c bioconda fastaguard=0.7.0
+docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
 ```
 
 The reusable module does not select a profile or gate. Callers pass optional

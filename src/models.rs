@@ -25,6 +25,7 @@ const GC_LENGTH_POINT_LIMIT: usize = 5_000;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FastaguardReport {
     pub schema_version: String,
+    pub report_type: String,
     pub tool: ToolInfo,
     pub input: InputInfo,
     pub verdict: Verdict,
@@ -387,6 +388,7 @@ impl FastaguardReport {
 
         Ok(Self {
             schema_version: SCHEMA_VERSION.to_string(),
+            report_type: "assembly".to_string(),
             tool: ToolInfo {
                 name: TOOL_NAME.to_string(),
                 version: TOOL_VERSION.to_string(),
@@ -486,6 +488,7 @@ impl FastaguardReport {
 
         Ok(Self {
             schema_version: SCHEMA_VERSION.to_string(),
+            report_type: "assembly".to_string(),
             tool: ToolInfo {
                 name: TOOL_NAME.to_string(),
                 version: TOOL_VERSION.to_string(),

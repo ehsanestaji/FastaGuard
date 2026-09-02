@@ -2,7 +2,7 @@ cff-version: "1.2.0"
 message: "If you use FastaGuard, please cite this software."
 type: software
 title: "FastaGuard"
-version: "0.6.0"
+version: "0.7.0"
 repository-code: "https://github.com/ehsanestaji/FastaGuard"
 license: "MIT"
 authors:

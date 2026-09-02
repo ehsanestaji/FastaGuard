@@ -1,8 +1,9 @@
 {
   "schema_version": "0.7.0",
+  "report_type": "assembly",
   "tool": {
     "name": "FastaGuard",
-    "version": "1.0.0-rc.1"
+    "version": "1.0.0"
   },
   "input": {
     "path": "testdata/problem_assembly.fa",

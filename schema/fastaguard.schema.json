@@ -37,6 +37,9 @@
           "const": "0.7.0",
           "description": "Version of the FastaGuard report schema."
         },
+        "report_type": {
+          "const": "assembly"
+        },
         "tool": {
           "type": "object",
           "required": [
