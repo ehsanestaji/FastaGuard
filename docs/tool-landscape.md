@@ -81,7 +81,8 @@ Current product evidence:
 - Rust CLI builds and runs as a single binary.
 - Docker build and smoke test pass.
 - GitHub release workflow builds Linux and macOS binaries.
-- FastaGuard v0.7.0 is published on GitHub with Linux and macOS binaries.
+- FastaGuard v1.0.0 is the Reference Contract Gate source release with Linux
+  and macOS binaries.
 - FastaGuard v0.7.0 is published on Bioconda for `linux-64`,
   `linux-aarch64`, `osx-64`, and `osx-arm64`.
 - Clean Bioconda install has been smoke-tested with `fastaguard --schema`.

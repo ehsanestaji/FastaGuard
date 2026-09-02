@@ -1,8 +1,8 @@
 # Five-minute quickstart
 
-This path uses the current published FastaGuard distribution, v0.7.0. The
-v1.0.0 source release candidate prepares the Reference Contract Gate, but no
-v1.0.0 GitHub release, Bioconda package, or BioContainers image is claimed here.
+This path uses the current Bioconda and BioContainers distribution, v0.7.0.
+The v1.0.0 GitHub source release adds the Reference Contract Gate; downstream
+packages remain at v0.7.0 until their update is published.
 
 ## 1. Install the published CLI
 
@@ -70,10 +70,10 @@ python3 -c 'import csv; rows = {row["metric"]: row["value"] for row in csv.DictR
 See [report interpretation](report-interpretation.md) before turning findings
 into workflow policy.
 
-## v1.0.0 source candidate: bundle mode
+## v1.0.0 source release: bundle mode
 
-The shorter bundle command belongs to the current v1.0.0 source tree. It is not
-evidence of a published v1.0.0 tag, package, or container:
+Until the downstream packages are updated, install v1.0.0 from its GitHub tag
+or use a local source checkout for the shorter bundle command:
 
 ```bash
 cargo install --path . --locked

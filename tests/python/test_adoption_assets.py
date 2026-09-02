@@ -100,7 +100,7 @@ class AdoptionAssetsTest(unittest.TestCase):
         registration = registration_document[0]
 
         self.assertEqual(registration["name"], "FastaGuard")
-        self.assertEqual(registration["version"], ["0.7.0"])
+        self.assertEqual(registration["version"], ["1.0.0"])
         self.assertEqual(registration["license"], "MIT")
         self.assertIn("Command-line tool", registration["toolType"])
         functions = registration["function"]
@@ -126,6 +126,13 @@ class AdoptionAssetsTest(unittest.TestCase):
             {"http://edamontology.org/format_1929"},
         )
         self.assertIn("FASTA-level", registration["description"])
+        github_download = next(
+            download
+            for download in registration["download"]
+            if download["type"] == "Binaries"
+        )
+        self.assertEqual(github_download["version"], "1.0.0")
+        self.assertTrue(github_download["url"].endswith("/releases/tag/v1.0.0"))
         overclaims = [
             r"assesses? biological completeness",
             r"confirms? contamination",

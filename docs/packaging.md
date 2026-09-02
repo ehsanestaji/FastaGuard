@@ -8,9 +8,9 @@ Treat packaging as part of the product, not as a later chore. For bioinformatics
 Bioconda -> BioContainers -> GitHub release binaries -> Docker image -> Homebrew later
 ```
 
-FastaGuard v1.0.0 source and package metadata prepare the Reference Contract
-release. FastaGuard v0.7.0 is published on GitHub with Linux and macOS release
-binaries. Bioconda serves v0.7.0 on `linux-64`,
+FastaGuard v1.0.0 is the Reference Contract Gate source release and provides
+Linux x86_64, macOS Intel, and macOS Apple Silicon release binaries. Bioconda
+serves v0.7.0 on `linux-64`,
 `linux-aarch64`, `osx-64`, and `osx-arm64` platforms. BioContainers provides
 the pinned v0.7 workflow image `quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0`
 generated from the Bioconda package. Docker remains useful for local smoke tests.

@@ -56,8 +56,9 @@ class ReleaseMetadataTest(unittest.TestCase):
             "nf-core",
             "Snakemake",
             "Downstream availability",
-            "GitHub release will include",
+            "GitHub release includes",
             "Bioconda and BioContainers remain at v0.7.0",
+            "The release is validated",
         ]:
             with self.subTest(expected=expected):
                 self.assertIn(expected, text)

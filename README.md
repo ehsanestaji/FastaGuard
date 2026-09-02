@@ -49,8 +49,8 @@ downstream tool.
 
 | Channel | Status |
 | --- | --- |
-| Source/package metadata | `v1.0.0` Reference Contract release preparation |
-| GitHub release | `v0.7.0` release binaries are published |
+| Source release | `v1.0.0` Reference Contract Gate |
+| GitHub release | `v1.0.0` release binaries and checksums |
 | Bioconda | `v0.7.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
 | BioContainers | `0.7.0--hfa8f182_0` is the published pinned workflow image |
 | Source build | local checkout builds report the package version from `Cargo.toml` |
@@ -81,23 +81,23 @@ docker run --rm quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0 fastaguard --
 GitHub release binary for Linux x86_64:
 
 ```bash
-curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.7.0/fastaguard-v0.7.0-x86_64-unknown-linux-gnu.tar.gz
-tar -xzf fastaguard-v0.7.0-x86_64-unknown-linux-gnu.tar.gz
-./fastaguard-v0.7.0-x86_64-unknown-linux-gnu/fastaguard --version
+curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v1.0.0/fastaguard-v1.0.0-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf fastaguard-v1.0.0-x86_64-unknown-linux-gnu.tar.gz
+./fastaguard-v1.0.0-x86_64-unknown-linux-gnu/fastaguard --version
 ```
 
 GitHub release binary for macOS Apple Silicon:
 
 ```bash
-curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v0.7.0/fastaguard-v0.7.0-aarch64-apple-darwin.tar.gz
-tar -xzf fastaguard-v0.7.0-aarch64-apple-darwin.tar.gz
-./fastaguard-v0.7.0-aarch64-apple-darwin/fastaguard --version
+curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v1.0.0/fastaguard-v1.0.0-aarch64-apple-darwin.tar.gz
+tar -xzf fastaguard-v1.0.0-aarch64-apple-darwin.tar.gz
+./fastaguard-v1.0.0-aarch64-apple-darwin/fastaguard --version
 ```
 
 Build from the latest published Git tag:
 
 ```bash
-cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v0.7.0
+cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v1.0.0
 fastaguard --version
 ```
 
@@ -494,17 +494,16 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.1.0 release notes](docs/releases/v0.1.0.md)
 - [Roadmap](docs/roadmap.md)
 
-Citation metadata follows the v1.0.0 source release candidate in
-[`CITATION.cff`](CITATION.cff). Public release downloads remain at v0.7.0 until
-publication.
+Citation metadata for the v1.0.0 source release is provided in
+[`CITATION.cff`](CITATION.cff).
 
 ## Status
 
-FastaGuard v1.0.0 source and package metadata prepare the Reference Contract
-release. The latest published GitHub, Bioconda, and BioContainers artifacts
-remain v0.7.0 until a separately authorised release and downstream package
-updates are published.
+FastaGuard v1.0.0 is the Reference Contract Gate source release. GitHub release
+archives include Linux x86_64, macOS Intel, and macOS Apple Silicon binaries
+plus a SHA-256 checksum manifest.
 
-Bioconda serves v0.7.0 for `linux-64`, `linux-aarch64`, `osx-64`, and
-`osx-arm64`. BioContainers publishes the pinned v0.7 workflow image
+Downstream distribution remains staged: Bioconda serves v0.7.0 for `linux-64`,
+`linux-aarch64`, `osx-64`, and `osx-arm64`, and BioContainers publishes the
+pinned v0.7 workflow image
 `quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0`.

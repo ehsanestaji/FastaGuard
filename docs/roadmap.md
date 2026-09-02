@@ -2,10 +2,10 @@
 
 ## Current Release
 
-FastaGuard v1.0.0 is the current source release candidate and introduces the
-Reference Contract Gate. The published GitHub, Bioconda, and BioContainers
-artifacts remain v0.7.0. Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`,
-and `osx-arm64`; the published BioContainers tag is `0.7.0--hfa8f182_0`.
+FastaGuard v1.0.0 is the Reference Contract Gate source release. Downstream
+Bioconda and BioContainers artifacts remain v0.7.0 while their update is in
+progress. Bioconda serves `linux-64`, `linux-aarch64`, `osx-64`, and
+`osx-arm64`; the published BioContainers tag is `0.7.0--hfa8f182_0`.
 
 ## v1.0: Reference Contract Gate
 
