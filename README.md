@@ -114,7 +114,7 @@ Local development build:
 cargo build --release --locked
 ```
 
-Local release-prep install from this checkout:
+Local source install from this checkout:
 
 ```bash
 cargo install --path . --locked
@@ -494,16 +494,16 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.1.0 release notes](docs/releases/v0.1.0.md)
 - [Roadmap](docs/roadmap.md)
 
-Citation metadata for the current published v0.7.0 distribution is provided in
-[`CITATION.cff`](CITATION.cff). The v1.0.0 source and package metadata are
-release preparation until corresponding public artifacts are published.
+Citation metadata follows the v1.0.0 source release candidate in
+[`CITATION.cff`](CITATION.cff). Public release downloads remain at v0.7.0 until
+publication.
 
 ## Status
 
 FastaGuard v1.0.0 source and package metadata prepare the Reference Contract
-release. The latest published GitHub, Bioconda, and
-BioContainers artifacts remain v0.7.0 until a separately authorised release
-and downstream package updates are published.
+release. The latest published GitHub, Bioconda, and BioContainers artifacts
+remain v0.7.0 until a separately authorised release and downstream package
+updates are published.
 
 Bioconda serves v0.7.0 for `linux-64`, `linux-aarch64`, `osx-64`, and
 `osx-arm64`. BioContainers publishes the pinned v0.7 workflow image

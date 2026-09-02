@@ -1,5 +1,6 @@
 import re
 import subprocess
+import tomllib
 import unittest
 from pathlib import Path
 from urllib.parse import urlparse
@@ -88,7 +89,10 @@ class CommunityHealthTest(unittest.TestCase):
 
         self.assertEqual(citation["cff-version"], "1.2.0")
         self.assertEqual(citation["title"], "FastaGuard")
-        self.assertEqual(citation["version"], "0.7.0")
+        source_version = tomllib.loads((ROOT / "Cargo.toml").read_text())["package"][
+            "version"
+        ]
+        self.assertEqual(citation["version"], source_version)
         self.assertEqual(
             citation["repository-code"],
             "https://github.com/ehsanestaji/FastaGuard",

@@ -79,8 +79,9 @@ credible for workflow users.
 Status: the nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
 merged 2026-08-21. The Snakemake wrapper PR
 [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436) merged
-2026-07-27, followed by autobump PR [#5737](https://github.com/snakemake/snakemake-wrappers/pull/5737)
-merged 2026-07-31. Local starters remain useful compatibility references.
+2026-07-27. Its v0.7 dependency update merged in
+[#5826](https://github.com/snakemake/snakemake-wrappers/pull/5826) on
+2026-08-24. Local starters remain useful compatibility references.
 
 Next work:
 
@@ -112,9 +113,9 @@ Goal: make the current published tool discoverable and gather useful adoption
 evidence without collecting user sequence data.
 
 - Keep `docs/biotools-registration.json` as a reviewable bio.tools draft until
-  a maintainer submits it. It is pinned to the published v0.7.0 distribution
-  and uses EDAM `format_1929` (FASTA) with `operation_3180` (Sequence assembly
-  validation).
+  a maintainer submits it. It remains pinned to the published v0.7.0
+  distribution and uses EDAM `format_1929` (FASTA) with `operation_3180`
+  (Sequence assembly validation).
 - Offer optional report-only feedback pilots using `docs/pilots.md` before a
   team enables a new workflow gate.
 - Never request FASTA files, raw sequences, input paths, or unreviewed reports.

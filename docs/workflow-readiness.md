@@ -19,11 +19,13 @@ The repository includes local starters for:
   `examples/workflows/check_fastaguard_gate.py`
 
 The nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
-merged 2026-08-21. The Snakemake wrapper PR
+merged 2026-08-21, and its v0.7 update merged in
+[#12775](https://github.com/nf-core/modules/pull/12775) on 2026-08-24. The
+Snakemake wrapper PR
 [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436) merged
-2026-07-27, and autobump PR [#5737](https://github.com/snakemake/snakemake-wrappers/pull/5737)
-merged 2026-07-31. The repository starters remain local compatibility
-references.
+2026-07-27, and its v0.7 update merged in
+[#5826](https://github.com/snakemake/snakemake-wrappers/pull/5826) on
+2026-08-24. The repository starters remain local compatibility references.
 
 Historical v0.5 upstream-style validation was run on 2026-07-03 in dedicated
 checkouts:
@@ -117,8 +119,10 @@ The local wrapper starter already provides:
 - outputs for HTML, JSON, TSV, and MultiQC custom-content JSON
 
 The merged wrapper is tracked by
-[#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436). For future
-updates, complete this checklist after GitHub and package publication:
+[#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436). The
+maintainer confirmed in [#5826](https://github.com/snakemake/snakemake-wrappers/pull/5826)
+that the weekly dependency bot normally handles version updates. After GitHub
+and package publication, monitor that update and intervene only if it fails:
 
 - regenerate `environment.linux-64.pin.txt` from the wrapper environment if
   the upstream repository requires a solver-produced pin file

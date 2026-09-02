@@ -97,7 +97,9 @@ Current product evidence:
 - nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
   merged 2026-08-21.
 - Snakemake wrapper PR [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436)
-  merged 2026-07-27; autobump PR #5737 merged 2026-07-31.
+  merged 2026-07-27; its v0.7 dependency update merged in
+  [#5826](https://github.com/snakemake/snakemake-wrappers/pull/5826) on
+  2026-08-24.
 - The v0.2 evidence workflow is documented in
   `docs/evidence/fastaguard-v0.2-evidence.md`.
 - The v0.3 gate evidence workflow is documented in

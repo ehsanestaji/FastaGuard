@@ -3,7 +3,9 @@
 This directory mirrors the FastaGuard wrapper merged into
 snakemake-wrappers in
 [PR #5436](https://github.com/snakemake/snakemake-wrappers/pull/5436). It is a
-local compatibility reference and copy-paste starter for future releases.
+local compatibility reference and copy-paste starter for future releases. The
+v0.7 dependency and generated Linux pin were updated in
+[PR #5826](https://github.com/snakemake/snakemake-wrappers/pull/5826).
 
 See `../../../docs/workflow-readiness.md` for the current update checklist.
 
@@ -73,5 +75,5 @@ For a future upstream update, use this safe local order:
 3. Run the upstream `test/Snakefile` and `test_wrappers.py` suite.
 4. Regenerate `environment.linux-64.pin.txt` when the upstream repository
    requires a solver-produced pin file.
-5. Submit an autobump or manual update only when the published dependency or
-   wrapper interface needs to change.
+5. Let the weekly dependency bot update published versions; submit a manual
+   update only when that automation fails or the wrapper interface changes.

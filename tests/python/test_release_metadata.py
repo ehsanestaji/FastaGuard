@@ -55,11 +55,51 @@ class ReleaseMetadataTest(unittest.TestCase):
             "Reference Contract schema version `1.0.0`",
             "nf-core",
             "Snakemake",
-            "Release preparation",
-            "does not claim published GitHub, Bioconda, or BioContainers artifacts",
+            "Downstream availability",
+            "GitHub release will include",
+            "Bioconda and BioContainers remain at v0.7.0",
         ]:
             with self.subTest(expected=expected):
                 self.assertIn(expected, text)
+
+    def test_release_tag_must_match_manifest_version(self):
+        checker = ROOT / "scripts" / "check_release_tag.sh"
+
+        self.assertTrue(checker.is_file(), checker)
+
+        matching = subprocess.run(
+            [str(checker), "v1.0.0"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(matching.returncode, 0, matching.stderr)
+
+        mismatching = subprocess.run(
+            [str(checker), "v1.0.1"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertNotEqual(mismatching.returncode, 0)
+        self.assertIn("v1.0.1", mismatching.stderr)
+        self.assertIn("v1.0.0", mismatching.stderr)
+
+    def test_release_workflow_validates_tag_before_packaging(self):
+        workflow = yaml.safe_load(
+            (ROOT / ".github" / "workflows" / "release.yml").read_text()
+        )
+        steps = workflow["jobs"]["build"]["steps"]
+
+        self.assertTrue(
+            any(
+                step.get("run")
+                == 'scripts/check_release_tag.sh "${GITHUB_REF_NAME}"'
+                for step in steps
+            )
+        )
 
     def test_release_archive_contains_runtime_and_contract_assets(self):
         with TemporaryDirectory() as temp_dir:
@@ -73,7 +113,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(ROOT / "scripts" / "package_release_artifact.sh"),
                     "test-target",
-                    "1.0.0",
+                    "v1.0.0",
                     str(binary),
                     str(dist),
                 ],
@@ -88,13 +128,17 @@ class ReleaseMetadataTest(unittest.TestCase):
             if not archive.is_absolute():
                 archive = ROOT / archive
             self.assertTrue(archive.exists(), archive)
+            self.assertEqual(
+                archive.name,
+                "fastaguard-v1.0.0-test-target.tar.gz",
+            )
 
             with tarfile.open(archive, "r:gz") as package:
                 names = set(package.getnames())
 
             top_levels = {name.split("/", 1)[0] for name in names}
-            self.assertEqual(top_levels, {"fastaguard-1.0.0-test-target"})
-            root = "fastaguard-1.0.0-test-target"
+            self.assertEqual(top_levels, {"fastaguard-v1.0.0-test-target"})
+            root = "fastaguard-v1.0.0-test-target"
             for expected in [
                 f"{root}/fastaguard",
                 f"{root}/README.md",
@@ -118,7 +162,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(project / "scripts" / "package_release_artifact.sh"),
                     host,
-                    "1.0.0",
+                    "v1.0.0",
                 ],
                 cwd=project,
                 capture_output=True,
@@ -128,7 +172,7 @@ class ReleaseMetadataTest(unittest.TestCase):
 
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertTrue(
-                (project / "dist" / f"fastaguard-1.0.0-{host}.tar.gz").exists()
+                (project / "dist" / f"fastaguard-v1.0.0-{host}.tar.gz").exists()
             )
 
     def test_release_archive_rejects_host_fallback_for_foreign_target(self):
@@ -145,7 +189,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(project / "scripts" / "package_release_artifact.sh"),
                     foreign_target,
-                    "1.0.0",
+                    "v1.0.0",
                 ],
                 cwd=project,
                 capture_output=True,
@@ -302,16 +346,37 @@ class ReleaseMetadataTest(unittest.TestCase):
             "version"
         ]
         examples = [
-            ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard.json",
-            ROOT / "examples" / "reports" / "assembly_fail" / "fastaguard.json",
+            (
+                ROOT / "examples" / "reports" / "assembly_pass" / "fastaguard.json",
+                ROOT
+                / "examples"
+                / "reports"
+                / "assembly_pass"
+                / "fastaguard_report.html",
+            ),
+            (
+                ROOT / "examples" / "reports" / "assembly_fail" / "fastaguard.json",
+                ROOT
+                / "examples"
+                / "reports"
+                / "assembly_fail"
+                / "fastaguard_report.html",
+            ),
         ]
 
-        for path in examples:
-            with self.subTest(path=path):
-                report = json.loads(path.read_text())
+        for json_path, html_path in examples:
+            with self.subTest(path=json_path):
+                report = json.loads(json_path.read_text())
                 self.assertEqual(report["tool"]["version"], source_version)
                 self.assertEqual(report["schema_version"], "0.7.0")
                 self.assertEqual(report["report_type"], "assembly")
+                html = html_path.read_text()
+                self.assertIn(
+                    f"&quot;version&quot;: &quot;{source_version}&quot;", html
+                )
+                self.assertIn(
+                    "&quot;report_type&quot;: &quot;assembly&quot;", html
+                )
 
     def test_bioconda_recipe_avoids_unneeded_runtime_zlib(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
@@ -355,7 +420,8 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertNotIn("GitHub repository is private", packaging)
         self.assertNotIn("placeholder SHA256", packaging)
         self.assertIn('release_version="X.Y.Z"', packaging)
-        self.assertIn('git tag "v${release_version}"', packaging)
+        self.assertIn('git tag -a "v${release_version}"', packaging)
+        self.assertIn("Create a draft GitHub release", packaging)
         self.assertNotIn("git tag v0.6.0", packaging)
 
     def test_current_release_docs_do_not_present_v0_5_as_latest(self):

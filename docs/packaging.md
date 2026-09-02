@@ -9,8 +9,8 @@ Bioconda -> BioContainers -> GitHub release binaries -> Docker image -> Homebrew
 ```
 
 FastaGuard v1.0.0 source and package metadata prepare the Reference Contract
-release. FastaGuard v0.7.0 is published on GitHub with Linux
-and macOS release binaries. Bioconda serves v0.7.0 on `linux-64`,
+release. FastaGuard v0.7.0 is published on GitHub with Linux and macOS release
+binaries. Bioconda serves v0.7.0 on `linux-64`,
 `linux-aarch64`, `osx-64`, and `osx-arm64` platforms. BioContainers provides
 the pinned v0.7 workflow image `quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0`
 generated from the Bioconda package. Docker remains useful for local smoke tests.
@@ -106,8 +106,8 @@ Build and inspect a host archive locally:
 
 ```bash
 cargo build --release --locked
-scripts/package_release_artifact.sh "$(rustc -vV | sed -n 's/^host: //p')" 1.0.0
-tar -tzf "dist/fastaguard-1.0.0-$(rustc -vV | sed -n 's/^host: //p').tar.gz"
+scripts/package_release_artifact.sh "$(rustc -vV | sed -n 's/^host: //p')" v1.0.0
+tar -tzf "dist/fastaguard-v1.0.0-$(rustc -vV | sed -n 's/^host: //p').tar.gz"
 ```
 
 Each archive has one top-level directory containing `fastaguard`, `README.md`,
@@ -135,14 +135,30 @@ For a public release:
 
    ```bash
    release_version="X.Y.Z"
-   git tag "v${release_version}"
+   git tag -a "v${release_version}" -m "FastaGuard v${release_version}"
    git push origin "v${release_version}"
    ```
 
 2. Push the tag to trigger `.github/workflows/release.yml`.
 3. Build release binaries for Linux x86_64, macOS Intel, and macOS Apple Silicon.
-4. Attach `SHA256SUMS` and release archives to the GitHub release.
-5. Keep the JSON Schema and finding catalog in the source archive and binary archives.
+   The release workflow uploads these as CI artifacts; it does not publish a
+   GitHub release automatically.
+4. Download the CI artifacts.
+5. Create a draft GitHub release for the pushed tag, using the release notes as
+   its description. For example:
+
+   ```bash
+   release_version="X.Y.Z"
+   gh release create "v${release_version}" \
+     --draft \
+     --verify-tag \
+     --title "FastaGuard v${release_version}" \
+     --notes-file "docs/releases/v${release_version}.md"
+   ```
+
+6. Attach `SHA256SUMS` and the release archives to the draft, verify the assets,
+   then publish the release.
+7. Keep the JSON Schema and finding catalog in the source archive and binary archives.
 
 ## Upstream Recipe
 

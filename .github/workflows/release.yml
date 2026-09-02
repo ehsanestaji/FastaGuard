@@ -32,6 +32,9 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Verify release tag
+        run: scripts/check_release_tag.sh "${GITHUB_REF_NAME}"
+
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
 

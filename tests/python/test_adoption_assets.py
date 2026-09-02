@@ -10,7 +10,11 @@ from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[2]
 NFCORE_PR = "https://github.com/nf-core/modules/pull/12239"
+NFCORE_UPDATE_PR = "https://github.com/nf-core/modules/pull/12775"
 SNAKEMAKE_PR = "https://github.com/snakemake/snakemake-wrappers/pull/5436"
+SNAKEMAKE_UPDATE_PR = (
+    "https://github.com/snakemake/snakemake-wrappers/pull/5826"
+)
 sys.path.insert(0, str(ROOT / "integrations" / "multiqc" / "src"))
 
 import fastaguard_multiqc.parser as multiqc_parser
@@ -848,9 +852,12 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("[Workflow readiness](docs/workflow-readiness.md)", readme)
         self.assertIn("Phase 5: Upstream workflow readiness", adoption)
         self.assertIn(NFCORE_PR, adoption)
+        self.assertIn(NFCORE_UPDATE_PR, readiness)
         self.assertIn(SNAKEMAKE_PR, adoption)
+        self.assertIn(SNAKEMAKE_UPDATE_PR, adoption)
         self.assertIn(NFCORE_PR, readiness)
         self.assertIn(SNAKEMAKE_PR, readiness)
+        self.assertIn(SNAKEMAKE_UPDATE_PR, readiness)
         self.assertNotIn("not yet an upstream nf-core module", readiness)
         self.assertNotIn("not yet an official Snakemake wrapper", readiness)
         self.assertIn("collect-then-gate", readiness)
