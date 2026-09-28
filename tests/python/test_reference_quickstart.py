@@ -148,6 +148,50 @@ class ReferenceQuickstartTest(unittest.TestCase):
                 report["reference_manifest"]["semantic_digest"],
             )
 
+    def test_rewrapping_changes_fai_bundle_digest_not_sequence_identity(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            reports = []
+            for name, fasta_text, fai_text in (
+                ("wide", ">chr1\nACGTACGT\n", "chr1\t8\t6\t8\t9\n"),
+                ("wrapped", ">chr1\nACGT\nACGT\n", "chr1\t8\t6\t4\t5\n"),
+            ):
+                fasta = root / f"{name}.fa"
+                fai = root / f"{name}.fa.fai"
+                report_path = root / f"{name}.json"
+                fasta.write_text(fasta_text)
+                fai.write_text(fai_text)
+                result = subprocess.run(
+                    [
+                        str(self.binary), "reference", str(fasta),
+                        "--fai", str(fai), "--require", "fai",
+                        "--format", "json", "--json", str(report_path),
+                    ],
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                report = json.loads(report_path.read_text())
+                jsonschema.validate(report, self.schema)
+                self.assertEqual(report["verdict"]["status"], "PASS")
+                self.assertIs(report["gate"]["can_continue"], True)
+                self.assertEqual(report["comparisons"][0]["relationship"], "exact")
+                reports.append(report)
+            left, right = reports
+            self.assertEqual(
+                left["canonical_reference"]["seqcol_digest"],
+                right["canonical_reference"]["seqcol_digest"],
+            )
+            self.assertEqual(
+                left["canonical_reference"]["sequences"][0]["refget_id"],
+                right["canonical_reference"]["sequences"][0]["refget_id"],
+            )
+            self.assertNotEqual(
+                left["reference_manifest"]["semantic_digest"],
+                right["reference_manifest"]["semantic_digest"],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -554,8 +554,14 @@ Only declarations that affect identity, coordinates or policy enter the
 semantic payload. Provenance-only header claims such as SAM `UR`/`AS` and VCF
 `URL`/`assembly` remain in the full report but do not affect the digest.
 
-Rewrapping or recompressing an otherwise identical FASTA therefore changes its
-physical SHA-256 but not the semantic digest.
+Sequence identity is not whole-bundle identity. Rewrapping or recompressing an
+otherwise identical FASTA preserves its sequence and SeqCol identities, but
+does not guarantee an unchanged semantic digest. For a plain FASTA, a
+regenerated FAI can have different offsets and line widths. Those layout fields
+change its declaration digest and the bundle's semantic digest even when both
+bundles are exact matches and receive PASS. Use the canonical sequence and
+collection identities for content comparisons; the bundle digest also captures
+companion declarations and policy.
 
 Each companion has a `declaration_digest`: SHA-256 over the RFC 8785 canonical
 JSON form of its normalised identity and coordinate declaration, excluding its
@@ -645,9 +651,13 @@ a differential test pass.
 - reproducible time and peak-memory measurements on human, microbial and
   non-model reference bundles.
 
-Large-file behaviour is streaming: one FASTA pass for sequence identities,
-header-only reads for BAM/CRAM/VCF/BCF, and one GFF3 feature pass. Memory scales
-with sequence declarations and bounded evidence, not full file size.
+Reference identity calculation reads the FASTA one record at a time; memory
+includes the largest sequence record, temporary sequence copies, retained
+declarations and bounded evidence. In v1.0.0, layout validation of a supplied
+FAI against a plain FASTA additionally reads the entire FASTA into memory.
+Size jobs for that full-file allocation and additional working memory; do not
+assume reference mode has constant or declaration-only memory use.
+BAM/CRAM/VCF/BCF checks read headers only, and GFF3 checks read the feature stream.
 
 ## Original release stages
 

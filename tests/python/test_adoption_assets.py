@@ -95,6 +95,18 @@ class AdoptionAssetsTest(unittest.TestCase):
                 self.assertNotIn("reading gate.status from JSON", text)
                 self.assertNotIn("logic from gate.status", text)
 
+    def test_reference_contract_qualifies_fai_memory_use(self):
+        contract = " ".join(self.read("docs/reference-contract-v1.md").split())
+        self.assertNotIn("not full file size", contract)
+        self.assertIn("reads the entire FASTA into memory", contract)
+        self.assertIn("largest sequence record", contract)
+
+    def test_reference_contract_distinguishes_sequence_and_bundle_identity(self):
+        contract = " ".join(self.read("docs/reference-contract-v1.md").split())
+        self.assertNotIn("physical SHA-256 but not the semantic digest", contract)
+        self.assertIn("Sequence identity is not whole-bundle identity", contract)
+        self.assertIn("FAI", contract)
+
     def test_workflow_status_distinguishes_reference_from_assembly(self):
         readiness = " ".join(self.read("docs/workflow-readiness.md").split())
         self.assertIn(NFCORE_UPDATE_PR, readiness)
