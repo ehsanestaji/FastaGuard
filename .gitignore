@@ -3,3 +3,7 @@ target/
 .worktrees/
 __pycache__/
 *.py[cod]
+/.nextflow/
+/.nextflow.log*
+/.snakemake/
+/work/

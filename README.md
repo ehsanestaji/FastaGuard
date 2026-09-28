@@ -291,7 +291,9 @@ not accepted as an annotation declaration.
 
 Try the [reference quickstart](docs/quickstart.md#reference-quickstart) for a
 matching reference and a deliberately mismatched dictionary, with retained
-reports and a separate policy gate.
+reports and a separate policy gate. The
+[reference workflow examples](examples/reference/README.md) run the same
+collect-then-gate pattern in Nextflow and Snakemake.
 
 Reference mode writes HTML, JSON, TSV and MultiQC-compatible JSON by default.
 Use `--format` to select a subset, `--write-lock` to write a

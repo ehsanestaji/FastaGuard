@@ -30,8 +30,10 @@ starters remain local compatibility references.
 
 Reference-specific workflow components are not yet available upstream.
 Use the [reference quickstart](quickstart.md#reference-quickstart) to exercise
-the published CLI directly; a version update to an assembly wrapper does not
-add reference inputs to its interface.
+the published CLI directly, or the local
+[Nextflow and Snakemake reference workflows](../examples/reference/README.md)
+for report retention and downstream gating. A version update to an assembly
+wrapper does not add reference inputs to its interface.
 
 Historical v0.5 upstream-style validation was run on 2026-07-03 in dedicated
 checkouts:
