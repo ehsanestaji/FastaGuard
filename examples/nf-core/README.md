@@ -2,9 +2,10 @@
 
 This directory mirrors the interface of the FastaGuard module merged into
 nf-core/modules in [PR #12239](https://github.com/nf-core/modules/pull/12239)
-and updated to v0.7 in
-[PR #12775](https://github.com/nf-core/modules/pull/12775). It remains a local
-compatibility reference for future FastaGuard releases.
+and updated to v1.0 in
+[PR #12892](https://github.com/nf-core/modules/pull/12892). It remains a local
+compatibility reference for future FastaGuard releases. The module runs the
+assembly command, not `fastaguard reference`.
 
 See `../../docs/workflow-readiness.md` for the current update checklist.
 
@@ -23,11 +24,11 @@ The module emits four QC reports plus version metadata:
 - `versions_fastaguard` on the versions topic
 
 The module assumes `fastaguard` is available on `PATH` when run without a
-container. The published v0.7 install and pinned workflow image are:
+container. The published v1.0 install and pinned workflow image are:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.7.0
-docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
+mamba install -c conda-forge -c bioconda fastaguard=1.0.0
+docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
 ```
 
 The reusable module does not select a profile or gate. Callers pass optional

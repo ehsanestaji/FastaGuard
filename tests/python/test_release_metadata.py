@@ -12,10 +12,10 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CURRENT_VERSION = "0.7.0"
-CURRENT_CONTAINER = "0.7.0--hfa8f182_0"
+CURRENT_VERSION = "1.0.0"
+CURRENT_CONTAINER = "1.0.0--hfa8f182_0"
 CURRENT_SOURCE_SHA256 = (
-    "80a5a350cb58c708c4c15a01cf76cb67356aa45c31f97fe3e104414de690a54c"
+    "427bd1b9cf406f42e9754bdf2e79370c3c879249cfb87e8a4a7c9dbfa6dc4cfa"
 )
 
 
@@ -233,10 +233,10 @@ class ReleaseMetadataTest(unittest.TestCase):
             )
         )
 
-    def test_bioconda_recipe_tracks_published_v0_7_0_archive(self):
+    def test_bioconda_recipe_tracks_published_v1_0_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
 
-        self.assertIn('{% set version = "0.7.0" %}', recipe)
+        self.assertIn('{% set version = "1.0.0" %}', recipe)
         self.assertIn("fastaguard --version | grep {{ version }}", recipe)
 
     def test_v0_2_0_release_notes_exist(self):
@@ -303,12 +303,12 @@ class ReleaseMetadataTest(unittest.TestCase):
                     description = text[start : start + 120]
                     self.assertIn("output-write", description, description)
 
-    def test_bioconda_recipe_has_publishable_v0_7_0_source_sha(self):
+    def test_bioconda_recipe_has_publishable_v1_0_0_source_sha(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         marker = "REPLACE" + "_WITH_"
 
         self.assertTrue((ROOT / "docs" / "releases" / "v0.6.0.md").exists())
-        self.assertIn('{% set version = "0.7.0" %}', recipe)
+        self.assertIn('{% set version = "1.0.0" %}', recipe)
         self.assertNotIn(marker, recipe)
 
         match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
@@ -424,6 +424,41 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertIn('git tag -a "v${release_version}"', packaging)
         self.assertIn("Create a draft GitHub release", packaging)
         self.assertNotIn("git tag v0.6.0", packaging)
+
+    def test_biotools_downloads_match_current_distribution(self):
+        registration = json.loads(
+            (ROOT / "docs/biotools-registration.json").read_text()
+        )[0]
+        downloads = {item["type"]: item for item in registration["download"]}
+        self.assertEqual(downloads["Binaries"]["version"], CURRENT_VERSION)
+        self.assertEqual(downloads["Software package"]["version"], CURRENT_VERSION)
+        self.assertEqual(downloads["Container file"]["version"], CURRENT_CONTAINER)
+
+    def test_current_distribution_docs_do_not_claim_updates_are_pending(self):
+        for relative in (
+            "README.md", "docs/quickstart.md", "docs/packaging.md",
+            "docs/adoption-plan.md", "docs/workflow-readiness.md",
+            "docs/roadmap.md", "docs/vision-plan.md", "docs/tool-landscape.md",
+        ):
+            with self.subTest(path=relative):
+                text = " ".join((ROOT / relative).read_text().split())
+                self.assertIn("1.0.0", text)
+                for stale in (
+                    "Bioconda remains at v0.7.0",
+                    "packages remain at v0.7.0",
+                    "artifacts remain v0.7.0 while their update is in progress",
+                ):
+                    self.assertNotIn(stale, text)
+
+    def test_v1_release_records_dated_distribution_update(self):
+        notes = (ROOT / "docs/releases/v1.0.0.md").read_text()
+        self.assertIn("2026-09-28", notes)
+        for url in (
+            "https://github.com/bioconda/bioconda-recipes/pull/68744",
+            "https://github.com/nf-core/modules/pull/12892",
+            "https://github.com/snakemake/snakemake-wrappers/pull/5847",
+        ):
+            self.assertIn(url, notes)
 
     def test_current_release_docs_do_not_present_v0_5_as_latest(self):
         current_docs = [

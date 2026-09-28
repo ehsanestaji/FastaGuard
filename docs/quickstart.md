@@ -1,15 +1,15 @@
 # Five-minute quickstart
 
-This path uses the current Bioconda and BioContainers distribution, v0.7.0.
-The v1.0.0 GitHub source release adds the Reference Contract Gate; downstream
-packages remain at v0.7.0 until their update is published.
+This path uses the published v1.0.0 CLI, available through Bioconda,
+BioContainers, and GitHub release binaries. It includes assembly preflight and
+the Reference Contract Gate.
 
 ## 1. Install the published CLI
 
 With Bioconda:
 
 ```bash
-mamba create -n fastaguard -c conda-forge -c bioconda fastaguard=0.7.0
+mamba create -n fastaguard -c conda-forge -c bioconda fastaguard=1.0.0
 mamba activate fastaguard
 fastaguard --version
 ```
@@ -70,26 +70,24 @@ python3 -c 'import csv; rows = {row["metric"]: row["value"] for row in csv.DictR
 See [report interpretation](report-interpretation.md) before turning findings
 into workflow policy.
 
-## v1.0.0 source release: bundle mode
+## Bundle mode
 
-Until the downstream packages are updated, install v1.0.0 from its GitHub tag
-or use a local source checkout for the shorter bundle command:
+The published v1.0.0 CLI also supports the shorter bundle command:
 
 ```bash
-cargo install --path . --locked
 fastaguard sample.fa --outdir reports --prefix sample-01
 ```
 
 It writes the same four names listed above. Existing outputs are protected
 unless `--force` is supplied.
 
-## Container alternatives for published v0.7.0
+## Container alternatives for published v1.0.0
 
 Docker:
 
 ```bash
 docker run --rm -v "$PWD:/work" \
-  quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0 \
+  quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0 \
   fastaguard /work/sample.fa --json /work/reports/sample-01.fastaguard.json
 ```
 
@@ -97,7 +95,7 @@ Apptainer can execute the same public OCI image from Quay:
 
 ```bash
 apptainer exec --bind "$PWD:/work" \
-  docker://quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0 \
+  docker://quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0 \
   fastaguard /work/sample.fa --json /work/reports/sample-01.fastaguard.json
 ```
 

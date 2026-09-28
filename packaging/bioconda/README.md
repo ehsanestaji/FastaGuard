@@ -1,23 +1,24 @@
 # Bioconda Recipe
 
-Upstream Bioconda currently publishes FastaGuard v0.7.0.
+Upstream Bioconda currently publishes FastaGuard v1.0.0, updated in
+[PR #68744](https://github.com/bioconda/bioconda-recipes/pull/68744).
 
 The recipe has been merged into `bioconda/bioconda-recipes` as
 `recipes/fastaguard/`, and the current published package is available from
 Bioconda:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.7.0
+mamba install -c conda-forge -c bioconda fastaguard=1.0.0
 ```
 
 BioContainers publishes the pinned workflow image:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
 ```
 
-This local recipe directory mirrors the FastaGuard v0.7.0 Bioconda recipe. The
-v0.7.0 GitHub source archive is published and `meta.yaml` includes the real
+This local recipe directory mirrors the FastaGuard v1.0.0 Bioconda recipe. The
+v1.0.0 GitHub source archive is published and `meta.yaml` includes the verified
 archive SHA256.
 
 ## Local Checks

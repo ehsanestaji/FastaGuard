@@ -70,12 +70,12 @@
     {
       "url": "https://anaconda.org/bioconda/fastaguard",
       "type": "Software package",
-      "version": "0.7.0"
+      "version": "1.0.0"
     },
     {
       "url": "https://quay.io/repository/biocontainers/fastaguard?tab=tags",
       "type": "Container file",
-      "version": "0.7.0--hfa8f182_0"
+      "version": "1.0.0--hfa8f182_0"
     }
   ],
   "documentation": [

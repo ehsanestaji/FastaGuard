@@ -2,12 +2,12 @@
 
 ## Current State
 
-FastaGuard is ready for workflow use through the published v0.7.0 Bioconda
+FastaGuard is ready for workflow use through the published v1.0.0 Bioconda
 package and BioContainers image:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.7.0
-docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
+mamba install -c conda-forge -c bioconda fastaguard=1.0.0
+docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
 ```
 
 The repository includes local starters for:
@@ -19,13 +19,14 @@ The repository includes local starters for:
   `examples/workflows/check_fastaguard_gate.py`
 
 The nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
-merged 2026-08-21, and its v0.7 update merged in
-[#12775](https://github.com/nf-core/modules/pull/12775) on 2026-08-24. The
+merged 2026-08-21, and its v1.0 update merged in
+[#12892](https://github.com/nf-core/modules/pull/12892) on 2026-09-19. The
 Snakemake wrapper PR
 [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436) merged
-2026-07-27, and its v0.7 update merged in
-[#5826](https://github.com/snakemake/snakemake-wrappers/pull/5826) on
-2026-08-24. The repository starters remain local compatibility references.
+2026-07-27, and its v1.0 update merged in
+[#5847](https://github.com/snakemake/snakemake-wrappers/pull/5847) on
+2026-09-04. These integrations run the assembly command; the repository
+starters remain local compatibility references.
 
 Historical v0.5 upstream-style validation was run on 2026-07-03 in dedicated
 checkouts:
@@ -60,7 +61,7 @@ official submission validators. The default workflow pattern is:
 collect FASTA-level evidence -> apply stop/go policy -> route downstream tools
 ```
 
-With the published v0.7 runtime, `--gate pipeline` and `--gate submission`
+With the published v1.0 runtime, `--gate pipeline` and `--gate submission`
 write JSON, TSV, HTML, and MultiQC-compatible evidence while successful report
 generation returns exit code `0`. Stop/go enforcement belongs to a downstream
 gate step. The important contract fields are:

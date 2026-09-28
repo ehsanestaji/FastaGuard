@@ -10,10 +10,10 @@ from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[2]
 NFCORE_PR = "https://github.com/nf-core/modules/pull/12239"
-NFCORE_UPDATE_PR = "https://github.com/nf-core/modules/pull/12775"
+NFCORE_UPDATE_PR = "https://github.com/nf-core/modules/pull/12892"
 SNAKEMAKE_PR = "https://github.com/snakemake/snakemake-wrappers/pull/5436"
 SNAKEMAKE_UPDATE_PR = (
-    "https://github.com/snakemake/snakemake-wrappers/pull/5826"
+    "https://github.com/snakemake/snakemake-wrappers/pull/5847"
 )
 sys.path.insert(0, str(ROOT / "integrations" / "multiqc" / "src"))
 
@@ -46,8 +46,8 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("verdict.status", quickstart)
         self.assertIn("gate.can_continue", quickstart)
         self.assertIn("gate_status", quickstart)
-        self.assertIn("fastaguard=0.7.0", quickstart)
-        self.assertIn("fastaguard:0.7.0--hfa8f182_0", quickstart)
+        self.assertIn("fastaguard=1.0.0", quickstart)
+        self.assertIn("fastaguard:1.0.0--hfa8f182_0", quickstart)
         self.assertNotIn("fastaguard=0.6.0", quickstart)
         self.assertNotIn("fastaguard:0.6.0--", quickstart)
 
@@ -142,7 +142,7 @@ class AdoptionAssetsTest(unittest.TestCase):
             with self.subTest(overclaim=overclaim):
                 self.assertNotRegex(registration["description"].lower(), overclaim)
 
-    def test_public_docs_link_adoption_materials_with_published_v0_7_claims(self):
+    def test_public_docs_link_adoption_materials_with_current_distribution(self):
         readme = self.read("README.md")
         adoption = self.read("docs/adoption-plan.md")
         packaging = self.read("docs/packaging.md")
@@ -161,7 +161,7 @@ class AdoptionAssetsTest(unittest.TestCase):
             with self.subTest(document=document[:40]):
                 self.assertIn("Bioconda", document)
                 self.assertIn("BioContainers", document)
-                self.assertIn("0.7", document)
+                self.assertIn("1.0.0", document)
 
     def test_v0_3_gate_docs_and_examples_are_present(self):
         readme = (ROOT / "README.md").read_text()
@@ -222,7 +222,7 @@ class AdoptionAssetsTest(unittest.TestCase):
 
         self.assertNotIn("0.2.0--", nf_core_module)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0",
             nf_core_module,
         )
         self.assertNotIn("fastaguard=0.2.0", wrapper_env)
@@ -808,12 +808,12 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn(install, nfcore_readme)
         self.assertIn(install, snakemake_readme)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0",
             nfcore_readme,
         )
         self.assertNotIn("0.2.0--", nfcore_module)
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0",
             snakemake_readme,
         )
 
@@ -874,10 +874,10 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn("environment.linux-64.pin.txt", readiness)
         self.assertIn("test_wrappers.py", readiness)
         self.assertIn("--gate submission", readiness)
-        self.assertIn("quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0", readiness)
+        self.assertIn("quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0", readiness)
         self.assertIn("docs/workflow-readiness.md", nfcore_readme)
         self.assertIn("docs/workflow-readiness.md", snakemake_readme)
-        self.assertIn("fastaguard=0.7.0", nfcore_environment)
+        self.assertIn("fastaguard=1.0.0", nfcore_environment)
         self.assertIn("name: fastaguard", snakemake_meta)
         self.assertIn("description:", snakemake_meta)
         self.assertIn("output:", snakemake_meta)
@@ -908,11 +908,11 @@ class AdoptionAssetsTest(unittest.TestCase):
         self.assertIn('conda "${moduleDir}/environment.yml"', main_nf)
         self.assertIn("workflow.containerEngine in ['singularity', 'apptainer']", main_nf)
         self.assertIn(
-            "https://depot.galaxyproject.org/singularity/fastaguard:0.7.0--hfa8f182_0",
+            "https://depot.galaxyproject.org/singularity/fastaguard:1.0.0--hfa8f182_0",
             main_nf,
         )
         self.assertIn(
-            "quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0",
+            "quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0",
             main_nf,
         )
         self.assertIn("\n    when:\n    task.ext.when == null || task.ext.when\n", main_nf)
@@ -991,7 +991,7 @@ class AdoptionAssetsTest(unittest.TestCase):
                 )
                 self.assertEqual(
                     outputs["versions_fastaguard"],
-                    [["FASTAGUARD", "fastaguard", "0.7.0"]],
+                    [["FASTAGUARD", "fastaguard", "1.0.0"]],
                 )
 
     def test_snakemake_wrapper_has_upstream_prep_test_layout(self):
@@ -1469,7 +1469,7 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
                 "  - bioconda",
                 "  - nodefaults",
                 "dependencies:",
-                "  - fastaguard=0.7.0",
+                "  - fastaguard=1.0.0",
             ],
         )
         self.assertIn("conda:\n        \"environment.yaml\"", snakefile.read_text())

@@ -10,9 +10,9 @@ Bioconda -> BioContainers -> GitHub release binaries -> Docker image -> Homebrew
 
 FastaGuard v1.0.0 is the Reference Contract Gate source release and provides
 Linux x86_64, macOS Intel, and macOS Apple Silicon release binaries. Bioconda
-serves v0.7.0 on `linux-64`,
+serves v1.0.0 on `linux-64`,
 `linux-aarch64`, `osx-64`, and `osx-arm64` platforms. BioContainers provides
-the pinned v0.7 workflow image `quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0`
+the pinned v1.0 workflow image `quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0`
 generated from the Bioconda package. Docker remains useful for local smoke tests.
 
 The current published package includes the `--gate submission` and
@@ -24,13 +24,13 @@ confirmed Bioconda and BioContainers versions before advertising them as live.
 Recommended install:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=0.7.0
+mamba install -c conda-forge -c bioconda fastaguard=1.0.0
 ```
 
 Conda equivalent:
 
 ```bash
-conda install -c conda-forge -c bioconda fastaguard=0.7.0
+conda install -c conda-forge -c bioconda fastaguard=1.0.0
 ```
 
 Verify the installed package:
@@ -43,7 +43,7 @@ fastaguard --finding-catalog
 
 Current published package:
 
-- Version: `0.7.0`
+- Version: `1.0.0`
 - Platforms: `linux-64`, `linux-aarch64`, `osx-64`, `osx-arm64`
 - Package page: [anaconda.org/bioconda/fastaguard](https://anaconda.org/bioconda/fastaguard)
 - Recipe page: [Bioconda fastaguard recipe](https://bioconda.github.io/recipes/fastaguard/README.html)
@@ -206,7 +206,7 @@ The Bioconda recipe has merged upstream and generated a BioContainers image.
 Use the pinned tag in workflow examples:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
 ```
 
 That path is preferable to maintaining a separate BioContainers Dockerfile.
@@ -215,11 +215,11 @@ The tag can be checked on the
 
 ## Apptainer
 
-Apptainer can execute the published v0.7.0 BioContainers OCI image directly:
+Apptainer can execute the published v1.0.0 BioContainers OCI image directly:
 
 ```bash
 apptainer exec --bind "$PWD:/work" \
-  docker://quay.io/biocontainers/fastaguard:0.7.0--hfa8f182_0 \
+  docker://quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0 \
   fastaguard /work/sample.fa \
   --out /work/fastaguard_report.html \
   --json /work/fastaguard.json \
@@ -230,7 +230,8 @@ apptainer exec --bind "$PWD:/work" \
 This follows Apptainer's documented support for `docker://` images hosted on
 Quay. See the official
 [Docker and OCI container guide](https://apptainer.org/docs/user/latest/docker_and_oci.html).
-No v1.0.0 container tag should be substituted until it appears in the registry.
+The pinned OCI image is Linux x86_64, not a multi-platform image. Its platform
+coverage differs from the four Bioconda package platforms listed above.
 
 ## MultiQC
 

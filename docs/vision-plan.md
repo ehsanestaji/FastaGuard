@@ -246,10 +246,10 @@ time.
 ## Current Recommendation
 
 FastaGuard v1.0.0 is the Reference Contract Gate source release. It preserves
-the operational-trust behaviour of v0.7. Downstream Bioconda and BioContainers
-artifacts remain v0.7.0 while their update is in progress. Bioconda serves
+the operational-trust behaviour of v0.7. Bioconda and BioContainers also
+distribute v1.0.0. Bioconda serves
 `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64`, and the published
-BioContainers tag is `0.7.0--hfa8f182_0`.
+BioContainers tag is `1.0.0--hfa8f182_0`.
 
 Recommended sequence:
 
