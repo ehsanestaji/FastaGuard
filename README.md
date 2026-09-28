@@ -289,6 +289,10 @@ and GFF3 sequence declarations and coordinate bounds. It reads headers only for
 BAM, CRAM, VCF and BCF; it does not scan alignment or variant records. GTF is
 not accepted as an annotation declaration.
 
+Try the [reference quickstart](docs/quickstart.md#reference-quickstart) for a
+matching reference and a deliberately mismatched dictionary, with retained
+reports and a separate policy gate.
+
 Reference mode writes HTML, JSON, TSV and MultiQC-compatible JSON by default.
 Use `--format` to select a subset, `--write-lock reference.lock.json` to write a
 portable identity record, and `--require fai,dict,alignment,variants,annotation`
