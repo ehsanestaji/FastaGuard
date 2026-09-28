@@ -15,7 +15,7 @@ process FASTAGUARD {
     script:
     """
     # FastaGuard writes PASS/WARN/FAIL decisions to JSON/TSV/HTML reports.
-    # Route downstream workflow steps by reading gate.status from JSON.
+    # Route downstream workflow steps by reading gate.can_continue from JSON.
     fastaguard ${fasta} \
       --profile assembly \
       --gate pipeline \
@@ -34,4 +34,4 @@ workflow {
 // fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
 // This is local starter guidance, not an upstream nf-core submission yet.
 // FastaGuard returns success when reports are written; collect-then-gate wrappers
-// can apply workflow stop/go logic from gate.status.
+// can apply workflow stop/go logic from gate.can_continue.

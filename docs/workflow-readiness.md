@@ -28,6 +28,11 @@ Snakemake wrapper PR
 2026-09-04. These integrations run the assembly command; the repository
 starters remain local compatibility references.
 
+Reference-specific workflow components are not yet available upstream.
+Use the [reference quickstart](quickstart.md#reference-quickstart) to exercise
+the published CLI directly; a version update to an assembly wrapper does not
+add reference inputs to its interface.
+
 Historical v0.5 upstream-style validation was run on 2026-07-03 in dedicated
 checkouts:
 
@@ -42,7 +47,8 @@ checkouts:
 The v0.6 contract removes QC-derived process failures: successfully written
 PASS, WARN, and FAIL reports all return exit code `0`. Future releases update
 existing integrations after GitHub and package publication; workflow routing
-should continue to use JSON or TSV status fields.
+should use the JSON boolean `gate.can_continue` or the corresponding TSV
+`gate_can_continue` value.
 
 ## Safe Order
 
@@ -64,8 +70,10 @@ collect FASTA-level evidence -> apply stop/go policy -> route downstream tools
 With the published v1.0 runtime, `--gate pipeline` and `--gate submission`
 write JSON, TSV, HTML, and MultiQC-compatible evidence while successful report
 generation returns exit code `0`. Stop/go enforcement belongs to a downstream
-gate step. The important contract fields are:
+gate step. Use `gate.can_continue` to decide whether downstream work may start.
+The remaining fields describe findings and context:
 
+- `gate.can_continue`
 - `verdict.status`
 - `gate.mode`
 - `gate.status`
@@ -105,7 +113,8 @@ GitHub and package publication:
 The module should remain database-free, pinned to Bioconda/BioContainers, and
 focused on stable machine-readable outputs.
 It should not choose a profile or gate by default. Callers select policy through
-`task.ext.args`, and downstream processes enforce it by parsing JSON or TSV.
+`task.ext.args`, and downstream processes enforce `gate.can_continue` from
+JSON or the corresponding TSV field.
 
 ## Snakemake Integration
 
@@ -134,7 +143,7 @@ and package publication, monitor that update and intervene only if it fails:
 - keep `wrapper.py` thin, consume optional arguments only through
   `params.extra`, and avoid a default profile or gate
 - preserve evidence on blocking FASTA results and enforce policy downstream by
-  parsing JSON or TSV
+  reading `gate.can_continue` from JSON or the corresponding TSV field
 
 ## Submission Gate Usage
 

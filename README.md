@@ -244,9 +244,9 @@ Starting with FastaGuard v0.6.0, exit codes are:
 ```
 
 QC PASS/WARN/FAIL decisions are recorded in the machine-readable outputs,
-especially `verdict.status`, `gate.status`, and `gate.blocking_findings`.
-Workflow engines should route on those fields instead of interpreting QC
-findings from the process exit code. Single-file TSV reports include
+including `verdict.status`, `gate.status`, and `gate.blocking_findings`.
+Workflow engines should route on the boolean `gate.can_continue`, not on the
+verdict or process exit code. Single-file TSV reports include
 `input_path`, `verdict`, and `gate_status`; compare TSV reports retain one row
 per input with its path and status fields.
 
@@ -294,11 +294,13 @@ matching reference and a deliberately mismatched dictionary, with retained
 reports and a separate policy gate.
 
 Reference mode writes HTML, JSON, TSV and MultiQC-compatible JSON by default.
-Use `--format` to select a subset, `--write-lock reference.lock.json` to write a
+Use `--format` to select a subset, `--write-lock` to write a
 portable identity record, and `--require fai,dict,alignment,variants,annotation`
 to make named companion kinds mandatory. Each supplied companion receives a
 normalised declaration digest in JSON and the lockfile; TSV retains its local
-source path for workflow routing.
+source path for workflow routing. With `--outdir`, the lockfile is named
+`<prefix>.fastaguard.lock.json`; otherwise use `--write-lock --lock PATH` for
+an explicit path. Lock writing requires JSON output.
 
 Reference identity is based on the canonical FASTA, not its filename. An alias
 map is only applied when it is supplied explicitly:
@@ -319,9 +321,10 @@ Choose the policy for the downstream task:
   differences as blocking.
 
 Invalid canonical FASTA and missing required declarations remain blocking under
-every policy. Read `verdict.status`, `gate.status` and
-`machine_summary.safe_for_downstream` from the JSON report when routing a
-workflow. A completed reference report, including a FAIL report, exits with
+every policy. Route workflows on the boolean `gate.can_continue`.
+`verdict.status`, `gate.status` and `machine_summary.safe_for_downstream`
+provide context but do not replace the selected policy decision.
+A completed reference report, including a FAIL report, exits with
 code `0`.
 
 The complete interface and evidence model are described in

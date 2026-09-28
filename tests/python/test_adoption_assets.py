@@ -67,6 +67,45 @@ class AdoptionAssetsTest(unittest.TestCase):
         )
         self.assertIn("JSON is the source of truth", interpretation)
 
+    def test_reference_guidance_matches_the_published_cli(self):
+        contract = self.read("docs/reference-contract-v1.md")
+        readme = self.read("README.md")
+        quickstart = self.read("docs/quickstart.md")
+        self.assertIn("Status: released in v1.0.0", contract)
+        for text in (contract, readme, quickstart):
+            self.assertNotIn("--write-lock <path>", text)
+            self.assertNotIn("--write-lock reference.lock.json", text)
+            self.assertIn("gate.can_continue", text)
+        self.assertIn("--lock", contract)
+        self.assertIn("--write-lock --lock", quickstart)
+        self.assertIn(
+            "https://w3id.org/ga4gh/seqcol/schema/extended/v1.0.0", contract
+        )
+        self.assertNotIn(
+            "https://ga4gh.github.io/refget/schemas/seqcol_extended_v1.0.0.json",
+            contract,
+        )
+        self.assertIn("examples/reference/quickstart.sh", quickstart)
+
+    def test_starter_comments_route_on_the_continuation_boolean(self):
+        for relative in ("examples/nextflow/main.nf", "examples/snakemake/Snakefile"):
+            with self.subTest(path=relative):
+                text = self.read(relative)
+                self.assertIn("gate.can_continue", text)
+                self.assertNotIn("reading gate.status from JSON", text)
+                self.assertNotIn("logic from gate.status", text)
+
+    def test_workflow_status_distinguishes_reference_from_assembly(self):
+        readiness = " ".join(self.read("docs/workflow-readiness.md").split())
+        self.assertIn(NFCORE_UPDATE_PR, readiness)
+        self.assertIn(SNAKEMAKE_UPDATE_PR, readiness)
+        self.assertIn("assembly", readiness)
+        self.assertIn(
+            "Reference-specific workflow components are not yet available upstream.",
+            readiness,
+        )
+        self.assertIn("gate.can_continue", readiness)
+
     def test_pilot_material_is_report_only_private_and_consent_based(self):
         pilots = self.read("docs/pilots.md")
         lower = pilots.lower()
@@ -274,7 +313,7 @@ class AdoptionAssetsTest(unittest.TestCase):
                 self.assertIn("fastaguard compare", text)
                 self.assertIn("starter", lower)
                 self.assertIn("local", lower)
-                self.assertIn("gate.status", text)
+                self.assertIn("gate.can_continue", text)
 
     def test_v0_5_submission_readiness_docs_are_present(self):
         readme = self.read("README.md")

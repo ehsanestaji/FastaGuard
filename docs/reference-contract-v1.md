@@ -1,6 +1,6 @@
 # FastaGuard 1.0 Reference Contract
 
-Status: implementation-ready; contract freeze pending release version and publication approval
+Status: released in v1.0.0; this document describes the published reference contract.
 Date: 2026-08-28
 
 ## Summary
@@ -92,7 +92,8 @@ explicit; FastaGuard does not discover companions from filenames:
 | `--policy <mode>` | one | `strict`, `coordinate` or `advisory`; default `coordinate` |
 | `--require <kinds>` | repeatable | comma-separated required kinds: `fai`, `dict`, `alignment`, `variants`, `annotation` |
 | `--format <format>` | repeatable | requested bundle formats: `html`, `json`, `tsv`, `multiqc` |
-| `--write-lock <path>` | zero or one | write a portable reference lockfile |
+| `--write-lock` | boolean switch | write a portable reference lockfile; requires JSON output |
+| `--lock <path>` | zero or one | explicit lockfile path when `--write-lock` is set; cannot be combined with `--outdir` |
 
 Repeated artefacts are evaluated independently. A required kind means at least
 one readable, structurally parseable artefact of that kind must supply a usable
@@ -109,8 +110,11 @@ target or assembly-threshold options. Its gate kind is fixed to `reference`, and
 The command reuses the FastaGuard 0.7 `--outdir`, `--prefix`, direct report-path
 and `--force` conventions. Reference mode adds selective output as a new,
 subcommand-local capability: with no `--format`, all four reports are produced;
-when `--format` is present, only the named formats are produced. `--format`
-cannot be combined with direct report-path options. JSON is the source of truth
+when `--format` is present, only the named formats are produced. Direct
+report-path options can name those selected outputs. `--outdir` cannot be
+combined with direct report-path options, including `--lock`. With `--outdir`,
+`--write-lock` produces `<prefix>.fastaguard.lock.json` in the bundle directory.
+JSON is the source of truth
 and is published last whenever it is among the requested reference outputs.
 Assembly and compare output selection and publication order remain unchanged.
 
@@ -196,7 +200,7 @@ new compatibility engine.
 
 Sequence-collection encoding is pinned to the GA4GH
 `seqcol_extended_v1.0.0` schema at
-`https://ga4gh.github.io/refget/schemas/seqcol_extended_v1.0.0.json`. Its
+`https://w3id.org/ga4gh/seqcol/schema/extended/v1.0.0`. Its
 additional coordinate attributes are non-inherent, so its top-level digest is
 compatible with the minimal version 1.0 schema. The manifest records this exact
 schema identifier. `name_length_pairs_digest` is the ordered level-1 attribute
@@ -427,8 +431,8 @@ Reference reports retain the established gate fields:
 - `gate.blocking_findings` contains stable finding IDs; and
 - `gate.advisory_findings` contains non-blocking finding IDs.
 
-Workflow engines must route on `gate.can_continue` or the documented JSON
-fields, not on process exit status. A completed FAIL report exits zero.
+Workflow engines must route on the boolean `gate.can_continue`, not on process
+exit status, verdict, or summary safety. A completed FAIL report exits zero.
 
 ### Verdict, safety and readiness
 
@@ -451,8 +455,8 @@ permission.
 
 ### Findings
 
-Reference finding IDs use the `reference_` namespace. The catalogue covers at
-least these stable categories before the release candidate:
+The finding catalogue documents the stable reference finding IDs. These
+categories include:
 
 - missing required artefact;
 - malformed declaration;
@@ -509,7 +513,7 @@ shape:
   "canonical_reference": {
     "physical_sha256": "<digest>",
     "sequences": [],
-    "seqcol_schema": "https://ga4gh.github.io/refget/schemas/seqcol_extended_v1.0.0.json",
+    "seqcol_schema": "https://w3id.org/ga4gh/seqcol/schema/extended/v1.0.0",
     "seqcol_digest": "<GA4GH SeqCol digest>",
     "name_length_pairs_digest": "<ordered coordinate digest>",
     "sorted_name_length_pairs_digest": "<order-invariant coordinate digest>"
@@ -573,21 +577,27 @@ Version 1.0 is additive around the existing product:
 - existing flags, default outputs, finding meanings and exit codes remain
   unchanged;
 - documented v0.7 JSON paths remain present with the same types and meanings;
-- the schema becomes a report-type-discriminated contract containing assembly,
-  compare and reference reports;
-- new findings are confined to the `reference_` namespace; and
+- the schema is a report-type-discriminated contract: assembly and compare
+  reports retain schema `0.7.0`, while reference reports use `1.0.0`;
+- reference findings are documented in the finding catalogue; and
 - the nf-core module and Snakemake wrapper for the established command remain
   unchanged.
 
 Reference-mode workflow components will be proposed separately only after the
-CLI, packages, containers, schema and finding catalogue are stable. They will
-call the public CLI rather than embed FastaGuard implementation code.
+CLI, packages, containers, schema and finding catalogue are stable. The
+published assembly integrations now use v1.0.0; this does not add reference
+inputs to them. Reference components will call the public CLI rather than
+embed FastaGuard implementation code.
 
-Migration fixtures must demonstrate that every documented v0.7 consumer query
-continues to work against version 1.0 assembly output. Any unavoidable breaking
-change delays the final release and requires an explicit migration document.
+Compatibility tests preserve documented v0.7 consumer queries against version
+1.0 assembly output. Any future breaking change requires an explicit migration
+document.
 
 ## Verification strategy
+
+The following is the validation scope from the original design, not a record
+that every proposed corpus or differential check has been completed. Consult
+the tests and dated evidence reports for results actually obtained.
 
 ### Identity and policy tests
 
@@ -639,7 +649,11 @@ Large-file behaviour is streaming: one FASTA pass for sequence identities,
 header-only reads for BAM/CRAM/VCF/BCF, and one GFF3 feature pass. Memory scales
 with sequence declarations and bounded evidence, not full file size.
 
-## Release stages
+## Original release stages
+
+The stages and go/no-go criteria below preserve the original rollout plan.
+Version 1.0.0 has been released; these are historical design targets, not
+outstanding prerelease tasks or evidence that every proposed check ran.
 
 ### 1.0 alpha
 
