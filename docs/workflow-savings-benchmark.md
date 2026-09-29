@@ -21,10 +21,42 @@ a lower bound, never as an exact saving.
 
 ## Required observation fields
 
-Each gated observation records `preflight_wall_seconds`,
-`preflight_cpu_seconds`, `preflight_peak_rss_kib`, and an empty
-`downstream_tasks` list. Each late-validation task records `name`,
-`wall_seconds`, `cpu_seconds`, `requested_cpus`, and `peak_rss_kib`.
+The inputs are JSON arrays of observation objects. Each observation requires:
+
+| Field | Meaning |
+| --- | --- |
+| `run_id` | Repeat identifier, unique within each input file and present in both files. Array order does not determine pairing. |
+| `engine` | Workflow engine used for this comparison. |
+| `case_id` | One fixed reference, declaration, policy and downstream-workload condition. Preserve its full configuration and companion checksums beside the observations. |
+| `input_sha256` | Lowercase SHA-256 digest of the canonical reference input bytes. |
+| `binary_sha256` | Lowercase SHA-256 digest of the measured FastaGuard executable. |
+| `runner_id` | Non-identifying label for the pinned platform, workflow-engine version and resource configuration. Preserve those details with the raw observations. |
+| `status` | `completed` for the gate; `completed` or `timeout` for the late-validation baseline. |
+
+All observations in one summary must share the same engine, case, input digest,
+binary digest and runner. Use separate summaries for different conditions.
+Run IDs must match exactly, with no duplicates or missing partners. These
+fields identify the recorded comparison; they do not independently attest
+that a measurement was performed correctly.
+
+Each gated observation also records `gate_can_continue: false`,
+`preflight_wall_seconds`, `preflight_cpu_seconds`, `preflight_peak_rss_kib`, and
+an empty `downstream_tasks` list. A completed report with a blocking decision is
+not a timed-out gate. A gate that permits continuation or starts downstream
+work is not a valid observation for this blocked-work experiment.
+
+Each late-validation observation contains a non-empty `downstream_tasks` list.
+Each task records `name`, `wall_seconds`, `cpu_seconds`, `requested_cpus`, and
+`peak_rss_kib`. CPU allocations are positive integers; all measured times and
+RSS values are finite, non-negative numbers, not booleans or numeric strings.
+Normalise RSS to KiB before recording it. Missing measurements must not be
+replaced with zero. Non-finite values, arithmetic overflow, malformed JSON and
+duplicate JSON keys are rejected.
+
+Optionally, record `workflow_wall_seconds` for both members of every pair.
+This is measured whole-workflow elapsed time, including scheduling and other
+overheads. Partial coverage is rejected rather than silently summarising a
+subset of repeats.
 
 Summarise matched observations with:
 
@@ -35,9 +67,51 @@ python3 scripts/benchmark_workflow_savings.py \
   --out workflow-savings-summary.json
 ```
 
-The summary reports medians for preflight overhead, downstream tasks started,
-allocated CPU-hours avoided, actual CPU seconds avoided after subtracting
-preflight CPU, wall time avoided, and peak RSS in both conditions.
+The output path must not already exist; the command will not replace an earlier
+summary or an observation file. Invalid inputs exit with code 2 without
+publishing a summary.
+
+## Summary contract
+
+The utility writes `summary_schema_version: 2`, the comparison context, sorted
+run IDs, repeat counts and timeout IDs. This is a benchmark utility format,
+not a change to FastaGuard's report schemas.
+
+Metrics are medians of per-pair observations or differences:
+
+- `median_allocated_cpu_hours_avoided`: gross downstream allocation,
+  `sum(task.wall_seconds * task.requested_cpus) / 3600`. This does not subtract
+  the gate's scheduled CPU allocation and is not a net compute-cost estimate.
+- `median_actual_cpu_seconds_avoided`: summed baseline task CPU seconds minus
+  preflight CPU seconds, retaining negative results.
+- `median_task_summed_wall_seconds_avoided`: summed baseline task wall seconds
+  minus preflight wall seconds, also retaining negative results. Parallel tasks
+  contribute separately; this is not elapsed workflow time.
+- `median_workflow_wall_seconds_avoided`: measured baseline workflow elapsed
+  time minus measured gated workflow elapsed time, or `null` if neither was
+  supplied. It is never inferred from task durations.
+- Preflight wall time and peak RSS, downstream task count, and the maximum
+  individual downstream task RSS in each repeat. The latter is not the combined
+  peak memory of concurrent tasks.
+
+Machine-readable metrics retain floating-point precision without display
+rounding, so small negative savings are not hidden and timeout lower bounds
+are not rounded upwards. Apply appropriate formatting separately in tables.
+
+A summary containing any timed-out baseline has `estimate_kind: "lower_bound"`
+and lists its censored repeats separately from completed pairs. Task costs
+observed before the timeout are lower bounds on completed-run costs; their
+derived median savings remain lower bounds even when mixed with completed
+repeats. All required measurements must still be available. Ordinary failures
+and cancellations are rejected, not reclassified as timeouts. A summary with
+no timeouts has `estimate_kind: "observed"`, not a guarantee about future runs.
+
+The old ambiguous `median_wall_seconds_avoided` key is replaced by the explicit
+task-summed metric. Historical observations lacking identity or status fields
+must be reconstructed from retained raw evidence or rerun. Do not guess those
+fields from array order or a published median. Use three repeats per named
+condition for the evidence campaign; the utility reports the actual count
+without claiming that fewer repeats meet that campaign requirement.
 
 ## Workflow-native sources
 
@@ -57,6 +131,10 @@ the experiment measures preflight placement rather than claiming a universal
 native failure mode.
 
 ## Local results
+
+The tables below record earlier experiments, not results of the current
+reference-evidence campaign. Their original measurements have not been
+recomputed under the version 2 observation contract.
 
 Three matched runs were completed in a Linux container using a deterministic
 5 Mbp reference and 20,000 150 bp reads. The late-validation task was limited
