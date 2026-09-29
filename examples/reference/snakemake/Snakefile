@@ -1,0 +1,221 @@
+import hashlib
+import json
+import re
+import shutil
+from pathlib import Path
+
+
+def required(key):
+    value = config.get(key)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{key} must be a non-empty path")
+    return str(Path(value).expanduser().resolve())
+
+
+def optional(key):
+    value = config.get(key)
+    if value is None:
+        return []
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{key} must be a path when supplied")
+    return [str(Path(value).expanduser().resolve())]
+
+
+def paths(key):
+    values = config.get(key, [])
+    if not isinstance(values, list) or any(
+        not isinstance(value, str) or not value for value in values
+    ):
+        raise ValueError(f"{key} must be a list of paths")
+    return [str(Path(value).expanduser().resolve()) for value in values]
+
+
+FASTA = required("fasta")
+FAI = optional("fai")
+DICT = optional("dict")
+ALIASES = optional("alias_map")
+ALIGNMENTS = paths("alignments")
+VARIANTS = paths("variants")
+ANNOTATIONS = paths("annotations")
+OUTPUT_ROOT = Path(required("output_dir"))
+RUN_ID = config.get("run_id", "reference")
+if not isinstance(RUN_ID, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", RUN_ID):
+    raise ValueError("run_id must contain only letters, digits, underscores or hyphens")
+RUN_DIR = OUTPUT_ROOT / RUN_ID
+MODE = config.get("mode", "report")
+POLICY = config.get("policy", "coordinate")
+REQUIRE = config.get("require", [])
+WRITE_LOCK = config.get("write_lock", False)
+BINARY = config.get("binary", "fastaguard")
+if MODE not in ("report", "enforce"):
+    raise ValueError("mode must be report or enforce")
+if POLICY not in ("strict", "coordinate", "advisory"):
+    raise ValueError("policy must be strict, coordinate or advisory")
+if not isinstance(REQUIRE, list) or any(
+    kind not in ("fai", "dict", "alignment", "variants", "annotation")
+    for kind in REQUIRE
+):
+    raise ValueError("require must list supported companion kinds")
+if not isinstance(WRITE_LOCK, bool):
+    raise ValueError("write_lock must be boolean")
+if not isinstance(BINARY, str) or not BINARY:
+    raise ValueError("binary must be a non-empty executable path or command")
+
+HELPER = Path(workflow.basedir).resolve().parents[1] / "workflows/check_fastaguard_gate.py"
+REPORTS = {
+    "html": str(RUN_DIR / "reference.fastaguard.html"),
+    "json": str(RUN_DIR / "reference.fastaguard.json"),
+    "tsv": str(RUN_DIR / "reference.fastaguard.tsv"),
+    "multiqc": str(RUN_DIR / "reference.fastaguard_mqc.json"),
+}
+LOCK = str(RUN_DIR / "reference.fastaguard.lock.json")
+STAGING = RUN_DIR / ".staging"
+STAGED_REPORTS = {
+    name: str(STAGING / Path(path).name) for name, path in REPORTS.items()
+}
+REPORT_OUTPUTS = dict(STAGED_REPORTS)
+if WRITE_LOCK:
+    REPORT_OUTPUTS["lock"] = str(STAGING / Path(LOCK).name)
+SIGNATURE_FILE = RUN_DIR / ".reference-inputs.sha256"
+REPORT_DIGESTS = RUN_DIR / ".reference-report-digests.json"
+PUBLISHED = str(RUN_DIR / ".reference-published")
+ACCEPTED = str(RUN_DIR / "reference.accepted.sha256")
+DOWNSTREAM = str(RUN_DIR / "downstream.started")
+
+
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+input_files = [FASTA, *FAI, *DICT, *ALIASES, *ALIGNMENTS, *VARIANTS, *ANNOTATIONS]
+resolved_binary = shutil.which(BINARY)
+if resolved_binary:
+    input_files.append(str(Path(resolved_binary).resolve()))
+signature_payload = {
+    "files": [(path, sha256_file(path)) for path in input_files],
+    "policy": POLICY,
+    "require": REQUIRE,
+    "write_lock": WRITE_LOCK,
+    "mode": MODE,
+    "binary": BINARY,
+}
+RUN_SIGNATURE = hashlib.sha256(
+    json.dumps(signature_payload, sort_keys=True, separators=(",", ":")).encode()
+).hexdigest()
+if RUN_DIR.exists():
+    if not RUN_DIR.is_dir():
+        raise ValueError(f"output path is not a directory: {RUN_DIR}")
+    allowed = {
+        STAGING.name, SIGNATURE_FILE.name, REPORT_DIGESTS.name,
+        Path(PUBLISHED).name,
+        Path(ACCEPTED).name,
+        Path(DOWNSTREAM).name, Path(LOCK).name,
+        ".reference-report.log", ".reference-publish.log",
+        ".reference-gate.log", ".downstream.log",
+        *(Path(path).name for path in REPORTS.values()),
+    }
+    if any(path.name not in allowed for path in RUN_DIR.iterdir()):
+        raise ValueError(f"occupied run_id contains unexpected files: {RUN_DIR}")
+    if SIGNATURE_FILE.is_file():
+        if SIGNATURE_FILE.read_text().strip() != RUN_SIGNATURE:
+            raise ValueError(f"run_id already belongs to different inputs: {RUN_ID}")
+        if not REPORT_DIGESTS.is_file():
+            raise ValueError(f"published report digests are missing: {RUN_DIR}")
+        expected = json.loads(REPORT_DIGESTS.read_text())
+        published = dict(REPORTS)
+        if WRITE_LOCK:
+            published["lock"] = LOCK
+        if (
+            set(expected) != set(published)
+            or any(
+                not Path(path).is_file() or sha256_file(path) != expected[name]
+                for name, path in published.items()
+            )
+        ):
+            raise ValueError(f"published reports are missing or modified: {RUN_DIR}")
+    elif any(Path(path).exists() for path in (PUBLISHED, ACCEPTED, DOWNSTREAM)):
+        raise ValueError(f"occupied run_id has no input signature: {RUN_DIR}")
+
+
+rule all:
+    input:
+        PUBLISHED if MODE == "report" else DOWNSTREAM
+
+
+rule reference_report:
+    input:
+        fasta=FASTA,
+        fai=FAI,
+        dict=DICT,
+        alias_map=ALIASES,
+        alignments=ALIGNMENTS,
+        variants=VARIANTS,
+        annotations=ANNOTATIONS
+    output:
+        **REPORT_OUTPUTS
+    params:
+        binary=BINARY,
+        policy=POLICY,
+        required=REQUIRE,
+        write_lock=WRITE_LOCK
+    conda:
+        "../../snakemake/wrapper/environment.yaml"
+    log:
+        str(RUN_DIR / ".reference-report.log")
+    script:
+        "scripts/report.py"
+
+
+rule publish_reports:
+    input:
+        **REPORT_OUTPUTS
+    output:
+        complete=PUBLISHED
+    params:
+        reports=REPORTS,
+        lock=LOCK if WRITE_LOCK else None,
+        report_digests=str(REPORT_DIGESTS),
+        signature_path=str(SIGNATURE_FILE),
+        signature=RUN_SIGNATURE
+    conda:
+        "../../snakemake/wrapper/environment.yaml"
+    log:
+        str(RUN_DIR / ".reference-publish.log")
+    script:
+        "scripts/publish.py"
+
+
+rule reference_gate:
+    input:
+        published=PUBLISHED,
+        helper=str(HELPER)
+    output:
+        accepted=ACCEPTED
+    params:
+        report=REPORTS["json"]
+    conda:
+        "../../snakemake/wrapper/environment.yaml"
+    log:
+        str(RUN_DIR / ".reference-gate.log")
+    script:
+        "scripts/gate.py"
+
+
+rule downstream:
+    input:
+        accepted=ACCEPTED
+    output:
+        marker=DOWNSTREAM
+    params:
+        run_id=RUN_ID,
+        report=REPORTS["json"]
+    conda:
+        "../../snakemake/wrapper/environment.yaml"
+    log:
+        str(RUN_DIR / ".downstream.log")
+    script:
+        "scripts/downstream.py"

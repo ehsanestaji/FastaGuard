@@ -124,6 +124,9 @@ It is not a reusable workflow gate. Use a new output directory to repeat the
 example while retaining previous evidence; existing files are not overwritten.
 The first argument can be a quoted executable path instead of `fastaguard`.
 
+For complete Nextflow and Snakemake examples, see the
+[reference workflows](../examples/reference/README.md).
+
 ### Write a reference lockfile
 
 `--write-lock` is a boolean switch. With `--outdir`, the lockfile is named

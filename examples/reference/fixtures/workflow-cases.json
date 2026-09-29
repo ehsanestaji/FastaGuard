@@ -1,0 +1,81 @@
+{
+  "cases": [
+    {
+      "id": "exact",
+      "fai": "reference.fa.fai",
+      "dict": "reference.dict",
+      "policy": "coordinate",
+      "require": ["fai", "dict"],
+      "write_lock": true,
+      "reportable": true,
+      "can_continue": true
+    },
+    {
+      "id": "header-coordinate",
+      "dict": "header-only.dict",
+      "policy": "coordinate",
+      "require": ["dict"],
+      "reportable": true,
+      "can_continue": true
+    },
+    {
+      "id": "header-strict",
+      "dict": "header-only.dict",
+      "policy": "strict",
+      "require": ["dict"],
+      "reportable": true,
+      "can_continue": false
+    },
+    {
+      "id": "length-coordinate",
+      "dict": "copied-length-mismatch.dict",
+      "policy": "coordinate",
+      "require": ["dict"],
+      "reportable": true,
+      "can_continue": false
+    },
+    {
+      "id": "length-advisory",
+      "dict": "copied-length-mismatch.dict",
+      "policy": "advisory",
+      "require": ["dict"],
+      "reportable": true,
+      "can_continue": true
+    },
+    {
+      "id": "missing-required",
+      "policy": "coordinate",
+      "require": ["dict"],
+      "reportable": true,
+      "can_continue": false
+    },
+    {
+      "id": "invalid-canonical",
+      "fasta": "invalid.fa",
+      "policy": "advisory",
+      "reportable": true,
+      "can_continue": false
+    },
+    {
+      "id": "unreadable-supplied",
+      "dict": "missing.dict",
+      "policy": "coordinate",
+      "require": ["dict"],
+      "reportable": false,
+      "can_continue": false
+    }
+  ],
+  "repeated": {
+    "id": "repeated",
+    "fai": "aliased.fa.fai",
+    "dict": "reference.dict",
+    "alias_map": "aliases.tsv",
+    "alignments": ["reads.sam"],
+    "variants": ["variants/a/sites.vcf", "variants/b/sites.vcf"],
+    "annotations": ["genes.gff3"],
+    "policy": "coordinate",
+    "require": ["fai", "dict", "alignment", "variants", "annotation"],
+    "reportable": true,
+    "can_continue": true
+  }
+}

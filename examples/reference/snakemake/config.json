@@ -1,0 +1,11 @@
+{
+  "fasta": "examples/reference/fixtures/reference.fa",
+  "fai": "examples/reference/fixtures/reference.fa.fai",
+  "dict": "examples/reference/fixtures/reference.dict",
+  "output_dir": "target/reference-snakemake",
+  "run_id": "exact",
+  "mode": "enforce",
+  "policy": "coordinate",
+  "require": ["fai", "dict"],
+  "write_lock": true
+}

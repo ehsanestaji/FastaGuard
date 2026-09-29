@@ -49,11 +49,15 @@ downstream tool.
 
 | Channel | Status |
 | --- | --- |
+| Development source | `v1.1.0` (unreleased) |
 | Source release | `v1.0.0` Reference Contract Gate |
 | GitHub release | `v1.0.0` release binaries and checksums |
 | Bioconda | `v1.0.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
 | BioContainers | `1.0.0--hfa8f182_0` is the published pinned workflow image |
 | Source build | local checkout builds report the package version from `Cargo.toml` |
+
+The [v1.1.0 release notes](docs/releases/v1.1.0.md) describe the reference
+workflow examples and CI checks being prepared for the next release.
 
 ## Install
 
@@ -291,7 +295,9 @@ not accepted as an annotation declaration.
 
 Try the [reference quickstart](docs/quickstart.md#reference-quickstart) for a
 matching reference and a deliberately mismatched dictionary, with retained
-reports and a separate policy gate.
+reports and a separate policy gate. The
+[reference workflow examples](examples/reference/README.md) run the same
+collect-then-gate pattern in Nextflow and Snakemake.
 
 Reference mode writes HTML, JSON, TSV and MultiQC-compatible JSON by default.
 Use `--format` to select a subset, `--write-lock` to write a
@@ -501,7 +507,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.1.0 release notes](docs/releases/v0.1.0.md)
 - [Roadmap](docs/roadmap.md)
 
-Citation metadata for the v1.0.0 source release is provided in
+Citation metadata for this source version is provided in
 [`CITATION.cff`](CITATION.cff).
 
 ## Status
