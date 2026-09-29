@@ -6,6 +6,7 @@ import subprocess
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 import jsonschema
 
@@ -20,6 +21,11 @@ SNAKEMAKE = ROOT / "examples/reference/snakemake/Snakefile"
 class ReferenceWorkflowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if (
+            os.environ.get("FASTAGUARD_REQUIRE_WORKFLOW_ENGINES") == "1"
+            and os.environ.get("FASTAGUARD_WORKFLOW_CASE")
+        ):
+            raise RuntimeError("Required workflow tests must run every fixture case")
         cls.cases = json.loads(MANIFEST.read_text())["cases"]
         cls.binary = Path(
             os.environ.get("FASTAGUARD_BINARY", ROOT / "target/debug/fastaguard")
@@ -116,6 +122,8 @@ class ReferenceWorkflowTest(unittest.TestCase):
         executable = shutil.which("nextflow")
         if executable:
             return [executable]
+        if os.environ.get("FASTAGUARD_REQUIRE_WORKFLOW_ENGINES") == "1":
+            self.fail("Nextflow executable unavailable")
         self.skipTest("Nextflow executable unavailable")
 
     def snakemake_command(self):
@@ -124,6 +132,8 @@ class ReferenceWorkflowTest(unittest.TestCase):
         )
         if executable:
             return [executable]
+        if os.environ.get("FASTAGUARD_REQUIRE_WORKFLOW_ENGINES") == "1":
+            self.fail("Snakemake executable unavailable")
         self.skipTest("Snakemake executable unavailable")
 
     def run_engine(self, engine, config, root, resume=False, extra_args=(), env=None):
@@ -490,6 +500,35 @@ class ReferenceWorkflowTest(unittest.TestCase):
                 (directory / ".reference-published").is_file(),
                 retry.stdout + retry.stderr,
             )
+
+
+class WorkflowEngineRequirementsTest(unittest.TestCase):
+    def test_missing_engines_skip_when_optional(self):
+        case = ReferenceWorkflowTest("test_nextflow_matrix")
+        with patch.dict(os.environ, {}, clear=True), patch("shutil.which", return_value=None):
+            for command in (case.nextflow_command, case.snakemake_command):
+                with self.subTest(engine=command.__name__):
+                    with self.assertRaises(unittest.SkipTest):
+                        command()
+
+    def test_missing_engines_fail_when_required(self):
+        case = ReferenceWorkflowTest("test_nextflow_matrix")
+        with patch.dict(
+            os.environ, {"FASTAGUARD_REQUIRE_WORKFLOW_ENGINES": "1"}, clear=True
+        ), patch("shutil.which", return_value=None):
+            for command in (case.nextflow_command, case.snakemake_command):
+                with self.subTest(engine=command.__name__):
+                    with self.assertRaises(Exception) as raised:
+                        command()
+                    self.assertIsInstance(raised.exception, AssertionError)
+
+    def test_required_matrix_rejects_a_single_case_filter(self):
+        with patch.dict(os.environ, {
+            "FASTAGUARD_REQUIRE_WORKFLOW_ENGINES": "1",
+            "FASTAGUARD_WORKFLOW_CASE": "exact",
+        }, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "every fixture case"):
+                ReferenceWorkflowTest.setUpClass()
 
 
 if __name__ == "__main__":

@@ -97,6 +97,67 @@ jobs:
           path: target/ncbi-policy.json
           if-no-files-found: error
 
+  reference-workflows:
+    name: Reference workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Nextflow
+        uses: nf-core/setup-nextflow@893c28b667aedeba26e37f296d260ccc5bc4d914 # v3.0.1
+        with:
+          version: "26.04.6"
+          java-version: "17"
+
+      - name: Install Snakemake and test dependencies
+        run: python3 -m pip install --requirement requirements-test.txt "snakemake==9.25.2"
+
+      - name: Build FastaGuard
+        run: cargo build --locked --bin fastaguard
+
+      - name: Check workflow engine versions
+        run: |
+          nextflow -version
+          snakemake --version
+
+      - name: Lint reference workflows
+        run: |
+          nextflow lint examples/reference/nextflow/main.nf
+          snakemake --snakefile examples/reference/snakemake/Snakefile \
+            --configfile examples/reference/snakemake/config.json \
+            --config binary="$PWD/target/debug/fastaguard" --lint
+
+      - name: Test reference workflows with both engines required
+        env:
+          FASTAGUARD_REQUIRE_WORKFLOW_ENGINES: "1"
+        run: |
+          python3 -m pytest -q -ra tests/python/test_reference_workflows.py \
+            --junitxml=target/reference-workflow-tests.xml
+
+      - name: Upload workflow test results
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: reference-workflow-tests
+          path: target/reference-workflow-tests.xml
+          if-no-files-found: warn
+
   multiqc-plugin:
     name: MultiQC plugin (Python ${{ matrix.python }}, MultiQC ${{ matrix.multiqc }})
     runs-on: ubuntu-latest

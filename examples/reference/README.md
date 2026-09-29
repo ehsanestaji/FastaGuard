@@ -68,3 +68,21 @@ Object-store publication and multiple bundles are outside their scope.
 The small [fixture manifest](fixtures/workflow-cases.json) defines eight
 expected decision cases used by the engine integration tests. It is test data,
 not biological validation evidence.
+
+## Testing
+
+The dedicated GitHub CI job uses Nextflow 26.04.6, Java 17, Snakemake 9.25.2,
+and Python 3.12. It runs both workflow linters and the full reference test
+file, including the decision matrix, report retention, and retry checks.
+
+With both engines on `PATH` and the Python test dependencies installed:
+
+```bash
+cargo build --locked --bin fastaguard
+FASTAGUARD_REQUIRE_WORKFLOW_ENGINES=1 \
+  python3 -m pytest -q -ra tests/python/test_reference_workflows.py
+```
+
+Required mode fails when an engine is unavailable and rejects a
+`FASTAGUARD_WORKFLOW_CASE` filter. Without required mode, local tests may
+skip an unavailable engine.
