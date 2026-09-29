@@ -12,7 +12,8 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CURRENT_VERSION = "1.0.0"
+SOURCE_VERSION = "1.1.0"
+PUBLISHED_VERSION = "1.0.0"
 CURRENT_CONTAINER = "1.0.0--hfa8f182_0"
 CURRENT_SOURCE_SHA256 = (
     "427bd1b9cf406f42e9754bdf2e79370c3c879249cfb87e8a4a7c9dbfa6dc4cfa"
@@ -37,10 +38,41 @@ class ReleaseMetadataTest(unittest.TestCase):
         binary.chmod(0o755)
         return project
 
-    def test_package_targets_v1_0_0_release(self):
+    def test_package_targets_v1_1_0_release(self):
         cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
 
-        self.assertEqual(cargo["package"]["version"], "1.0.0")
+        self.assertEqual(cargo["package"]["version"], SOURCE_VERSION)
+
+    def test_cargo_lock_matches_source_version(self):
+        lock = tomllib.loads((ROOT / "Cargo.lock").read_text())
+        package = next(item for item in lock["package"] if item["name"] == "fastaguard")
+
+        self.assertEqual(package["version"], SOURCE_VERSION)
+
+    def test_v1_1_0_release_notes_define_workflow_scope(self):
+        notes = ROOT / "docs/releases/v1.1.0.md"
+
+        self.assertTrue(notes.is_file())
+        text = " ".join(notes.read_text().split())
+        for expected in (
+            "FastaGuard v1.1.0",
+            "Status: unreleased",
+            "Nextflow", "Snakemake", "report", "enforce",
+            "gate.can_continue", "report retention", "retry",
+            "Assembly and compare reports retain schema version `0.7.0`",
+            "Reference reports retain schema version `1.0.0`",
+            "Bioconda and BioContainers remain at v1.0.0",
+            "nf-core", "single reference bundle", "shared filesystem",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, text)
+
+    def test_readme_separates_development_from_published_release(self):
+        text = (ROOT / "README.md").read_text()
+
+        self.assertIn("| Development source | `v1.1.0` (unreleased) |", text)
+        self.assertIn("| Source release | `v1.0.0` Reference Contract Gate |", text)
+        self.assertIn("docs/releases/v1.1.0.md", text)
 
     def test_v1_0_0_release_notes_define_reference_contract(self):
         notes = ROOT / "docs" / "releases" / "v1.0.0.md"
@@ -69,7 +101,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         self.assertTrue(checker.is_file(), checker)
 
         matching = subprocess.run(
-            [str(checker), "v1.0.0"],
+            [str(checker), f"v{SOURCE_VERSION}"],
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -77,16 +109,17 @@ class ReleaseMetadataTest(unittest.TestCase):
         )
         self.assertEqual(matching.returncode, 0, matching.stderr)
 
+        mismatching_tag = "v0.0.0"
         mismatching = subprocess.run(
-            [str(checker), "v1.0.1"],
+            [str(checker), mismatching_tag],
             cwd=ROOT,
             capture_output=True,
             text=True,
             check=False,
         )
         self.assertNotEqual(mismatching.returncode, 0)
-        self.assertIn("v1.0.1", mismatching.stderr)
-        self.assertIn("v1.0.0", mismatching.stderr)
+        self.assertIn(mismatching_tag, mismatching.stderr)
+        self.assertIn(f"v{SOURCE_VERSION}", mismatching.stderr)
 
     def test_release_workflow_validates_tag_before_packaging(self):
         workflow = yaml.safe_load(
@@ -114,7 +147,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(ROOT / "scripts" / "package_release_artifact.sh"),
                     "test-target",
-                    "v1.0.0",
+                    f"v{SOURCE_VERSION}",
                     str(binary),
                     str(dist),
                 ],
@@ -131,15 +164,15 @@ class ReleaseMetadataTest(unittest.TestCase):
             self.assertTrue(archive.exists(), archive)
             self.assertEqual(
                 archive.name,
-                "fastaguard-v1.0.0-test-target.tar.gz",
+                f"fastaguard-v{SOURCE_VERSION}-test-target.tar.gz",
             )
 
             with tarfile.open(archive, "r:gz") as package:
                 names = set(package.getnames())
 
             top_levels = {name.split("/", 1)[0] for name in names}
-            self.assertEqual(top_levels, {"fastaguard-v1.0.0-test-target"})
-            root = "fastaguard-v1.0.0-test-target"
+            self.assertEqual(top_levels, {f"fastaguard-v{SOURCE_VERSION}-test-target"})
+            root = f"fastaguard-v{SOURCE_VERSION}-test-target"
             for expected in [
                 f"{root}/fastaguard",
                 f"{root}/README.md",
@@ -163,7 +196,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(project / "scripts" / "package_release_artifact.sh"),
                     host,
-                    "v1.0.0",
+                    f"v{SOURCE_VERSION}",
                 ],
                 cwd=project,
                 capture_output=True,
@@ -173,7 +206,7 @@ class ReleaseMetadataTest(unittest.TestCase):
 
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertTrue(
-                (project / "dist" / f"fastaguard-v1.0.0-{host}.tar.gz").exists()
+                (project / "dist" / f"fastaguard-v{SOURCE_VERSION}-{host}.tar.gz").exists()
             )
 
     def test_release_archive_rejects_host_fallback_for_foreign_target(self):
@@ -190,7 +223,7 @@ class ReleaseMetadataTest(unittest.TestCase):
                 [
                     str(project / "scripts" / "package_release_artifact.sh"),
                     foreign_target,
-                    "v1.0.0",
+                    f"v{SOURCE_VERSION}",
                 ],
                 cwd=project,
                 capture_output=True,
@@ -399,7 +432,7 @@ class ReleaseMetadataTest(unittest.TestCase):
 
     def test_docs_reference_published_bioconda_install(self):
         install_command = "mamba install -c conda-forge -c bioconda fastaguard"
-        pinned_install = install_command + f"={CURRENT_VERSION}"
+        pinned_install = install_command + f"={PUBLISHED_VERSION}"
         container = f"quay.io/biocontainers/fastaguard:{CURRENT_CONTAINER}"
         docs = [
             ROOT / "README.md",
@@ -430,8 +463,8 @@ class ReleaseMetadataTest(unittest.TestCase):
             (ROOT / "docs/biotools-registration.json").read_text()
         )[0]
         downloads = {item["type"]: item for item in registration["download"]}
-        self.assertEqual(downloads["Binaries"]["version"], CURRENT_VERSION)
-        self.assertEqual(downloads["Software package"]["version"], CURRENT_VERSION)
+        self.assertEqual(downloads["Binaries"]["version"], PUBLISHED_VERSION)
+        self.assertEqual(downloads["Software package"]["version"], PUBLISHED_VERSION)
         self.assertEqual(downloads["Container file"]["version"], CURRENT_CONTAINER)
 
     def test_current_distribution_docs_do_not_claim_updates_are_pending(self):
@@ -479,7 +512,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         for path in current_docs:
             with self.subTest(path=path):
                 text = path.read_text()
-                self.assertIn(CURRENT_VERSION, text)
+                self.assertIn(PUBLISHED_VERSION, text)
                 for claim in stale_claims:
                     self.assertNotIn(claim, text)
 

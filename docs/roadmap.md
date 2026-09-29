@@ -7,6 +7,20 @@ GitHub, Bioconda, and BioContainers. Bioconda serves `linux-64`,
 `linux-aarch64`, `osx-64`, and
 `osx-arm64`; the published BioContainers tag is `1.0.0--hfa8f182_0`.
 
+## v1.1: Reference Workflow Adoption
+
+Status: in preparation, not yet released.
+
+- tested Nextflow and Snakemake examples for a single reference bundle
+- separate reporting and enforcement, with reports retained when a gate blocks
+- explicit input dependencies and checks for changed inputs or reports on retry
+- pinned workflow-engine CI that requires the full decision matrix
+- clearer installation, reference quickstart and compatibility guidance
+
+This release keeps the v1.0 command-line behaviour and report schemas.
+It does not introduce new upstream nf-core or Snakemake reference components.
+See the [v1.1.0 release notes](releases/v1.1.0.md) for scope and limitations.
+
 ## v1.0: Reference Contract Gate
 
 Goal:

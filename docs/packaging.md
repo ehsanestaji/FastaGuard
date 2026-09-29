@@ -19,6 +19,11 @@ The current published package includes the `--gate submission` and
 `--submission-target generic|ncbi` contract. Keep future docs pinned to
 confirmed Bioconda and BioContainers versions before advertising them as live.
 
+The development source targets v1.1.0, which is not yet released. Its
+[release notes](releases/v1.1.0.md) describe the planned workflow additions.
+Keep the recipe, source archive checksum and workflow image pins at the
+published version until the new source archive and packages are available.
+
 ## Bioconda
 
 Recommended install:
@@ -106,8 +111,12 @@ Build and inspect a host archive locally:
 
 ```bash
 cargo build --release --locked
-scripts/package_release_artifact.sh "$(rustc -vV | sed -n 's/^host: //p')" v1.0.0
-tar -tzf "dist/fastaguard-v1.0.0-$(rustc -vV | sed -n 's/^host: //p').tar.gz"
+package_id="$(cargo pkgid --quiet)"
+release_version="${package_id##*@}"
+host_target="$(rustc -vV | sed -n 's/^host: //p')"
+scripts/check_release_tag.sh "v${release_version}"
+scripts/package_release_artifact.sh "$host_target" "v${release_version}"
+tar -tzf "dist/fastaguard-v${release_version}-${host_target}.tar.gz"
 ```
 
 Each archive has one top-level directory containing `fastaguard`, `README.md`,

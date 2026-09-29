@@ -3,7 +3,7 @@
   "report_type": "assembly",
   "tool": {
     "name": "FastaGuard",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "input": {
     "path": "testdata/invalid_empty_record.fa",
