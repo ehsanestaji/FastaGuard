@@ -8,11 +8,16 @@ submission_portal: ScholarOne (Bioinformatics)
 format_policy: format-free_first_submission_ok
 oup_template_deferred_to: revision
 
-# Machine-check status after `make check` (human ScholarOne/Zenodo steps remain USER-ACTION).
+# Machine-check status after `make check` (human ScholarOne/bioRxiv steps remain USER-ACTION).
 submission_status: ready_for_author_upload
 author_gate_status: pending_coauthor_confirmation
 zenodo_gate_status: deposited
+biorxiv_status: not_submitted
 scholarone_status: not_submitted
+# OUP policy: AI use must be disclosed in the cover letter AND the manuscript; preprints must be
+# disclosed in the cover letter; update the preprint with the published DOI after acceptance.
+ai_disclosure_locations: [manuscript, cover_letter]
+preprint_disclosure_location: cover_letter
 
 manuscript:
   source: paper/main.tex
@@ -96,15 +101,14 @@ submission_docs:
 
 required_human_inputs:
   - coauthor_final_ok_jian_feng_mao
-  - zenodo_doi_from_v1.0.0_release
-  - optional_biorxiv_deposit
+  - biorxiv_deposit
   - scholarone_upload
   - apc_or_read_and_publish_check
   - suggested_editors_or_accept_defaults
 
 blockers_for_machine_ready: []
 blockers_for_human_submit:
+  - Co-author final confirmation (also required by bioRxiv: all authors must consent to deposit)
+  - bioRxiv deposit (login by Ehsan; affiliation required)
   - ScholarOne upload (credentials)
-  - Zenodo DOI mint from GitHub release v1.0.0 (credentials / GitHub–Zenodo link)
-  - Co-author final confirmation
   - APC / institutional Read & Publish / ISCB discount check

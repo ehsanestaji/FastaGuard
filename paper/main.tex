@@ -21,7 +21,7 @@
 \usepackage{xcolor}
 \usepackage{natbib}
 \usepackage{url}
-\usepackage{microtype}
+\usepackage{microtype}\DisableLigatures[-]{encoding=*,family=tt*}% keep "--" in CLI flags as two hyphens
 \usepackage{lineno}
 \usepackage{amssymb}
 \usepackage{tikz}
@@ -33,7 +33,10 @@
   colorlinks=true,
   linkcolor=fgblue,
   citecolor=fgblue,
-  urlcolor=fgblue
+  urlcolor=fgblue,
+  pdftitle={FastaGuard: FASTA preflight QC for modern bioinformatics pipelines},
+  pdfauthor={Ehsan Estaji and Jian-Feng Mao},
+  pdfkeywords={FASTA, quality control, genome assembly, preflight, bioinformatics pipelines, Rust}
 }
 \setlength{\emergencystretch}{2em}
 
@@ -58,9 +61,10 @@ SE-901\,87 Ume{\aa}, Sweden \\[4pt]
 
 \begin{abstract}
 \noindent\textbf{Summary:}
-FastaGuard is a fast, explainable FASTA preflight QC tool that validates assembly
-FASTA files, detects structural and composition red flags, and emits a stable
-multi-format report contract before expensive downstream analysis such as QUAST,
+FastaGuard is a streaming, explainable FASTA preflight QC tool that validates assembly
+FASTA files, detects structural and composition red flags, and emits a versioned
+multi-format report with an explicit pipeline gate before expensive downstream
+analysis such as QUAST,
 BUSCO, BlobToolKit, CheckM, annotation, or official repository validation.
 
 \noindent\textbf{Availability and Implementation:}
@@ -81,7 +85,7 @@ Implemented in Rust; supported on Linux and macOS, including Bioconda builds for
 
 \noindent\textbf{Supplementary information:}
 Finding-catalog excerpts, evidence packs, and reproducibility notes are maintained
-with the software repository under \texttt{docs/} and \texttt{paper/}.
+with the software repository under \texttt{docs/}.
 \end{abstract}
 
 \vspace{0.4em}
@@ -90,31 +94,40 @@ bioinformatics pipelines, Rust
 
 \section{Introduction}
 Genome assemblies and reference FASTA files are foundational inputs for
-bioinformatics pipelines, yet FASTA-level quality control remains fragmented.
+bioinformatics pipelines, yet FASTA-level checks are usually assembled from
+separate utilities.
 Teams commonly combine ad hoc scripts, general sequence utilities such as
-SeqKit~\citep{shen2016seqkit}, assembly evaluators such as
+SeqKit~\citep{shen2016seqkit,shen2024seqkit2}, assembly evaluators such as
 QUAST~\citep{gurevich2013quast}, biological completeness tools such as
-BUSCO~\citep{simao2015busco}, contamination-oriented exploration with
+BUSCO~\citep{simao2015busco}, genome-quality estimation with
+CheckM~\citep{parks2015checkm}, contamination-oriented exploration with
 BlobToolKit~\citep{challis2020blobtoolkit}, and late-stage report aggregation with
 MultiQC~\citep{ewels2016multiqc}.
 Raw-read QC tools remain essential before assembly, but they do not answer
 whether a finished assembly FASTA is structurally sound for the next stage.
-Each of the tools above is valuable for its intended question.
-None is the simple default first command for a narrower but frequent need:
+Each of the tools above is valuable for its intended question; none is designed
+as a first-step gate for a narrower but frequent need:
 whether a FASTA file is structurally valid, alphabet-sane, interpretable, and
 safe to pass into expensive downstream steps.
 
 The cost of skipping that earlier layer is practical.
 Malformed headers, empty records, duplicate identifiers, invalid IUPAC
-characters, extreme ambiguity, and high-N scaffolds often surface only after
-minutes to hours of assembly QC, completeness assessment, taxonomy workflows,
-annotation, or official repository validation have already started.
-Pipeline authors then reinvent the same checks repeatedly, with incompatible
-report shapes and unclear stop/go semantics for workflow engines.
-SeqKit and related utilities can compute counts and lengths quickly, but they
-are not opinionated QC gates with a versioned schema, MultiQC-compatible
-artifacts, and explicit blocking-versus-advisory policy for Nextflow or
-Snakemake.
+characters, extreme ambiguity, and high-N scaffolds may be caught only when a
+downstream tool reaches the offending record, or be silently normalised along
+the way; we did not quantify the resulting delay.
+Pipeline authors then reimplement the same checks, with incompatible report
+shapes and unclear stop/go semantics for workflow engines such as
+Nextflow~\citep{ditommaso2017nextflow} and Snakemake~\citep{molder2021snakemake}.
+Dedicated validators exist: py\_fasta\_validator~\citep{edwards2023pyfastavalidator}
+and fa-lint~\citep{falint} check headers, alphabet, and identifier uniqueness
+but, to our knowledge, provide no structured per-finding report, and AssemblyQC
+embeds such input checks inside a single pipeline~\citep{rashid2024assemblyqc}.
+Statistics toolkits such as SeqKit, SeqFu~\citep{telatin2021seqfu}, and
+gfastats~\citep{formenti2022gfastats} mainly summarise sequences and define no
+gate semantics.
+To our knowledge, none combines severity-graded findings, an explicit
+blocking-versus-advisory gate, and a schema-versioned machine-readable report
+(JSON, TSV, MultiQC) that workflow engines can branch on.
 
 FastaGuard addresses that gap as a dedicated \emph{preflight} layer
 (Fig.~\ref{fig:overview}).
@@ -122,12 +135,14 @@ It is intentionally not a competitor to interpretive assembly QC:
 it does not claim biological completeness, contamination taxonomy, or repository
 acceptance, and it does not replace official NCBI, ENA, or DDBJ validators.
 Instead it answers whether the FASTA itself is ready for those tools, and it
-returns a deterministic, versioned PASS/WARN/FAIL contract that humans,
-Nextflow/Snakemake/nf-core workflows, and future tool-using agents can consume
+returns a versioned PASS/WARN/FAIL contract, with verdicts, gates, and findings
+that are deterministic for a given input and options, that humans and
+Nextflow, Snakemake, or nf-core~\citep{ewels2020nfcore} workflows can consume
 without scraping logs or HTML.
-The product thesis is therefore a contract as much as a report:
-stable field names, documented finding identifiers, provenance checksums, and
-gate continuation booleans that pipelines can depend on across releases.
+The design is therefore a contract as much as a report:
+field names, documented finding identifiers, provenance checksums, and gate
+continuation booleans are intended to remain stable within a schema major
+version.
 
 \section{Implementation}
 FastaGuard is a streaming-first command-line tool implemented in Rust and
@@ -140,9 +155,11 @@ fastaguard sample.fa --profile assembly --gate pipeline \
 \end{verbatim}
 
 \noindent
-which writes a deterministic four-report bundle
+which writes a four-report bundle
 (\texttt{.html}, \texttt{.json}, \texttt{.tsv}, and MultiQC-compatible
 \texttt{\_mqc.json}) under a chosen prefix.
+Verdicts, gates, and findings are deterministic for a given input and options;
+provenance timestamps and durations vary between runs.
 JSON is the source of truth for machine routing.
 A committed JSON Schema and finding catalog document field names, finding
 identifiers, severity semantics, and suggested actions
@@ -161,9 +178,9 @@ routing language that distinguishes blockers from advisories.
 
 \paragraph{Pipeline gates and process exit contract.}
 Optional gates make stop/go policy explicit.
-The recommended workflow preset \texttt{--gate pipeline} marks duplicate IDs,
-invalid characters, invalid FASTA structure, and high-N content as blocking by
-default, while GC and length outliers remain advisory routing signals unless
+The recommended workflow preset \texttt{--gate pipeline} marks duplicate identifiers
+(full-header or first-token), invalid characters, invalid FASTA structure, and
+high-N content as blocking by default, while GC and length outliers remain advisory routing signals unless
 elevated with \texttt{--fail-on}.
 JSON exposes \texttt{gate.status}, \texttt{gate.blocking\_findings},
 \texttt{gate.advisory\_findings}, \texttt{gate.can\_continue}, and
@@ -180,11 +197,14 @@ only for overall PASS) and is not a synonym for gate continuation.
 \paragraph{Submission-readiness, compare mode, and reference checks.}
 \texttt{--gate submission} with \texttt{--submission-target generic|ncbi}
 performs FASTA-level submission preflight before official validators.
-For NCBI genome targeting, FastaGuard applies a documented
-\texttt{ncbi\_genome} policy snapshot (first-token SeqID syntax and length
-limits, minimum record length, terminal Ns) derived from the NCBI Genome
-Submission Guide~\citep{ncbi_genome_submit}; it does not replace NCBI FCS,
-annotation validation, or repository acceptance decisions.
+For NCBI genome targeting, FastaGuard applies a documented, deliberately
+conservative \texttt{ncbi\_genome} policy snapshot (first-token SeqID syntax and
+length limits, minimum record length, terminal Ns) based on NCBI submission and
+FASTA guidance~\citep{ncbi_genome_submit,ncbi_fasta_format}; in a local
+differential check it was stricter than table2asn on several boundary cases
+(for example, a 199-bp record or a 50-character SeqID), and it does not replace
+NCBI FCS~\citep{astashyn2024fcsgx}, annotation validation, or repository
+acceptance decisions.
 \texttt{fastaguard compare} triages many FASTA files into cohort HTML/JSON/TSV
 outputs for starter cohort routing before interpretive QC.
 A separate \texttt{reference} mode checks whether explicitly supplied companion
@@ -202,19 +222,20 @@ HTML reports remain human-oriented, while JSON/TSV remain stable for engines
 and for MultiQC custom content.
 
 \paragraph{Packaging and workflow adoption.}
-FastaGuard is published on Bioconda and BioContainers, ships GitHub release
-binaries for major Linux and macOS targets, and has merged nf-core module and
-Snakemake wrapper integrations for assembly preflight.
+FastaGuard is published on Bioconda~\citep{gruning2018bioconda} and
+BioContainers~\citep{daveigaleprevost2017biocontainers}, ships GitHub release
+binaries for x86\_64 Linux and for Intel and Apple-silicon macOS (Linux aarch64
+is available through Bioconda), and has merged nf-core and Snakemake wrapper
+integrations for assembly preflight.
 A typical install path is
 \texttt{mamba install -c conda-forge -c bioconda fastaguard=1.0.0}
 (matching GitHub release tag \texttt{v1.0.0}), with a pinned BioContainers image
 for containerized workflow engines.
 These distribution paths are part of the Application Note claim: the tool is
-meant to be installed and gated in real pipelines with low friction, not only
-built from source by specialists.
-Availability commitments follow the journal software policy: source and
-published packages remain openly reachable from the project repository under
-the MIT license~\citep{fastaguard2026}.
+meant to be installed and gated in pipelines with low friction, not only built
+from source by specialists; we make no claim about third-party adoption.
+The archived release is citable~\citep{fastaguard2026}, and source and
+published packages remain openly reachable under the MIT license.
 
 \begin{figure}[t]
   \centering
@@ -243,7 +264,7 @@ the MIT license~\citep{fastaguard2026}.
     \draw[arr] (rep.south east) -- (bl.north);
     \draw[arr] (rep) -- (sub);
     \node[lab, above=0.05cm of fg] {PASS / WARN / FAIL; \texttt{gate.can\_continue}};
-    \node[lab, below=1.55cm of fg]
+    \node[lab, below=2.0cm of fg]
       {Fix FASTA-level blockers first; interpretive QC remains downstream};
   \end{tikzpicture}
   \caption{FastaGuard as the FASTA preflight layer before interpretive assembly
@@ -255,26 +276,25 @@ the MIT license~\citep{fastaguard2026}.
 
 \section{Results}
 Committed public-evidence summaries for FastaGuard v0.6.0 illustrate the intended
-behaviour on synthetic contract fixtures and two exact NCBI reference assemblies
-(Table~\ref{tab:evidence}).
+behaviour on synthetic contract fixtures and two exact NCBI RefSeq
+assemblies~\citep{oleary2016refseq} (Table~\ref{tab:evidence}).
 Portable JSON and TSV summaries in the repository record input byte sizes,
 SHA-256 digests, structural metrics, finding identifiers, and scoped provenance
 separately for the observed executable and the verified source tree.
-On a recorded macOS arm64 run, a clean \emph{Escherichia coli} K-12 MG1655
-assembly (\texttt{GCF\_000005845.2}; 4\,641\,652~bp) completed pipeline-gated
+On a recorded macOS arm64 run, a clean \emph{Escherichia coli} K-12
+MG1655~\citep{blattner1997ecoli} assembly (\texttt{GCF\_000005845.2}; 4\,641\,652~bp) completed pipeline-gated
 preflight in 0.0569~s with PASS and no findings.
-A \emph{Neurospora crassa} OR74A assembly (\texttt{GCF\_000182925.2}; 41\,102\,378~bp)
+A \emph{Neurospora crassa} OR74A~\citep{galagan2003neurospora} assembly (\texttt{GCF\_000182925.2}; 41\,102\,378~bp)
 completed in 0.3441~s with WARN for gap-pattern advisories and
 \texttt{gate.can\_continue} still true under the pipeline gate, routing to deeper
 assembly or composition follow-up rather than hard failure.
 An intentionally broken local fixture returned FAIL with blocking findings
-(duplicate IDs, invalid characters, high-N content) while still exiting~0 after
+(duplicate identifiers, invalid characters, high-N content) while still exiting~0 after
 writing a complete FAIL report---matching the v0.6 workflow contract that
 separates QC status from process success.
-Earlier local value-benchmark runs on synthetic 10--100~Mbp FASTA inputs
-likewise completed in under a second with modest RSS~\citep{fastaguard2026},
-supporting the claim that preflight overhead is small relative to typical
-downstream QC.
+Re-running the two local fixtures with the v1.0.0 binary reproduced the same
+verdicts, gate statuses, input SHA-256 digests, and exit status; the two NCBI
+assemblies were not re-run.
 
 These examples are contract demonstrations, not a representative biological
 benchmark across taxa or assemblers.
@@ -289,9 +309,15 @@ canonical FASTA before mapping or annotation workflows proceed.
 \begin{table}[t]
   \centering
   \caption{Frozen FastaGuard v0.6.0 public-evidence outcomes (assembly profile,
-  pipeline gate) from \texttt{docs/evidence/results/v0.6/evidence\_summary.tsv}.
-  Elapsed times are single-machine contextual measurements, not cross-platform
-  guarantees. Software Availability cites the published \texttt{v1.0.0} release.}
+  pipeline gate) from
+  \texttt{docs/evidence/results/v0.6/evidence\_summary.tsv}.
+  All runs used \texttt{--min-contig-length 1}; with the default minimum, the
+  604-bp synthetic fixture returns WARN through an advisory tiny-contig finding.
+  Elapsed times are single-machine contextual measurements (macOS arm64), not
+  cross-platform guarantees.
+  The \emph{N.\ crassa} count includes the mitochondrial sequence NC\_026614.1
+  (64\,840~bp). Software Availability cites the published \texttt{v1.0.0}
+  release.}
   \label{tab:evidence}
   \begin{tabular}{@{}llllr@{}}
     \toprule
@@ -325,24 +351,27 @@ FastaGuard's contribution is a pipeline-native FASTA preflight \emph{contract}:
 streaming validation, explainable findings, stable schemas, explicit gates, and
 packaging paths that workflow authors can adopt without reinventing per-pipeline
 scripts.
-Relative to SeqKit, FastaGuard trades general sequence manipulation for an
-opinionated QC verdict and gate policy.
+Relative to SeqKit and SeqFu, FastaGuard trades general sequence manipulation
+for an opinionated QC verdict and gate policy; relative to syntax validators
+such as py\_fasta\_validator and fa-lint, it adds severity-graded, explainable
+findings and a structured report.
 Relative to QUAST, BUSCO, BlobToolKit, and CheckM, it runs earlier and answers a
 different question: whether the FASTA is safe to spend those tools on.
 Relative to MultiQC, it is a producer of aggregatable content rather than an
 aggregator.
 Positioning the tool as preflight---rather than as a substitute for those
-ecosystem components---keeps claims falsifiable and complementary.
+ecosystem components---keeps it complementary to them.
 
 Limitations follow from that scope.
 FastaGuard does not discover biological contamination, does not certify archive
 acceptance, and does not replace official validators or FCS-style screens.
 Public-evidence timings are contextual to one machine and release line; authors
 should re-measure on their targets before citing absolute performance.
-The present Application Note freezes the v1.x reference-contract story suitable
-for citation; feature expansion beyond FASTA preflight belongs in software
-releases and, if warranted later, a separate research article rather than an
-overloaded note.
+Finding thresholds are heuristics: we did not measure detection or
+false-positive rates, nor compare FastaGuard with other validators on a common
+defect corpus.
+The behaviour described here corresponds to release v1.0.0; later changes are
+recorded in the project changelog.
 
 \section*{Author contributions}
 Following CRediT, E.E.: conceptualisation, software, validation, investigation,
@@ -365,7 +394,6 @@ The authors reviewed all output and remain responsible for the manuscript, code,
 evidence interpretation, and all scientific claims.
 
 \section*{Acknowledgements}
-Computing resources provided by SNIC/HPC2N at Ume{\aa} University.
 We thank packaging and workflow maintainers who exercised Bioconda,
 BioContainers, nf-core module, and Snakemake wrapper integrations for FastaGuard.
 
@@ -375,7 +403,10 @@ available at \url{https://github.com/ehsanestaji/FastaGuard} under the MIT
 license (cited release tag \texttt{v1.0.0}).
 Committed public-evidence summaries used in Table~\ref{tab:evidence} are
 archived under \texttt{docs/evidence/} (v0.6.0 portable JSON/TSV pack) in the
-repository.
+repository; the rows can be regenerated with
+\texttt{scripts/collect\_evidence.py}, which retrieves the NCBI assemblies by
+accession with the NCBI Datasets command-line tool and records input SHA-256
+digests in the TSV.
 No new biological samples were generated for this study; public NCBI assemblies
 cited in the evidence pack are used under their existing data-access terms.
 

@@ -17,7 +17,11 @@ Machine check: `cd paper && make check`.
 | Cited software release for Availability: GitHub **`v1.0.0`** (Bioconda-published) | DONE |
 | Forbidden phrase guard (“FastQC for FASTA”) in `check_submission.py` | DONE |
 | `.zenodo.json` metadata prepared (no fake DOI) | DONE |
-| Cover letter draft (`paper/cover-letter.md`) | DONE |
+| Zenodo DOI minted from `v1.0.0` (`10.5281/zenodo.23622311`) and cited in Availability + manifest | DONE |
+| Cover letter draft (`paper/cover-letter.md`) incl. preprint + AI disclosure + archive DOI (OUP policy) | DONE |
+| Upstream claims verified (Bioconda, BioContainers, nf-core module, Snakemake wrapper) | DONE |
+| Pre-submission review: claims re-tested against a v1.0.0 build; related work + references audited; fixes applied (see `paper/HANDOFF.md`) | DONE |
+| Zenodo record creators corrected (Estaji + Mao, ORCIDs, affiliation) | DONE |
 | bioRxiv build target + checklist | DONE |
 | PDF builds (`make`) | DONE |
 | Word count ~2.0–2.6k band | DONE (~2.0k+) |
@@ -27,8 +31,8 @@ Machine check: `cd paper && make check`.
 | Item | Notes |
 | --- | --- |
 | Co-author final OK (Jian-Feng Mao) | Confirm authorship/order/CRediT |
-| Zenodo DOI from existing `v1.0.0` release | Follow [`paper/ZENODO.md`](../paper/ZENODO.md); then paste DOI into Availability + `submission.yml` and rebuild |
-| Optional bioRxiv deposit | Follow [`paper/biorxiv-checklist.md`](../paper/biorxiv-checklist.md) |
+| Review decisions | AI-disclosure wording, funding line, SNIC ack, optional feature matrix / differential test, optional NCBI re-run at v1.0.0 (see `paper/HANDOFF.md`) |
+| bioRxiv deposit | Follow [`paper/biorxiv-checklist.md`](../paper/biorxiv-checklist.md); all authors must consent; cover letter discloses it |
 | ScholarOne upload | Format-free first submission OK; upload PDF + cover letter; OUP General Template deferred to **revision** |
 | APC / Read & Publish / ISCB discount | Check before acceptance |
 | Suggested editors (optional) | Cover letter suggests assembly/sequence-analysis tools area |
