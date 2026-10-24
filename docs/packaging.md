@@ -19,10 +19,10 @@ The current published package includes the `--gate submission` and
 `--submission-target generic|ncbi` contract. Keep future docs pinned to
 confirmed Bioconda and BioContainers versions before advertising them as live.
 
-The development source targets v1.1.0, which is not yet released. Its
-[release notes](releases/v1.1.0.md) describe the planned workflow additions.
+FastaGuard v1.1.0 is published on GitHub with source and binary archives; its
+[release notes](releases/v1.1.0.md) describe the reference workflow additions.
 Keep the recipe, source archive checksum and workflow image pins at the
-published version until the new source archive and packages are available.
+published Bioconda version (`1.0.0`) until downstream packages are updated.
 
 ## Bioconda
 

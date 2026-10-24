@@ -49,15 +49,14 @@ downstream tool.
 
 | Channel | Status |
 | --- | --- |
-| Development source | `v1.1.0` (unreleased) |
-| Source release | `v1.0.0` Reference Contract Gate |
-| GitHub release | `v1.0.0` release binaries and checksums |
+| Source release | `v1.1.0` Reference Workflow Adoption |
+| GitHub release | `v1.1.0` release binaries and checksums |
 | Bioconda | `v1.0.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
 | BioContainers | `1.0.0--hfa8f182_0` is the published pinned workflow image |
 | Source build | local checkout builds report the package version from `Cargo.toml` |
 
 The [v1.1.0 release notes](docs/releases/v1.1.0.md) describe the reference
-workflow examples and CI checks being prepared for the next release.
+workflow examples and CI checks included in the `v1.1.0` source release.
 
 ## Install
 
@@ -85,23 +84,23 @@ docker run --rm quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0 fastaguard --
 GitHub release binary for Linux x86_64:
 
 ```bash
-curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v1.0.0/fastaguard-v1.0.0-x86_64-unknown-linux-gnu.tar.gz
-tar -xzf fastaguard-v1.0.0-x86_64-unknown-linux-gnu.tar.gz
-./fastaguard-v1.0.0-x86_64-unknown-linux-gnu/fastaguard --version
+curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v1.1.0/fastaguard-v1.1.0-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf fastaguard-v1.1.0-x86_64-unknown-linux-gnu.tar.gz
+./fastaguard-v1.1.0-x86_64-unknown-linux-gnu/fastaguard --version
 ```
 
 GitHub release binary for macOS Apple Silicon:
 
 ```bash
-curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v1.0.0/fastaguard-v1.0.0-aarch64-apple-darwin.tar.gz
-tar -xzf fastaguard-v1.0.0-aarch64-apple-darwin.tar.gz
-./fastaguard-v1.0.0-aarch64-apple-darwin/fastaguard --version
+curl -L -O https://github.com/ehsanestaji/FastaGuard/releases/download/v1.1.0/fastaguard-v1.1.0-aarch64-apple-darwin.tar.gz
+tar -xzf fastaguard-v1.1.0-aarch64-apple-darwin.tar.gz
+./fastaguard-v1.1.0-aarch64-apple-darwin/fastaguard --version
 ```
 
 Build from the latest published Git tag:
 
 ```bash
-cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v1.0.0
+cargo install --git https://github.com/ehsanestaji/FastaGuard --tag v1.1.0
 fastaguard --version
 ```
 
@@ -496,6 +495,7 @@ FastaGuard catches FASTA-level assembly problems before expensive assembly QC.
 - [v0.5 public evidence workflow](docs/evidence/fastaguard-v0.5-public-evidence.md)
 - [v0.6 public evidence](docs/evidence/fastaguard-v0.6-public-evidence.md)
 - [Packaging](docs/packaging.md)
+- [v1.1.0 release notes](docs/releases/v1.1.0.md)
 - [v1.0.0 release notes](docs/releases/v1.0.0.md)
 - [v0.7.0 release notes](docs/releases/v0.7.0.md)
 - [v0.6.0 release notes](docs/releases/v0.6.0.md)

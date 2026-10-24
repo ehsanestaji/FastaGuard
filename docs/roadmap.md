@@ -2,14 +2,14 @@
 
 ## Current Release
 
-FastaGuard v1.0.0 is the Reference Contract Gate release, available through
-GitHub, Bioconda, and BioContainers. Bioconda serves `linux-64`,
+FastaGuard v1.1.0 is the Reference Workflow Adoption source and GitHub binary
+release. Bioconda and BioContainers serve v1.0.0 on `linux-64`,
 `linux-aarch64`, `osx-64`, and
 `osx-arm64`; the published BioContainers tag is `1.0.0--hfa8f182_0`.
 
 ## v1.1: Reference Workflow Adoption
 
-Status: in preparation, not yet released.
+Status: released on GitHub.
 
 - tested Nextflow and Snakemake examples for a single reference bundle
 - separate reporting and enforcement, with reports retained when a gate blocks

@@ -56,7 +56,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         text = " ".join(notes.read_text().split())
         for expected in (
             "FastaGuard v1.1.0",
-            "Status: unreleased",
+            "Status: released on GitHub",
             "Nextflow", "Snakemake", "report", "enforce",
             "gate.can_continue", "report retention", "retry",
             "Assembly and compare reports retain schema version `0.7.0`",
@@ -70,8 +70,8 @@ class ReleaseMetadataTest(unittest.TestCase):
     def test_readme_separates_development_from_published_release(self):
         text = (ROOT / "README.md").read_text()
 
-        self.assertIn("| Development source | `v1.1.0` (unreleased) |", text)
-        self.assertIn("| Source release | `v1.0.0` Reference Contract Gate |", text)
+        self.assertIn("| Source release | `v1.1.0` Reference Workflow Adoption |", text)
+        self.assertIn("| GitHub release | `v1.1.0` release binaries and checksums |", text)
         self.assertIn("docs/releases/v1.1.0.md", text)
 
     def test_v1_0_0_release_notes_define_reference_contract(self):
