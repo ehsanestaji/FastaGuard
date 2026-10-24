@@ -1,0 +1,173 @@
+% FastaGuard — Bioinformatics (OUP) Application Note draft
+% Target: Application Note (~4 pages / ~2,000–2,600 words)
+% Initial submissions may be format-free; use OUP General Template for revision.
+% See README.md for build steps and venue notes.
+%
+% Compile: make   (or: latexmk -pdf main.tex)
+\pdfminorversion=5
+\documentclass[11pt,a4paper]{article}
+
+% Draft layout approximating journal constraints without requiring oup-authoring-template.
+% Switch to OUP General Template (\documentclass[numsec,webpdf,modern,large]{...})
+% before camera-ready / revision formatting.
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage{setspace}
+\usepackage{lineno}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue!50!black,
+  urlcolor=blue!50!black
+}
+
+% Double-spacing + line numbers help page-budget checks for first submission.
+\doublespacing
+\linenumbers
+
+\title{FastaGuard: FASTA preflight QC for modern bioinformatics pipelines}
+
+\author{
+  Ehsan Estaji%
+  \thanks{Corresponding author. Email: \texttt{[institutional-email@example.org]}}%
+  \\
+  \textit{[Affiliation to be completed]}
+}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent\textbf{Summary:}
+FastaGuard is a fast, explainable FASTA preflight QC tool that validates assembly
+FASTA files, detects structural and composition red flags, and emits a stable,
+pipeline-ready report contract (HTML, JSON, TSV, MultiQC-compatible JSON) before
+expensive downstream steps such as QUAST, BUSCO, BlobToolKit, CheckM, or annotation.
+
+\noindent\textbf{Availability and Implementation:}
+Source, binaries, and documentation are freely available under the MIT license at
+\url{https://github.com/ehsanestaji/FastaGuard}.
+Install via Bioconda (\texttt{fastaguard}), BioContainers, or GitHub release binaries.
+Implemented in Rust; supported on Linux and macOS.
+
+\noindent\textbf{Contact:}
+\texttt{[institutional-email@example.org]}
+
+\noindent\textbf{Supplementary information:}
+Supplementary figures, finding catalog excerpts, and reproducibility notes will
+accompany the submitted manuscript (see \texttt{paper/} in the repository).
+\end{abstract}
+
+\section*{Motivation}
+FASTA files underpin genome assembly workflows, yet FASTA-level quality control
+remains fragmented across ad hoc scripts, general sequence utilities, and heavy
+downstream evaluators~\citep{gurevich2013quast,simao2015busco,challis2020blobtoolkit}.
+Malformed structure, duplicate identifiers, invalid alphabet characters, high-N
+content, and submission hazards often surface only after costly QC or official
+repository validation has already started.
+
+FastaGuard fills the missing \emph{preflight} layer: a single, opinionated first
+command that answers whether a FASTA is valid, sane, interpretable, and safe to
+pass downstream, and that returns a deterministic PASS/WARN/FAIL contract for
+humans, workflow engines, and tool agents~\citep{ewels2016multiqc}.
+It is not a replacement for interpretive assembly QC; it is the earlier gate
+that makes those tools safer and cheaper to run.
+
+\section*{Implementation and features}
+FastaGuard is a streaming-first Rust CLI focused on assembly FASTA preflight.
+Core capabilities include:
+
+\begin{itemize}
+  \item Structural validity checks (headers, empty records, parse failures) with
+        explainable FAIL verdicts.
+  \item Identifier and alphabet hygiene (duplicate IDs/sequences, invalid IUPAC).
+  \item Assembly stats and composition signals (N50/L50 family metrics; GC/AT/N
+        and ambiguity rates; gap runs; tiny-contig advisories; outlier hints).
+  \item Pipeline gates (\texttt{--gate pipeline}) exposing
+        \texttt{gate.can\_continue}, blocking vs advisory findings, and input
+        checksum provenance for stop/go routing in Nextflow, Snakemake, nf-core,
+        and related engines.
+  \item Submission-readiness preflight (\texttt{--gate submission}) for FASTA-level
+        NCBI genome policy signals without replacing official validators.
+  \item Cohort triage via \texttt{fastaguard compare} across many assemblies.
+  \item Reference compatibility mode for FASTA vs index/dictionary/header
+        declaration agreement (v1 reference contract).
+  \item Stable multi-format outputs: HTML report, versioned JSON schema, TSV,
+        and MultiQC-compatible JSON.
+\end{itemize}
+
+\noindent
+Install and smoke-test paths are intentionally low-friction (Bioconda,
+BioContainers, and release binaries), so Application Note readers can reproduce
+basic runs without heavy local builds.
+
+% Placeholder figure — replace with real pipeline schematic or benchmark plot.
+\begin{figure}[t]
+  \centering
+  \fbox{\parbox{0.92\linewidth}{\centering\vspace{2.2cm}
+  \textbf{[Figure~1 placeholder]}\\[0.4em]
+  FastaGuard as the preflight layer before QUAST / BUSCO / BlobToolKit / MultiQC.\\[0.3em]
+  \textit{Replace with \texttt{figures/preflight-overview.pdf} or PNG.}
+  \vspace{2.2cm}}}
+  \caption{Conceptual placement of FastaGuard relative to common assembly QC tools.
+  FastaGuard answers FASTA validity and triage questions; interpretive QC remains
+  downstream.}
+  \label{fig:overview}
+\end{figure}
+
+\section*{Results and use}
+On representative public and synthetic assemblies, FastaGuard completes preflight
+in seconds-scale wall time with modest memory, returning machine-readable
+verdicts suitable for workflow branching
+(see Table~\ref{tab:benchmark-placeholder} and repository evidence under
+\texttt{docs/evidence/}).
+Typical outcomes are: PASS with empty finding sets on clean references;
+non-blocking WARN advisories (for example gap-pattern hints) that route follow-up
+QC; and FAIL when structure, alphabet, or gate-blocking conditions are met.
+
+% Placeholder table — replace with measured public-evidence numbers before submission.
+\begin{table}[t]
+  \centering
+  \caption{Illustrative preflight outcomes (replace with frozen public-evidence
+  numbers before submission).}
+  \label{tab:benchmark-placeholder}
+  \begin{tabular}{@{}lllrr@{}}
+    \toprule
+    Input role & Verdict & Gate continue & Time & Peak RSS \\
+    \midrule
+    Clean public assembly & PASS & yes & TBD s & TBD MB \\
+    Public assembly + advisories & WARN & yes & TBD s & TBD MB \\
+    Synthetic contract FAIL case & FAIL & no & TBD s & TBD MB \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+FastaGuard is already packaged for community workflows (Bioconda, BioContainers,
+merged nf-core module and Snakemake wrapper updates). The citable artifact is
+the versioned software contract plus this Application Note.
+
+\section*{Discussion}
+Positioning FastaGuard as preflight—not as FastQC-for-FASTA or as a QUAST/BUSCO
+competitor—keeps claims falsifiable and useful: catch FASTA-level problems early,
+emit a stable schema, and let interpretive tools do interpretive work.
+Remaining work for the published note includes locking public-evidence tables,
+one overview figure, and a short finding-catalog supplement.
+
+\section*{Acknowledgements}
+% Add acknowledgements, funding, and conflict disclosures as required by the venue.
+The author thanks early adopters and workflow maintainers who exercised packaging
+and module integrations. Funding: [to be completed].
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
