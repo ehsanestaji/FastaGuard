@@ -1,0 +1,14 @@
+# Real files: no expectation, nothing scored. Same decision rules as results.tsv.
+file	scope	expectation	tool	flagged	strict	exit_code	detail
+ecoli_GCF_000005845.2	real	n/a	py_fasta_validator	no	no	0	valid
+ecoli_GCF_000005845.2	real	n/a	fa-lint	no	no	0	Fasta is valid: $REAL/genomic.fna
+ecoli_GCF_000005845.2	real	n/a	table2asn	no	no	0	only baseline warnings (2)
+ecoli_GCF_000005845.2	real	n/a	seqkit	no	no	0	no message
+ecoli_GCF_000005845.2	real	n/a	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+ecoli_GCF_000005845.2	real	n/a	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+neurospora_GCF_000182925.2	real	n/a	py_fasta_validator	no	no	0	valid
+neurospora_GCF_000182925.2	real	n/a	fa-lint	no	no	0	Fasta is valid: $REAL/genomic.fna
+neurospora_GCF_000182925.2	real	n/a	table2asn	yes	yes	0	error [SEQ_INST.InternalNsInSeqRaw] Run of 100 Ns in raw sequence starting at base 72205 BIOSEQ: lcl|NC_02; error [SEQ_INST.InternalNsInSeqRaw] Run of 100 Ns in raw sequence starting at base 77053 BIOSEQ: lcl|NC_02; error [SEQ_INST.InternalNsInSeqRaw] Run of 1
+neurospora_GCF_000182925.2	real	n/a	seqkit	no	no	0	no message
+neurospora_GCF_000182925.2	real	n/a	fastaguard_pipeline	yes	no	0	verdict=WARN gate=WARN can_continue=true blocking=none advisory=gap_runs,gap_pattern_warnings
+neurospora_GCF_000182925.2	real	n/a	fastaguard_ncbi	yes	no	0	verdict=WARN gate=WARN can_continue=true blocking=none advisory=gap_runs,gap_pattern_warnings

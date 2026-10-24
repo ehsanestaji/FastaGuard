@@ -10,7 +10,7 @@ PR: [#21](https://github.com/ehsanestaji/FastaGuard/pull/21) · branch `cursor/p
 | --- | --- |
 | **DONE / submit-package ready** | Full draft; front-matter; evidence freeze; `submission.yml`; `check_submission.py`; cover letter; `.zenodo.json`; bioRxiv build target; `docs/paper-readiness.md` |
 | **DONE (2026-10-24)** | Zenodo DOI minted and pasted into Availability + manifest; OUP guideline review (AI + preprint disclosure added to cover letter); external claims verified (see below); PDF metadata + Fig. 1 label overlap fixed |
-| **USER-ACTION only** | Co-author final OK (Jian-Feng Mao); bioRxiv deposit; ScholarOne upload; APC/R&P/ISCB |
+| **USER-ACTION only** | bioRxiv deposit; ScholarOne upload; APC/R&P/ISCB |
 
 Do **not** claim bioRxiv or ScholarOne submitted from this agent track until the
 confirmation page / DOI is seen. Never click final Submit without explicit user OK.
@@ -73,11 +73,26 @@ references) plus an editorial pass. Applied to `main.tex` / `references.bib`:
 - Zenodo record 23622311 creators fixed on zenodo.org (Estaji + Mao, ORCIDs, UPSC affiliation); DOI unchanged.
 - PDF: `--flag` ligature fixed (microtype `\DisableLigatures`), PDF metadata filled, Fig. 1 label overlap fixed.
 
-Open items (user decisions, NOT done): AI-disclosure wording vs OUP rule; funding line confirmation;
-restore SNIC ack only if HPC2N was really used; optional feature-matrix + differential test vs
-py_fasta_validator/fa-lint/table2asn (referee will likely ask); optional re-run of the two NCBI rows with v1.0.0;
-`CITATION.cff` lists Estaji only (product repo); Zenodo description still says Bioconda "remains at v0.7.0".
-Length: body ~2,270 words (limit ~2,600) but 24 references push the draft PDF to 7 pages.
+Resolved after the user's answers (same day):
+- AI disclosure rewritten (paper + cover letter): software, code base and benchmarking results came first; the draft
+  was written solely from them, not from a free-form prompt; tools named (Cursor-based agents, Anthropic Claude Code).
+- Funding unchanged: GraphPop, GraphMana and VariantFlow preprints carry the identical WIFORCE/KAW sentence.
+- SNIC/HPC2N not used for FastaGuard: acknowledgement stays removed.
+- NCBI rows re-run with a v1.0.0 build (clean clone at the tag + NCBI Datasets 18.39.0): all five evidence-pack rows
+  match the frozen v0.6.0 values on verdict, gate, blocking findings, lengths, sequence counts, SHA-256, exit code
+  (timings differ). Portable summary: `docs/evidence/results/v1.0.0-rerun/`. Binary was built from the v1.0.0 tag, not
+  the release asset.
+- Validator comparison added (Table 2, `paper/comparison/`): py_fasta_validator 0.6, fa-lint 1.2.0, table2asn 1.29.324,
+  SeqKit 2.14.0, FastaGuard 1.0.0 on 30 constructed files (expectations fixed first) + the two RefSeq assemblies.
+  Reproduce with `python3 -I paper/comparison/run_comparison.py --help`; tool SHA-256s in `tool_versions.json`.
+  Author-constructed corpus favours FastaGuard; capability, not accuracy. A first real-data run was discarded (label
+  collision + stale report read); the script was fixed and the 30-file results were byte-identical afterwards.
+
+Co-author OK: reported by Ehsan in chat 2026-10-24 (no message from Jian-Feng seen by the agent).
+Still open: merge PR #21 so `paper/comparison/` resolves on main (it is not in the v1.0.0
+Zenodo archive; consider a small separate deposit for test data); `CITATION.cff` lists Estaji only (product repo); Zenodo
+description still says Bioconda "remains at v0.7.0"; length (Introduction-Discussion ~2,260 words; ~2,700 incl.
+abstract, captions and declarations; ~850 more in references; draft PDF is 8 pages).
 
 ## OUP policy points that shaped the cover letter
 

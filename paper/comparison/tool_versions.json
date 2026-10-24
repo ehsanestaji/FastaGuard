@@ -1,0 +1,53 @@
+{
+  "corpus_files": 30,
+  "corpus_sha256": "0d8aa8f02cbac6164750ad719b1bd36c973f55bd924ee733478e9b67934f9181",
+  "note": "Author-constructed corpus favouring FastaGuard's check list; tools differ in purpose.",
+  "platform": "Darwin arm64",
+  "tools": [
+    {
+      "archive_sha256_pinned": "ca29c20e1be31ef190f923b62ddb7fccda8c1c3ba9cf699a6ccaccce10ea011a",
+      "archive_sha256_verified": true,
+      "executable_sha256": "3360f4602a710d3ce7d239fe89894c94a9cd07d8ed10612786c3cf0d9dccbeb7",
+      "notes": "PyPI sdist of project py-fasta-validator; built in a python3.11 venv with setuptools==80.9.0 because the shipped CLI imports pkg_resources",
+      "source_url": "https://files.pythonhosted.org/packages/source/p/py_fasta_validator/py_fasta_validator-0.6.tar.gz",
+      "tool": "py_fasta_validator",
+      "version": "0.6"
+    },
+    {
+      "archive_sha256_pinned": "6edcb792489b18bcfd03156912d05227ac05cdf657c517041c40489566470436",
+      "archive_sha256_verified": true,
+      "executable_sha256": "5330aa5003cee754d26951c53f251a7546fe2006962cfeb1a281353fc079026d",
+      "notes": "official release binary",
+      "source_url": "https://github.com/GallVp/fa-lint/releases/download/1.2.0/fa-lint-darwin-arm64.tar.gz",
+      "tool": "fa-lint",
+      "version": "1.2.0"
+    },
+    {
+      "archive_sha256_pinned": "348b9d5f1b05065f4e5e61b6c2350e5ff044de2d6dc14765be6ac02c00e59341",
+      "archive_sha256_verified": true,
+      "executable_sha256": "94f276a1283be339f10272f71963bce22053a8463987bac3c1ed55a7078583c1",
+      "notes": "digest equals the one pinned in docs/evidence/fastaguard-v0.7-ncbi-genome-policy.md; NCBI publishes no separate digest",
+      "source_url": "https://ftp.ncbi.nlm.nih.gov/asn1-converters/by_program/table2asn/mac.table2asn.gz",
+      "tool": "table2asn",
+      "version": "table2asn: 1.29.324"
+    },
+    {
+      "archive_sha256_pinned": "7b3a6a7c9be07a06c5b308d1aad769c09762b36b387690eed8b91b00d01503b7",
+      "archive_sha256_verified": true,
+      "executable_sha256": "4939e4d15cca77bdfff5d1904447b7721ce93d2026462e7d302de95e6f664537",
+      "notes": "official release binary; md5 2b335eb27f69af97a252818a85145684 also matched",
+      "source_url": "https://github.com/shenwei356/seqkit/releases/download/v2.14.0/seqkit_darwin_arm64.tar.gz",
+      "tool": "seqkit",
+      "version": "seqkit v2.14.0"
+    },
+    {
+      "archive_sha256_pinned": null,
+      "archive_sha256_verified": null,
+      "executable_sha256": "8a76785d89f2f7c7f569dba0bbc741124f8b506851f5bff25d5eb134d87b897f",
+      "notes": "no archive; executable hash recorded",
+      "source_url": "local build of `git archive v1.0.0` of https://github.com/ehsanestaji/FastaGuard",
+      "tool": "fastaguard",
+      "version": "fastaguard 1.0.0"
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+# NOTE: the corpus is author-constructed and favours FastaGuard's own check list.
+# Expectations (valid/error/advisory) were fixed before any tool ran; advisory rows are not scored.
+# The tools were not designed for the same purpose. flagged: yes|no|crash|n.a.; strict: blocked / error-level.
+file	scope	expectation	tool	flagged	strict	exit_code	detail
+valid_simple	control	valid	py_fasta_validator	no	no	0	valid
+valid_simple	control	valid	fa-lint	no	no	0	Fasta is valid: $CORPUS/valid_simple.fa
+valid_simple	control	valid	table2asn	no	no	0	only baseline warnings (4)
+valid_simple	control	valid	seqkit	no	no	0	no message
+valid_simple	control	valid	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+valid_simple	control	valid	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+valid_single_line	control	valid	py_fasta_validator	no	no	0	valid
+valid_single_line	control	valid	fa-lint	no	no	0	Fasta is valid: $CORPUS/valid_single_line.fa
+valid_single_line	control	valid	table2asn	no	no	0	only baseline warnings (4)
+valid_single_line	control	valid	seqkit	no	no	0	no message
+valid_single_line	control	valid	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+valid_single_line	control	valid	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+valid_softmasked	control	valid	py_fasta_validator	no	no	0	valid
+valid_softmasked	control	valid	fa-lint	no	no	0	Fasta is valid: $CORPUS/valid_softmasked.fa
+valid_softmasked	control	valid	table2asn	no	no	0	only baseline warnings (4)
+valid_softmasked	control	valid	seqkit	no	no	0	no message
+valid_softmasked	control	valid	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+valid_softmasked	control	valid	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+valid_iupac	control	valid	py_fasta_validator	no	no	0	valid
+valid_iupac	control	valid	fa-lint	no	no	0	Fasta is valid: $CORPUS/valid_iupac.fa
+valid_iupac	control	valid	table2asn	no	no	0	only baseline warnings (4)
+valid_iupac	control	valid	seqkit	no	no	0	no message
+valid_iupac	control	valid	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+valid_iupac	control	valid	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+valid_no_final_newline	control	valid	py_fasta_validator	no	no	0	valid
+valid_no_final_newline	control	valid	fa-lint	no	no	0	Fasta is valid: $CORPUS/valid_no_final_newline.fa
+valid_no_final_newline	control	valid	table2asn	no	no	0	only baseline warnings (4)
+valid_no_final_newline	control	valid	seqkit	no	no	0	no message
+valid_no_final_newline	control	valid	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+valid_no_final_newline	control	valid	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+empty_file	syntax	error	py_fasta_validator	no	no	0	valid
+empty_file	syntax	error	fa-lint	yes	yes	1	Fasta file is empty
+empty_file	syntax	error	table2asn	crash	crash	1	console: Cannot open $WORK/table2asn/empty_file/empty_file.fa
+empty_file	syntax	error	seqkit	no	no	0	no message
+empty_file	syntax	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+empty_file	syntax	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+seq_before_header	syntax	error	py_fasta_validator	yes	yes	1	$CORPUS/seq_before_header.fa does not start with a >
+seq_before_header	syntax	error	fa-lint	yes	yes	1	Fasta file must start with a header line
+seq_before_header	syntax	error	table2asn	yes	yes	1	console Error: CFastaReader: Input doesn't start with a defline or comment around line 1
+seq_before_header	syntax	error	seqkit	yes	yes	255	[ERRO] fastx: invalid FASTA/Q format
+seq_before_header	syntax	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+seq_before_header	syntax	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+empty_header	syntax	error	py_fasta_validator	no	no	0	valid
+empty_header	syntax	error	fa-lint	yes	yes	1	Fasta header does not contain a valid ID near line #12: >
+empty_header	syntax	error	table2asn	no	no	0	only baseline warnings (4)
+empty_header	syntax	error	seqkit	yes	yes	255	[ERRO] seq: invalid DNAredundant letter:
+empty_header	syntax	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+empty_header	syntax	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+empty_record	syntax	error	py_fasta_validator	no	no	0	valid
+empty_record	syntax	error	fa-lint	yes	yes	1	Empty sequence for record near line #12: ctg2_empty
+empty_record	syntax	error	table2asn	yes	yes	1	console Error: FASTA-Reader: No residues given
+empty_record	syntax	error	seqkit	no	no	0	no message
+empty_record	syntax	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+empty_record	syntax	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+dup_id_identical_header	identifier	error	py_fasta_validator	yes	yes	2	$CORPUS/dup_id_identical_header.fa has multiple sequences with the same identifier
+dup_id_identical_header	identifier	error	fa-lint	yes	yes	1	Duplicate fasta ID found near line #12: >ctg1 isolate X
+dup_id_identical_header	identifier	error	table2asn	crash	crash	-	timeout after 30s (process killed)
+dup_id_identical_header	identifier	error	seqkit	no	no	0	no message
+dup_id_identical_header	identifier	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=duplicate_ids,duplicate_first_token_ids advisory=none
+dup_id_identical_header	identifier	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=duplicate_ids,duplicate_first_token_ids advisory=none
+dup_first_token_id	identifier	error	py_fasta_validator	yes	yes	2	$CORPUS/dup_first_token_id.fa has multiple sequences with the same identifier
+dup_first_token_id	identifier	error	fa-lint	yes	yes	1	Duplicate fasta ID found near line #12: >ctg1 isolate B
+dup_first_token_id	identifier	error	table2asn	crash	crash	-	timeout after 30s (process killed)
+dup_first_token_id	identifier	error	seqkit	no	no	0	no message
+dup_first_token_id	identifier	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=duplicate_ids,duplicate_first_token_ids advisory=none
+dup_first_token_id	identifier	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=duplicate_ids,duplicate_first_token_ids advisory=none
+dup_sequence_diff_ids	content	advisory	py_fasta_validator	no	no	0	valid
+dup_sequence_diff_ids	content	advisory	fa-lint	no	no	0	Fasta is valid: $CORPUS/dup_sequence_diff_ids.fa
+dup_sequence_diff_ids	content	advisory	table2asn	no	no	0	only baseline warnings (4)
+dup_sequence_diff_ids	content	advisory	seqkit	no	no	0	no message
+dup_sequence_diff_ids	content	advisory	fastaguard_pipeline	yes	no	0	verdict=WARN gate=WARN can_continue=true blocking=none advisory=duplicate_sequences
+dup_sequence_diff_ids	content	advisory	fastaguard_ncbi	yes	no	0	verdict=WARN gate=WARN can_continue=true blocking=none advisory=duplicate_sequences
+digit_in_sequence	syntax	error	py_fasta_validator	yes	yes	4	$CORPUS/digit_in_sequence.fa has non-sequence characters in it
+digit_in_sequence	syntax	error	fa-lint	yes	yes	1	Invalid sequence character near line #7
+digit_in_sequence	syntax	error	table2asn	yes	yes	1	console Error: CFastaReader: There are invalid residue(s) in input sequence
+digit_in_sequence	syntax	error	seqkit	yes	yes	255	[ERRO] seq: invalid DNAredundant letter: 7
+digit_in_sequence	syntax	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+digit_in_sequence	syntax	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+stop_star_in_sequence	syntax	error	py_fasta_validator	yes	yes	4	$CORPUS/stop_star_in_sequence.fa has non-sequence characters in it
+stop_star_in_sequence	syntax	error	fa-lint	yes	yes	1	Invalid sequence character near line #7
+stop_star_in_sequence	syntax	error	table2asn	yes	yes	1	console Error: CFastaReader: There are invalid residue(s) in input sequence
+stop_star_in_sequence	syntax	error	seqkit	yes	yes	255	[ERRO] seq: invalid DNAredundant letter: *
+stop_star_in_sequence	syntax	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+stop_star_in_sequence	syntax	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+gap_dash_in_sequence	syntax	advisory	py_fasta_validator	yes	yes	4	$CORPUS/gap_dash_in_sequence.fa has non-sequence characters in it
+gap_dash_in_sequence	syntax	advisory	fa-lint	yes	yes	1	Invalid sequence character near line #7
+gap_dash_in_sequence	syntax	advisory	table2asn	yes	no	2	console Warning: CFastaReader: Hyphens are invalid and will be ignored around line 7
+gap_dash_in_sequence	syntax	advisory	seqkit	no	no	0	no message
+gap_dash_in_sequence	syntax	advisory	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+gap_dash_in_sequence	syntax	advisory	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+non_iupac_letter_x	syntax	error	py_fasta_validator	no	no	0	valid
+non_iupac_letter_x	syntax	error	fa-lint	no	no	0	Fasta is valid: $CORPUS/non_iupac_letter_x.fa
+non_iupac_letter_x	syntax	error	table2asn	yes	yes	1	console Error: CFastaReader: There are invalid residue(s) in input sequence
+non_iupac_letter_x	syntax	error	seqkit	yes	yes	255	[ERRO] seq: invalid DNAredundant letter: X
+non_iupac_letter_x	syntax	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+non_iupac_letter_x	syntax	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+space_in_sequence	syntax	advisory	py_fasta_validator	yes	yes	4	$CORPUS/space_in_sequence.fa has non-sequence characters in it
+space_in_sequence	syntax	advisory	fa-lint	yes	yes	1	Invalid sequence character near line #2
+space_in_sequence	syntax	advisory	table2asn	no	no	0	only baseline warnings (2)
+space_in_sequence	syntax	advisory	seqkit	no	no	0	no message
+space_in_sequence	syntax	advisory	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+space_in_sequence	syntax	advisory	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_chars advisory=none
+blank_line_in_record	syntax	advisory	py_fasta_validator	no	no	0	valid
+blank_line_in_record	syntax	advisory	fa-lint	yes	yes	1	Empty sequence line near line #4
+blank_line_in_record	syntax	advisory	table2asn	no	no	0	only baseline warnings (2)
+blank_line_in_record	syntax	advisory	seqkit	no	no	0	no message
+blank_line_in_record	syntax	advisory	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+blank_line_in_record	syntax	advisory	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+crlf_line_endings	syntax	advisory	py_fasta_validator	no	no	0	valid
+crlf_line_endings	syntax	advisory	fa-lint	no	no	0	Fasta is valid: $CORPUS/crlf_line_endings.fa
+crlf_line_endings	syntax	advisory	table2asn	no	no	0	only baseline warnings (4)
+crlf_line_endings	syntax	advisory	seqkit	no	no	0	no message
+crlf_line_endings	syntax	advisory	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+crlf_line_endings	syntax	advisory	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+inconsistent_wrapping	syntax	advisory	py_fasta_validator	no	no	0	valid
+inconsistent_wrapping	syntax	advisory	fa-lint	yes	yes	1	Sequence near line #4 violates preceding line wrapping length
+inconsistent_wrapping	syntax	advisory	table2asn	no	no	0	only baseline warnings (2)
+inconsistent_wrapping	syntax	advisory	seqkit	no	no	0	no message
+inconsistent_wrapping	syntax	advisory	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+inconsistent_wrapping	syntax	advisory	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+utf8_bom	syntax	advisory	py_fasta_validator	yes	yes	1	$CORPUS/utf8_bom.fa does not start with a >
+utf8_bom	syntax	advisory	fa-lint	yes	yes	1	Fasta file must start with a header line
+utf8_bom	syntax	advisory	table2asn	yes	yes	1	console Error: Object type not supported
+utf8_bom	syntax	advisory	seqkit	no	no	0	no message
+utf8_bom	syntax	advisory	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+utf8_bom	syntax	advisory	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=invalid_fasta_structure advisory=none
+high_n_record	content	advisory	py_fasta_validator	no	no	0	valid
+high_n_record	content	advisory	fa-lint	no	no	0	Fasta is valid: $CORPUS/high_n_record.fa
+high_n_record	content	advisory	table2asn	yes	yes	2	error [SEQ_INST.ContigsTooShort] Maximum contig length is 2 bases BIOSEQ: lcl|ctg1: raw, dna len= 600
+high_n_record	content	advisory	seqkit	no	no	0	no message
+high_n_record	content	advisory	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=high_n_rate advisory=none
+high_n_record	content	advisory	fastaguard_ncbi	yes	no	0	verdict=WARN gate=WARN can_continue=true blocking=none advisory=high_n_rate
+all_n_record	content	error	py_fasta_validator	no	no	0	valid
+all_n_record	content	error	fa-lint	yes	yes	1	Sequence near line #1 is comprised entirely of N, n, '.' or '*': ctg1
+all_n_record	content	error	table2asn	yes	yes	2	critical [SEQ_INST.AllNs] Sequence is all Ns BIOSEQ: lcl|ctg1: raw, dna len= 600
+all_n_record	content	error	seqkit	no	no	0	no message
+all_n_record	content	error	fastaguard_pipeline	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=high_n_rate advisory=gap_runs,terminal_ns,composite_anomalies
+all_n_record	content	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=terminal_ns advisory=high_n_rate,gap_runs,composite_anomalies
+tiny_contig_50	content	advisory	py_fasta_validator	no	no	0	valid
+tiny_contig_50	content	advisory	fa-lint	no	no	0	Fasta is valid: $CORPUS/tiny_contig_50.fa
+tiny_contig_50	content	advisory	table2asn	no	no	0	only baseline warnings (4)
+tiny_contig_50	content	advisory	seqkit	no	no	0	no message
+tiny_contig_50	content	advisory	fastaguard_pipeline	yes	no	0	verdict=WARN gate=WARN can_continue=true blocking=none advisory=tiny_contigs
+tiny_contig_50	content	advisory	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=ncbi_genome_short_contigs advisory=tiny_contigs
+seqid_len_49	ncbi	valid	py_fasta_validator	no	no	0	valid
+seqid_len_49	ncbi	valid	fa-lint	no	no	0	Fasta is valid: $CORPUS/seqid_len_49.fa
+seqid_len_49	ncbi	valid	table2asn	no	no	0	only baseline warnings (2)
+seqid_len_49	ncbi	valid	seqkit	no	no	0	no message
+seqid_len_49	ncbi	valid	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+seqid_len_49	ncbi	valid	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+seqid_len_50	ncbi	error	py_fasta_validator	no	no	0	valid
+seqid_len_50	ncbi	error	fa-lint	no	no	0	Fasta is valid: $CORPUS/seqid_len_50.fa
+seqid_len_50	ncbi	error	table2asn	no	no	0	only baseline warnings (2)
+seqid_len_50	ncbi	error	seqkit	no	no	0	no message
+seqid_len_50	ncbi	error	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+seqid_len_50	ncbi	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=ncbi_genome_seqid advisory=none
+seqid_disallowed_char	ncbi	error	py_fasta_validator	no	no	0	valid
+seqid_disallowed_char	ncbi	error	fa-lint	no	no	0	Fasta is valid: $CORPUS/seqid_disallowed_char.fa
+seqid_disallowed_char	ncbi	error	table2asn	no	no	0	only baseline warnings (2)
+seqid_disallowed_char	ncbi	error	seqkit	no	no	0	no message
+seqid_disallowed_char	ncbi	error	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+seqid_disallowed_char	ncbi	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=ncbi_genome_seqid advisory=none
+contig_len_199	ncbi	advisory	py_fasta_validator	no	no	0	valid
+contig_len_199	ncbi	advisory	fa-lint	no	no	0	Fasta is valid: $CORPUS/contig_len_199.fa
+contig_len_199	ncbi	advisory	table2asn	no	no	0	only baseline warnings (2)
+contig_len_199	ncbi	advisory	seqkit	no	no	0	no message
+contig_len_199	ncbi	advisory	fastaguard_pipeline	yes	no	0	verdict=WARN gate=WARN can_continue=true blocking=none advisory=tiny_contigs
+contig_len_199	ncbi	advisory	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=ncbi_genome_short_contigs advisory=tiny_contigs
+contig_len_200	ncbi	valid	py_fasta_validator	no	no	0	valid
+contig_len_200	ncbi	valid	fa-lint	no	no	0	Fasta is valid: $CORPUS/contig_len_200.fa
+contig_len_200	ncbi	valid	table2asn	no	no	0	only baseline warnings (2)
+contig_len_200	ncbi	valid	seqkit	no	no	0	no message
+contig_len_200	ncbi	valid	fastaguard_pipeline	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+contig_len_200	ncbi	valid	fastaguard_ncbi	no	no	0	verdict=PASS gate=PASS can_continue=true blocking=none advisory=none
+terminal_ns	ncbi	error	py_fasta_validator	no	no	0	valid
+terminal_ns	ncbi	error	fa-lint	no	no	0	Fasta is valid: $CORPUS/terminal_ns.fa
+terminal_ns	ncbi	error	table2asn	yes	yes	0	error [SEQ_INST.TerminalNs] N at beginning of sequence BIOSEQ: lcl|ctg1: raw, dna len= 600; error [SEQ_INST.TerminalNs] N at end of sequence BIOSEQ: lcl|ctg1: raw, dna len= 600
+terminal_ns	ncbi	error	seqkit	no	no	0	no message
+terminal_ns	ncbi	error	fastaguard_pipeline	yes	no	0	verdict=WARN gate=WARN can_continue=true blocking=none advisory=terminal_ns
+terminal_ns	ncbi	error	fastaguard_ncbi	yes	yes	0	verdict=FAIL gate=FAIL can_continue=false blocking=terminal_ns advisory=none

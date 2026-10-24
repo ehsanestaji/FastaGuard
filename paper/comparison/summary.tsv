@@ -1,0 +1,93 @@
+# Author-constructed corpus favouring FastaGuard's check list; tools differ in purpose.
+# block: scores (flagged = any report; strict = FastaGuard blocked / table2asn error-level)
+tool	definition	scope	error_flagged	error_total	error_crash	valid_flagged	valid_total	valid_crash	advisory_flagged	advisory_total	advisory_crash
+py_fasta_validator	flagged	all	5	13	0	0	7	0	3	10	0
+py_fasta_validator	flagged	control	0	0	0	0	5	0	0	0	0
+py_fasta_validator	flagged	syntax	3	7	0	0	0	0	3	6	0
+py_fasta_validator	flagged	identifier	2	2	0	0	0	0	0	0	0
+py_fasta_validator	flagged	content	0	1	0	0	0	0	0	3	0
+py_fasta_validator	flagged	ncbi	0	3	0	0	2	0	0	1	0
+fa-lint	flagged	all	9	13	0	0	7	0	5	10	0
+fa-lint	flagged	control	0	0	0	0	5	0	0	0	0
+fa-lint	flagged	syntax	6	7	0	0	0	0	5	6	0
+fa-lint	flagged	identifier	2	2	0	0	0	0	0	0	0
+fa-lint	flagged	content	1	1	0	0	0	0	0	3	0
+fa-lint	flagged	ncbi	0	3	0	0	2	0	0	1	0
+table2asn	flagged	all	7	13	3	0	7	0	3	10	0
+table2asn	flagged	control	0	0	0	0	5	0	0	0	0
+table2asn	flagged	syntax	5	7	1	0	0	0	2	6	0
+table2asn	flagged	identifier	0	2	2	0	0	0	0	0	0
+table2asn	flagged	content	1	1	0	0	0	0	1	3	0
+table2asn	flagged	ncbi	1	3	0	0	2	0	0	1	0
+table2asn	strict	all	7	13	3	0	7	0	2	10	0
+table2asn	strict	control	0	0	0	0	5	0	0	0	0
+table2asn	strict	syntax	5	7	1	0	0	0	1	6	0
+table2asn	strict	identifier	0	2	2	0	0	0	0	0	0
+table2asn	strict	content	1	1	0	0	0	0	1	3	0
+table2asn	strict	ncbi	1	3	0	0	2	0	0	1	0
+seqkit	flagged	all	5	13	0	0	7	0	0	10	0
+seqkit	flagged	control	0	0	0	0	5	0	0	0	0
+seqkit	flagged	syntax	5	7	0	0	0	0	0	6	0
+seqkit	flagged	identifier	0	2	0	0	0	0	0	0	0
+seqkit	flagged	content	0	1	0	0	0	0	0	3	0
+seqkit	flagged	ncbi	0	3	0	0	2	0	0	1	0
+fastaguard_pipeline	flagged	all	11	13	0	0	7	0	7	10	0
+fastaguard_pipeline	flagged	control	0	0	0	0	5	0	0	0	0
+fastaguard_pipeline	flagged	syntax	7	7	0	0	0	0	3	6	0
+fastaguard_pipeline	flagged	identifier	2	2	0	0	0	0	0	0	0
+fastaguard_pipeline	flagged	content	1	1	0	0	0	0	3	3	0
+fastaguard_pipeline	flagged	ncbi	1	3	0	0	2	0	1	1	0
+fastaguard_pipeline	strict	all	10	13	0	0	7	0	4	10	0
+fastaguard_pipeline	strict	control	0	0	0	0	5	0	0	0	0
+fastaguard_pipeline	strict	syntax	7	7	0	0	0	0	3	6	0
+fastaguard_pipeline	strict	identifier	2	2	0	0	0	0	0	0	0
+fastaguard_pipeline	strict	content	1	1	0	0	0	0	1	3	0
+fastaguard_pipeline	strict	ncbi	0	3	0	0	2	0	0	1	0
+fastaguard_ncbi	flagged	all	13	13	0	0	7	0	7	10	0
+fastaguard_ncbi	flagged	control	0	0	0	0	5	0	0	0	0
+fastaguard_ncbi	flagged	syntax	7	7	0	0	0	0	3	6	0
+fastaguard_ncbi	flagged	identifier	2	2	0	0	0	0	0	0	0
+fastaguard_ncbi	flagged	content	1	1	0	0	0	0	3	3	0
+fastaguard_ncbi	flagged	ncbi	3	3	0	0	2	0	1	1	0
+fastaguard_ncbi	strict	all	13	13	0	0	7	0	5	10	0
+fastaguard_ncbi	strict	control	0	0	0	0	5	0	0	0	0
+fastaguard_ncbi	strict	syntax	7	7	0	0	0	0	3	6	0
+fastaguard_ncbi	strict	identifier	2	2	0	0	0	0	0	0	0
+fastaguard_ncbi	strict	content	1	1	0	0	0	0	1	3	0
+fastaguard_ncbi	strict	ncbi	3	3	0	0	2	0	1	1	0
+# block: capability_matrix (yes = flagged and blocked/error-level or single-level tool; warn = flagged below block/error level; no; crash; n.a.)
+file	scope	expectation	py_fasta_validator	fa-lint	table2asn	seqkit	fastaguard_pipeline	fastaguard_ncbi
+valid_simple	control	valid	no	no	no	no	no	no
+valid_single_line	control	valid	no	no	no	no	no	no
+valid_softmasked	control	valid	no	no	no	no	no	no
+valid_iupac	control	valid	no	no	no	no	no	no
+valid_no_final_newline	control	valid	no	no	no	no	no	no
+empty_file	syntax	error	no	yes	crash	no	yes	yes
+seq_before_header	syntax	error	yes	yes	yes	yes	yes	yes
+empty_header	syntax	error	no	yes	no	yes	yes	yes
+empty_record	syntax	error	no	yes	yes	no	yes	yes
+dup_id_identical_header	identifier	error	yes	yes	crash	no	yes	yes
+dup_first_token_id	identifier	error	yes	yes	crash	no	yes	yes
+dup_sequence_diff_ids	content	advisory	no	no	no	no	warn	warn
+digit_in_sequence	syntax	error	yes	yes	yes	yes	yes	yes
+stop_star_in_sequence	syntax	error	yes	yes	yes	yes	yes	yes
+gap_dash_in_sequence	syntax	advisory	yes	yes	warn	no	yes	yes
+non_iupac_letter_x	syntax	error	no	no	yes	yes	yes	yes
+space_in_sequence	syntax	advisory	yes	yes	no	no	yes	yes
+blank_line_in_record	syntax	advisory	no	yes	no	no	no	no
+crlf_line_endings	syntax	advisory	no	no	no	no	no	no
+inconsistent_wrapping	syntax	advisory	no	yes	no	no	no	no
+utf8_bom	syntax	advisory	yes	yes	yes	no	yes	yes
+high_n_record	content	advisory	no	no	yes	no	yes	warn
+all_n_record	content	error	no	yes	yes	no	yes	yes
+tiny_contig_50	content	advisory	no	no	no	no	warn	yes
+seqid_len_49	ncbi	valid	no	no	no	no	no	no
+seqid_len_50	ncbi	error	no	no	no	no	no	yes
+seqid_disallowed_char	ncbi	error	no	no	no	no	no	yes
+contig_len_199	ncbi	advisory	no	no	no	no	warn	yes
+contig_len_200	ncbi	valid	no	no	no	no	no	no
+terminal_ns	ncbi	error	no	no	yes	no	warn	yes
+# block: real_files (no expectation; see real_results.tsv for detail)
+file	py_fasta_validator	fa-lint	table2asn	seqkit	fastaguard_pipeline	fastaguard_ncbi
+ecoli_GCF_000005845.2	no	no	no	no	no	no
+neurospora_GCF_000182925.2	no	no	yes	no	warn	warn

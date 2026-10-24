@@ -39,12 +39,14 @@ available at the stable URL above, and archived on Zenodo
 **Preprint disclosure.** The same manuscript has been submitted to bioRxiv as a
 preprint. We will update the preprint with the published DOI after acceptance.
 
-**AI use disclosure.** AI coding assistants (including Cursor-based agents and
-related large-language-model tools) were used for planning, manuscript
-scaffolding, repository evidence cross-checks, and prose drafting support. The
-authors reviewed all output and remain responsible for the manuscript, code,
-evidence interpretation, and all scientific claims. The same statement appears in
-the manuscript.
+**AI use disclosure.** AI coding assistants (Cursor-based agents and Anthropic
+Claude Code) were used for planning, manuscript scaffolding, repository evidence
+cross-checks, prose drafting support, and revision. The software, code base, and
+benchmarking results were completed first; the manuscript was then drafted solely
+from that code base and those results, not from a free-form prompt. The authors
+reviewed all output and remain responsible for the manuscript, code, evidence
+interpretation, and all scientific claims. The same statement appears in the
+manuscript.
 
 Both corresponding authors can be reached at ehsan.estaji@umu.se and
 jianfeng.mao@umu.se. We confirm that the work is original, is not under

@@ -10,7 +10,7 @@ oup_template_deferred_to: revision
 
 # Machine-check status after `make check` (human ScholarOne/bioRxiv steps remain USER-ACTION).
 submission_status: ready_for_author_upload
-author_gate_status: pending_coauthor_confirmation
+author_gate_status: confirmed  # 2026-10-24, reported in chat by Ehsan Estaji (Jian-Feng Mao knew of the work and agreed); no message from Jian-Feng seen by the agent
 zenodo_gate_status: deposited
 biorxiv_status: not_submitted
 scholarone_status: not_submitted
@@ -26,6 +26,8 @@ manuscript:
   biorxiv_pdf: paper/build/fastaguard-biorxiv.pdf
   title: "FastaGuard: FASTA preflight QC for modern bioinformatics pipelines"
   cover_letter: paper/cover-letter.md
+  validator_comparison: paper/comparison/
+  evidence_rerun_v1_0_0: docs/evidence/results/v1.0.0-rerun/
 
 authors:
   - name: Ehsan Estaji
@@ -108,7 +110,6 @@ required_human_inputs:
 
 blockers_for_machine_ready: []
 blockers_for_human_submit:
-  - Co-author final confirmation (also required by bioRxiv: all authors must consent to deposit)
   - bioRxiv deposit (login by Ehsan; affiliation required)
   - ScholarOne upload (credentials)
   - APC / institutional Read & Publish / ISCB discount check

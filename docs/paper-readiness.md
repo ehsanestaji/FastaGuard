@@ -25,6 +25,9 @@ Machine check: `cd paper && make check`.
 | Upstream claims verified (Bioconda, BioContainers, nf-core module, Snakemake wrapper) | DONE |
 | Pre-submission review: claims re-tested against a v1.0.0 build; related work + references audited; fixes applied (see `paper/HANDOFF.md`) | DONE |
 | Zenodo record creators corrected (Estaji + Mao, ORCIDs, affiliation) | DONE |
+| Validator comparison vs py_fasta_validator, fa-lint, table2asn, SeqKit (Table 2, `paper/comparison/`) | DONE |
+| NCBI rows re-run with a v1.0.0 build (`docs/evidence/results/v1.0.0-rerun/`) | DONE |
+| AI-disclosure wording, funding line, SNIC acknowledgement settled with the author | DONE |
 | bioRxiv build target + checklist | DONE |
 | PDF builds (`make`) | DONE |
 | Word count ~2.0–2.6k band | DONE (~2.0k+) |
@@ -33,8 +36,8 @@ Machine check: `cd paper && make check`.
 
 | Item | Notes |
 | --- | --- |
-| Co-author final OK (Jian-Feng Mao) | Confirm authorship/order/CRediT |
-| Review decisions | AI-disclosure wording, funding line, SNIC ack, optional feature matrix / differential test, optional NCBI re-run at v1.0.0 (see `paper/HANDOFF.md`) |
+| Co-author final OK (Jian-Feng Mao) | DONE 2026-10-24: reported in chat by Ehsan Estaji (Jian-Feng agreed and knew of the work); no written message seen by the agent |
+| Merge PR #21 | `paper/comparison/` is not in the v1.0.0 archive; merge before submission so paths in the paper resolve |
 | bioRxiv deposit | Follow [`paper/biorxiv-checklist.md`](../paper/biorxiv-checklist.md); all authors must consent; cover letter discloses it |
 | ScholarOne upload | Format-free first submission OK; upload PDF + cover letter; OUP General Template deferred to **revision** |
 | APC / Read & Publish / ISCB discount | Check before acceptance |
