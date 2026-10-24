@@ -31,3 +31,10 @@ exists and is the cited Availability / Bioconda line
 - Invent or placeholder a `10.5281/zenodo.…` DOI in the submit-ready PDF.
 - Retag a different software version unless the manuscript Availability is
   updated to match.
+
+## Minted (2026-10-24)
+
+- **Version DOI:** `10.5281/zenodo.23622311` — https://doi.org/10.5281/zenodo.23622311
+- **Concept DOI:** `10.5281/zenodo.23622310`
+- **Record:** https://zenodo.org/records/23622311
+- Pasted into `paper/main.tex` Availability and `paper/submission.yml`.

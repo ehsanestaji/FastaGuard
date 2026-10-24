@@ -11,7 +11,7 @@ oup_template_deferred_to: revision
 # Machine-check status after `make check` (human ScholarOne/Zenodo steps remain USER-ACTION).
 submission_status: ready_for_author_upload
 author_gate_status: pending_coauthor_confirmation
-zenodo_gate_status: pending_user_deposit
+zenodo_gate_status: deposited
 scholarone_status: not_submitted
 
 manuscript:
@@ -39,9 +39,10 @@ release:
   tag: v1.0.0
   source_archive_url: https://github.com/ehsanestaji/FastaGuard/releases/tag/v1.0.0
   bioconda_package: fastaguard=1.0.0
-  archive_doi: null
-  version_doi: null
-  zenodo_notes: USER-ACTION — mint DOI from existing GitHub release v1.0.0 (see paper/ZENODO.md); do not invent DOIs.
+  archive_doi: "10.5281/zenodo.23622310"
+  version_doi: "10.5281/zenodo.23622311"
+  zenodo_record_url: "https://zenodo.org/records/23622311"
+  zenodo_notes: "Minted 2026-10-24 from GitHub release v1.0.0 via Zenodo GitHub webhook replay; concept DOI 10.5281/zenodo.23622310; version DOI 10.5281/zenodo.23622311."
 
 # Public-evidence freeze used by Table 1 (contract illustrations; not a cross-platform benchmark).
 evidence_freeze:

@@ -41,3 +41,9 @@ VariantFlow VCF claims, benchmarks, tables, Zenodo/bioRxiv DOIs.
 - Manifest: `paper/submission.yml`
 - Readiness: `docs/paper-readiness.md`
 - Store context: `/cursor/stores/bc-53e26eb2-1f92-41f8-9fa2-384c56a6ad53/docs/project-context.md`
+
+## Zenodo DOI (2026-10-24)
+
+- Version DOI: `10.5281/zenodo.23622311` (https://zenodo.org/records/23622311)
+- Concept DOI: `10.5281/zenodo.23622310`
+- Source: GitHub release `v1.0.0` via Zenodo GitHub integration
