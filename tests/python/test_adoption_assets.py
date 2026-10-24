@@ -1525,6 +1525,216 @@ multiqc_path.write_text(json.dumps({"id": "fastaguard", "data": {}}))
         )
         self.assertIn("conda:\n        \"environment.yaml\"", snakefile.read_text())
 
+    def test_nf_core_reference_starter_matches_subtool_contract(self):
+        module = (
+            ROOT
+            / "examples"
+            / "nf-core"
+            / "modules"
+            / "local"
+            / "fastaguard"
+            / "reference"
+        )
+        main_nf = (module / "main.nf").read_text()
+        meta_yml = (module / "meta.yml").read_text()
+        env_yml = (module / "environment.yml").read_text()
+        nf_config = (module / "tests" / "nextflow.config").read_text()
+        nf_test = (module / "tests" / "main.nf.test").read_text()
+        nf_readme = (ROOT / "examples" / "nf-core" / "README.md").read_text()
+
+        self.assertIn("process FASTAGUARD_REFERENCE", main_nf)
+        self.assertIn('conda "${moduleDir}/environment.yml"', main_nf)
+        self.assertIn(
+            "https://depot.galaxyproject.org/singularity/fastaguard:1.0.0--hfa8f182_0",
+            main_nf,
+        )
+        self.assertIn(
+            "quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0",
+            main_nf,
+        )
+        self.assertIn(
+            "tuple val(meta), path(reference), path(fai), path(dict), "
+            "path(alignments), path(variants), path(annotations), path(alias_map)",
+            main_nf,
+        )
+        self.assertIn('tuple val(meta), path("*.fastaguard.html"), emit: html', main_nf)
+        self.assertIn('tuple val(meta), path("*.fastaguard.json"), emit: json', main_nf)
+        self.assertIn('tuple val(meta), path("*.fastaguard.tsv"), emit: tsv', main_nf)
+        self.assertIn(
+            'tuple val(meta), path("*.fastaguard_mqc.json"), emit: mqc', main_nf
+        )
+        self.assertIn(
+            'tuple val(meta), path("*.fastaguard.lock.json"), optional: true, emit: lock',
+            main_nf,
+        )
+        self.assertIn("emit: versions_fastaguard, topic: versions", main_nf)
+        self.assertIn("fastaguard reference ${reference}", main_nf)
+        self.assertIn("--lock ${prefix}.fastaguard.lock.json", main_nf)
+        self.assertIn("bioconda::fastaguard=1.0.0", env_yml)
+        self.assertIn('name: "fastaguard_reference"', meta_yml)
+        self.assertIn("lock:", meta_yml)
+        self.assertIn("versions_fastaguard:", meta_yml)
+        self.assertIn("topics:\n  versions:", meta_yml)
+        self.assertIn("withName: 'FASTAGUARD_REFERENCE'", nf_config)
+        self.assertIn("--policy coordinate --require fai,dict --write-lock", nf_config)
+        self.assertIn('process "FASTAGUARD_REFERENCE"', nf_test)
+        self.assertIn('tag "fastaguard/reference"', nf_test)
+        self.assertIn(
+            'unstableKeys: ["html", "json", "tsv", "mqc", "lock"]', nf_test
+        )
+        self.assertIn("FASTAGUARD_REFERENCE", nf_readme)
+        self.assertIn("./modules/local/fastaguard/reference", nf_readme)
+
+    def test_snakemake_reference_wrapper_starter_has_upstream_layout(self):
+        wrapper = ROOT / "examples" / "snakemake" / "wrapper_reference"
+        wrapper_py = (wrapper / "wrapper.py").read_text()
+        env_yaml = (wrapper / "environment.yaml").read_text()
+        meta_yaml = (wrapper / "meta.yaml").read_text()
+        snakefile = (wrapper / "Snakefile").read_text()
+        test_snakefile = (wrapper / "test" / "Snakefile").read_text()
+        readme = (wrapper / "README.md").read_text()
+        assembly_readme = (
+            ROOT / "examples" / "snakemake" / "wrapper" / "README.md"
+        ).read_text()
+
+        self.assertIn("fastaguard reference {snakemake.input.reference}", wrapper_py)
+        self.assertIn('extra = snakemake.params.get("extra", "")', wrapper_py)
+        self.assertEqual(
+            env_yaml.splitlines(),
+            [
+                "channels:",
+                "  - conda-forge",
+                "  - bioconda",
+                "  - nodefaults",
+                "dependencies:",
+                "  - fastaguard=1.0.0",
+            ],
+        )
+        self.assertIn("name: fastaguard/reference", meta_yaml)
+        for key in (
+            "reference:",
+            "fai:",
+            "dict:",
+            "alignment:",
+            "variants:",
+            "annotation:",
+            "alias_map:",
+            "html:",
+            "json:",
+            "tsv:",
+            "multiqc:",
+            "lock:",
+            "extra:",
+        ):
+            with self.subTest(key=key):
+                self.assertIn(key, meta_yaml)
+        self.assertIn('conda:\n        "environment.yaml"', snakefile)
+        self.assertIn('"master/bio/fastaguard/reference"', test_snakefile)
+        self.assertIn("bio/fastaguard/reference", readme)
+        self.assertIn("gate.can_continue", readme)
+        self.assertIn("../wrapper_reference/", assembly_readme)
+
+    def test_snakemake_reference_wrapper_executes_expected_shell_commands(self):
+        wrapper_path = (
+            ROOT / "examples" / "snakemake" / "wrapper_reference" / "wrapper.py"
+        )
+        wrapper_code = wrapper_path.read_text()
+
+        class NamedMapping(dict):
+            def __getattr__(self, name):
+                try:
+                    return self[name]
+                except KeyError as exc:
+                    raise AttributeError(name) from exc
+
+        def run_wrapper(inputs, outputs, params=None):
+            recorded = []
+            fake_snakemake_pkg = types.ModuleType("snakemake")
+            fake_shell_mod = types.ModuleType("snakemake.shell")
+
+            def fake_shell(cmd, *args, **kwargs):
+                frame = sys._getframe(1)
+                context = {**frame.f_globals, **frame.f_locals}
+                formatted = cmd.format(**context)
+                recorded.append(" ".join(formatted.split()))
+
+            fake_shell_mod.shell = fake_shell
+            fake_snakemake_pkg.shell = fake_shell_mod
+
+            snakemake_obj = types.SimpleNamespace(
+                input=NamedMapping(inputs),
+                output=NamedMapping(outputs),
+                params=NamedMapping(params or {}),
+                log_fmt_shell=lambda stdout=True, stderr=True: "> ref.log 2>&1",
+            )
+
+            old_snakemake = sys.modules.get("snakemake")
+            old_shell = sys.modules.get("snakemake.shell")
+            sys.modules["snakemake"] = fake_snakemake_pkg
+            sys.modules["snakemake.shell"] = fake_shell_mod
+            try:
+                exec(compile(wrapper_code, str(wrapper_path), "exec"), {"snakemake": snakemake_obj})
+            finally:
+                if old_snakemake is None:
+                    sys.modules.pop("snakemake", None)
+                else:
+                    sys.modules["snakemake"] = old_snakemake
+                if old_shell is None:
+                    sys.modules.pop("snakemake.shell", None)
+                else:
+                    sys.modules["snakemake.shell"] = old_shell
+
+            self.assertEqual(len(recorded), 1)
+            return recorded[0]
+
+        minimal_cmd = run_wrapper(
+            inputs={"reference": "ref.fa"},
+            outputs={
+                "html": "out.html",
+                "json": "out.json",
+                "tsv": "out.tsv",
+                "multiqc": "out_mqc.json",
+            },
+        )
+        self.assertEqual(
+            minimal_cmd,
+            "fastaguard reference ref.fa "
+            "--out out.html --json out.json --tsv out.tsv --multiqc out_mqc.json "
+            "> ref.log 2>&1",
+        )
+
+        full_cmd = run_wrapper(
+            inputs={
+                "reference": "ref.fa",
+                "fai": "ref.fa.fai",
+                "dict": "ref.dict",
+                "alignment": ["a.sam", "b.bam"],
+                "variants": ["v1.vcf", "v2.bcf"],
+                "annotation": "genes.gff3",
+                "alias_map": "aliases.tsv",
+            },
+            outputs={
+                "html": "out.html",
+                "json": "out.json",
+                "tsv": "out.tsv",
+                "multiqc": "out_mqc.json",
+                "lock": "out.lock.json",
+            },
+            params={"extra": "--policy strict --require fai,dict"},
+        )
+        self.assertEqual(
+            full_cmd,
+            "fastaguard reference ref.fa "
+            "--fai ref.fa.fai --dict ref.dict "
+            "--alignment a.sam --alignment b.bam "
+            "--variants v1.vcf --variants v2.bcf "
+            "--annotation genes.gff3 --alias-map aliases.tsv "
+            "--write-lock --lock out.lock.json "
+            "--out out.html --json out.json --tsv out.tsv --multiqc out_mqc.json "
+            "--policy strict --require fai,dict "
+            "> ref.log 2>&1",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

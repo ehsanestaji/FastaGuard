@@ -1,0 +1,102 @@
+nextflow_process {
+
+    name "Test FASTAGUARD_REFERENCE"
+    script "../main.nf"
+    process "FASTAGUARD_REFERENCE"
+    config "./nextflow.config"
+
+    tag "modules"
+    tag "modules_nfcore"
+    tag "fastaguard"
+    tag "fastaguard/reference"
+
+    test("compatible reference bundle emits reports and lockfile") {
+        when {
+            process {
+                """
+                def reference = file(workDir.resolve("reference.fa").toString())
+                reference.text = [
+                    ">chr1",
+                    "ACGTACGTACGTACGT",
+                    ">chr2",
+                    "TTTTCCCCAAAAGGGG"
+                ].join("\\n") + "\\n"
+
+                def fai = file(workDir.resolve("reference.fa.fai").toString())
+                fai.text = [
+                    "chr1\\t16\\t6\\t16\\t17",
+                    "chr2\\t16\\t29\\t16\\t17"
+                ].join("\\n") + "\\n"
+
+                def dict = file(workDir.resolve("reference.dict").toString())
+                dict.text = [
+                    "@HD\\tVN:1.6\\tSO:unsorted",
+                    "@SQ\\tSN:chr1\\tLN:16",
+                    "@SQ\\tSN:chr2\\tLN:16"
+                ].join("\\n") + "\\n"
+
+                input[0] = [
+                    [ id:'compatible' ],
+                    reference,
+                    fai,
+                    dict,
+                    [],
+                    [],
+                    [],
+                    []
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(sanitizeOutput(process.out, unstableKeys: ["html", "json", "tsv", "mqc", "lock"])).match() }
+            )
+        }
+    }
+
+    test("mismatched companion preserves reports for gate review") {
+        when {
+            process {
+                """
+                def reference = file(workDir.resolve("reference.fa").toString())
+                reference.text = [
+                    ">chr1",
+                    "ACGTACGTACGTACGT"
+                ].join("\\n") + "\\n"
+
+                def fai = file(workDir.resolve("mismatched.fa.fai").toString())
+                fai.text = [
+                    "chr1\\t32\\t6\\t16\\t17"
+                ].join("\\n") + "\\n"
+
+                def dict = file(workDir.resolve("reference.dict").toString())
+                dict.text = [
+                    "@HD\\tVN:1.6\\tSO:unsorted",
+                    "@SQ\\tSN:chr1\\tLN:16"
+                ].join("\\n") + "\\n"
+
+                input[0] = [
+                    [ id:'mismatch' ],
+                    reference,
+                    fai,
+                    dict,
+                    [],
+                    [],
+                    [],
+                    []
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(sanitizeOutput(process.out, unstableKeys: ["html", "json", "tsv", "mqc", "lock"])).match() }
+            )
+        }
+    }
+}

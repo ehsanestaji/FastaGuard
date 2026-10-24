@@ -1,0 +1,140 @@
+name: "fastaguard_reference"
+description: Reference contract verification for canonical FASTA and companion declarations
+keywords:
+  - fasta
+  - reference
+  - qc
+  - validation
+tools:
+  - "fastaguard":
+      description: Reference contract verification for canonical FASTA and companion declarations
+      homepage: "https://github.com/ehsanestaji/FastaGuard"
+      documentation: "https://github.com/ehsanestaji/FastaGuard"
+      tool_dev_url: "https://github.com/ehsanestaji/FastaGuard"
+      licence:
+        - "MIT"
+      identifier: ""
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample or reference bundle information
+          e.g. [ id:'grch38' ]
+    - reference:
+        type: file
+        description: Canonical reference FASTA file
+        pattern: "*.{fa,fasta,fa.gz,fasta.gz}"
+        ontologies: []
+    - fai:
+        type: file
+        description: Optional FASTA index (.fai) companion declaration
+        pattern: "*.fai"
+        ontologies: []
+    - dict:
+        type: file
+        description: Optional SAM sequence dictionary (.dict) companion declaration
+        pattern: "*.dict"
+        ontologies: []
+    - alignments:
+        type: file
+        description: Optional alignment header (SAM/BAM/CRAM) companion declarations
+        pattern: "*.{sam,bam,cram}"
+        ontologies: []
+    - variants:
+        type: file
+        description: Optional variant header (VCF/BCF) companion declarations
+        pattern: "*.{vcf,vcf.gz,bcf}"
+        ontologies: []
+    - annotations:
+        type: file
+        description: Optional GFF3 annotation companion declarations
+        pattern: "*.{gff,gff3,gff.gz,gff3.gz}"
+        ontologies: []
+    - alias_map:
+        type: file
+        description: Optional two-column contig alias mapping file
+        pattern: "*.{tsv,txt}"
+        ontologies: []
+output:
+  html:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample or reference bundle information
+            e.g. [ id:'grch38' ]
+      - "*.fastaguard.html":
+          type: file
+          description: FastaGuard reference HTML report
+          pattern: "*.fastaguard.html"
+          ontologies: []
+  json:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample or reference bundle information
+            e.g. [ id:'grch38' ]
+      - "*.fastaguard.json":
+          type: file
+          description: FastaGuard reference JSON report
+          pattern: "*.fastaguard.json"
+          ontologies:
+            - edam: http://edamontology.org/format_3464
+  tsv:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample or reference bundle information
+            e.g. [ id:'grch38' ]
+      - "*.fastaguard.tsv":
+          type: file
+          description: FastaGuard reference TSV summary
+          pattern: "*.fastaguard.tsv"
+          ontologies:
+            - edam: http://edamontology.org/format_3475
+  mqc:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample or reference bundle information
+            e.g. [ id:'grch38' ]
+      - "*.fastaguard_mqc.json":
+          type: file
+          description: MultiQC custom-content reference JSON
+          pattern: "*.fastaguard_mqc.json"
+          ontologies:
+            - edam: http://edamontology.org/format_3464
+  lock:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample or reference bundle information
+            e.g. [ id:'grch38' ]
+      - "*.fastaguard.lock.json":
+          type: file
+          description: Optional FastaGuard reference manifest lockfile
+          pattern: "*.fastaguard.lock.json"
+          ontologies:
+            - edam: http://edamontology.org/format_3464
+  versions_fastaguard:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - fastaguard:
+          type: string
+          description: The tool name
+      - fastaguard --version | cut -d " " -f 2:
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - fastaguard:
+          type: string
+          description: The tool name
+      - fastaguard --version | cut -d " " -f 2:
+          type: eval
+          description: The expression to obtain the version of the tool
+authors:
+  - "@ehsanestaji"

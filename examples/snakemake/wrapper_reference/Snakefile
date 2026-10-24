@@ -1,0 +1,19 @@
+rule fastaguard_reference_wrapped:
+    input:
+        reference="reference.fa",
+        fai="reference.fa.fai",
+        dict="reference.dict",
+    output:
+        html="reference.fastaguard.html",
+        json="reference.fastaguard.json",
+        tsv="reference.fastaguard.tsv",
+        multiqc="reference.fastaguard_mqc.json",
+        lock="reference.fastaguard.lock.json",
+    log:
+        "fastaguard_reference.log",
+    conda:
+        "environment.yaml"
+    params:
+        extra="--policy coordinate --require fai,dict",
+    wrapper:
+        "file:."

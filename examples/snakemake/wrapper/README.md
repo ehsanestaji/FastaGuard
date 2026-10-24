@@ -70,6 +70,9 @@ params:
 This remains FASTA-level readiness only and does not replace repository
 validators or downstream interpretive QC.
 
+For reference contract verification (`fastaguard reference`), see the companion
+`bio/fastaguard/reference` wrapper starter in `../wrapper_reference/`.
+
 For a future upstream update, use this safe local order:
 
 1. Run the repository Python contract tests and the local copy-paste starter.

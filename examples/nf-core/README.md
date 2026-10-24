@@ -80,7 +80,15 @@ Example include:
 
 ```nextflow
 include { FASTAGUARD } from './modules/local/fastaguard'
+include { FASTAGUARD_REFERENCE } from './modules/local/fastaguard/reference'
 ```
+
+For reference contract verification (`fastaguard reference`), the upstream-ready
+`fastaguard/reference` subtool starter lives in
+`./modules/local/fastaguard/reference/` (`process FASTAGUARD_REFERENCE`). It
+accepts `tuple val(meta), path(reference), path(fai), path(dict), path(alignments), path(variants), path(annotations), path(alias_map)`
+and emits `html`, `json`, `tsv`, `mqc`, optional `lock`, and
+`versions_fastaguard`.
 
 For a future upstream update, use this safe local order:
 

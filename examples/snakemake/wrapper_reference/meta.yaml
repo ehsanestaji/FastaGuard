@@ -1,0 +1,25 @@
+name: fastaguard/reference
+description: Reference contract verification for canonical FASTA and companion declarations.
+url: https://github.com/ehsanestaji/FastaGuard
+authors:
+  - Ehsan ESTAJI
+input:
+  reference: Canonical reference FASTA file.
+  fai: Optional FASTA index (.fai) companion declaration.
+  dict: Optional SAM sequence dictionary (.dict) companion declaration.
+  alignment: Optional alignment header (SAM/BAM/CRAM) companion declaration(s).
+  variants: Optional variant header (VCF/BCF) companion declaration(s).
+  annotation: Optional GFF3 annotation companion declaration(s).
+  alias_map: Optional two-column contig alias mapping file.
+output:
+  html: Human-readable FastaGuard reference report.
+  json: Machine-readable FastaGuard reference report.
+  tsv: Tabular FastaGuard reference summary.
+  multiqc: MultiQC custom-content reference JSON.
+  lock: Optional reference manifest lockfile (implies --write-lock).
+params:
+  extra: Additional command-line arguments passed to fastaguard reference, such as --policy and --require.
+notes: >
+  FastaGuard reference verifies coordinate and naming compatibility across
+  declared reference artefacts before downstream alignment, variant calling,
+  or annotation workflows run.

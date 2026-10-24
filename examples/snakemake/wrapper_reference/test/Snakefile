@@ -1,0 +1,56 @@
+rule fastaguard_reference_compatible:
+    input:
+        reference="data/reference.fa",
+        fai="data/reference.fa.fai",
+        dict="data/reference.dict",
+    output:
+        html="compatible/reference.fastaguard.html",
+        json="compatible/reference.fastaguard.json",
+        tsv="compatible/reference.fastaguard.tsv",
+        multiqc="compatible/reference.fastaguard_mqc.json",
+        lock="compatible/reference.fastaguard.lock.json",
+    log:
+        "logs/compatible.fastaguard_reference.log",
+    params:
+        extra="--policy coordinate --require fai,dict",
+    wrapper:
+        "master/bio/fastaguard/reference"
+
+
+rule fastaguard_reference_advisory:
+    input:
+        reference="data/reference.fa",
+        fai="data/reference.fa.fai",
+        dict="data/reordered.dict",
+        alignment=["data/sample.sam"],
+        variants=["data/sites.vcf"],
+        annotation=["data/genes.gff3"],
+        alias_map="data/aliases.tsv",
+    output:
+        html="advisory/reference.fastaguard.html",
+        json="advisory/reference.fastaguard.json",
+        tsv="advisory/reference.fastaguard.tsv",
+        multiqc="advisory/reference.fastaguard_mqc.json",
+    log:
+        "logs/advisory.fastaguard_reference.log",
+    params:
+        extra="--policy advisory --require fai,dict",
+    wrapper:
+        "master/bio/fastaguard/reference"
+
+
+rule fastaguard_reference_incompatible:
+    input:
+        reference="data/reference.fa",
+        fai="data/mismatched.fa.fai",
+    output:
+        html="incompatible/reference.fastaguard.html",
+        json="incompatible/reference.fastaguard.json",
+        tsv="incompatible/reference.fastaguard.tsv",
+        multiqc="incompatible/reference.fastaguard_mqc.json",
+    log:
+        "logs/incompatible.fastaguard_reference.log",
+    params:
+        extra="--policy strict --require fai",
+    wrapper:
+        "master/bio/fastaguard/reference"
