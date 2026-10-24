@@ -10,7 +10,8 @@ PR: [#21](https://github.com/ehsanestaji/FastaGuard/pull/21) · branch `cursor/p
 | --- | --- |
 | **DONE / submit-package ready** | Full draft; front-matter; evidence freeze; `submission.yml`; `check_submission.py`; cover letter; `.zenodo.json`; bioRxiv build target; `docs/paper-readiness.md` |
 | **DONE (2026-10-24)** | Zenodo DOI minted and pasted into Availability + manifest; OUP guideline review (AI + preprint disclosure added to cover letter); external claims verified (see below); PDF metadata + Fig. 1 label overlap fixed |
-| **USER-ACTION only** | bioRxiv deposit; ScholarOne upload; APC/R&P/ISCB |
+| **DONE (2026-10-24)** | bioRxiv preprint submitted as `BIORXIV/2026/761563` (acknowledgement email received); in screening, DOI pending |
+| **USER-ACTION only** | Record the bioRxiv DOI when issued; ScholarOne upload; APC/R&P/ISCB; merge PR #21 |
 
 Do **not** claim bioRxiv or ScholarOne submitted from this agent track until the
 confirmation page / DOI is seen. Never click final Submit without explicit user OK.
@@ -93,6 +94,15 @@ Still open: merge PR #21 so `paper/comparison/` resolves on main (it is not in t
 Zenodo archive; consider a small separate deposit for test data); `CITATION.cff` lists Estaji only (product repo); Zenodo
 description still says Bioconda "remains at v0.7.0"; length (Introduction-Discussion ~2,260 words; ~2,700 incl.
 abstract, captions and declarations; ~850 more in references; draft PDF is 8 pages).
+
+## bioRxiv submission record (2026-10-24)
+
+- ID `BIORXIV/2026/761563`; New Results; Bioinformatics; CC BY 4.0; funder Knut and Alice Wallenberg Foundation (no award number).
+- The uploaded PDF is `paper/build/fastaguard-biorxiv.pdf` (SHA-256 `8eb58ec7...2269`); bioRxiv served it back byte-identical.
+- Form notes: one corresponding author only (Ehsan); accented letters must be HTML entities (`Ume&aring;`); the abstract field takes the full
+  abstract; the built-in browser has no file-upload tool, so the file is picked by the user in the native dialog.
+- Next: when bioRxiv issues the DOI, record it in `paper/submission.yml`, the cover letter and the academic dashboard
+  (`research-monitor`, entry SUB-03), then upload to ScholarOne.
 
 ## OUP policy points that shaped the cover letter
 

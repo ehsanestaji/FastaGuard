@@ -12,7 +12,7 @@ oup_template_deferred_to: revision
 submission_status: ready_for_author_upload
 author_gate_status: confirmed  # 2026-10-24, reported in chat by Ehsan Estaji (Jian-Feng Mao knew of the work and agreed); no message from Jian-Feng seen by the agent
 zenodo_gate_status: deposited
-biorxiv_status: not_submitted
+biorxiv_status: submitted_in_screening  # BIORXIV/2026/761563, submitted 2026-10-24, acknowledgement received; DOI pending
 scholarone_status: not_submitted
 # OUP policy: AI use must be disclosed in the cover letter AND the manuscript; preprints must be
 # disclosed in the cover letter; update the preprint with the published DOI after acceptance.
@@ -110,6 +110,6 @@ required_human_inputs:
 
 blockers_for_machine_ready: []
 blockers_for_human_submit:
-  - bioRxiv deposit (login by Ehsan; affiliation required)
+  - bioRxiv screening clearance and preprint DOI (then add it to the cover letter)
   - ScholarOne upload (credentials)
   - APC / institutional Read & Publish / ISCB discount check

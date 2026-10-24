@@ -38,7 +38,7 @@ Machine check: `cd paper && make check`.
 | --- | --- |
 | Co-author final OK (Jian-Feng Mao) | DONE 2026-10-24: reported in chat by Ehsan Estaji (Jian-Feng agreed and knew of the work); no written message seen by the agent |
 | Merge PR #21 | `paper/comparison/` is not in the v1.0.0 archive; merge before submission so paths in the paper resolve |
-| bioRxiv deposit | Follow [`paper/biorxiv-checklist.md`](../paper/biorxiv-checklist.md); all authors must consent; cover letter discloses it |
+| Record bioRxiv DOI | Submitted 2026-10-24 as `BIORXIV/2026/761563`; after screening (24-72 h) add the DOI to `paper/submission.yml` and the cover letter |
 | ScholarOne upload | Format-free first submission OK; upload PDF + cover letter; OUP General Template deferred to **revision** |
 | APC / Read & Publish / ISCB discount | Check before acceptance |
 | Suggested editors (optional) | Cover letter suggests assembly/sequence-analysis tools area |
