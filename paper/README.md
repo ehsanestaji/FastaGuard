@@ -1,83 +1,60 @@
 # FastaGuard paper (LaTeX)
 
-Draft manuscript targeting **Bioinformatics (Oxford Academic) — Application Note**.
+**Venue (user-confirmed):** [*Bioinformatics*](https://academic.oup.com/bioinformatics) (Oxford Academic) — **Application Note**.
 
-This folder is paper preparation only. It does not change the FastaGuard product.
+**PR / branch:** [#21](https://github.com/ehsanestaji/FastaGuard/pull/21) · `cursor/paper-prep-venues-198e`
 
-## Target venue (primary)
+This folder is **paper preparation only**. It does not change the FastaGuard product.
+Cold-start resume details: see [`HANDOFF.md`](HANDOFF.md).
 
-| Item | Choice |
+## Article constraints
+
+| Item | Target |
 | --- | --- |
-| Journal | [*Bioinformatics*](https://academic.oup.com/bioinformatics) (OUP) |
-| Article type | Application Note |
-| Length budget | Up to ~4 pages (~2,600 words, or ~2,000 words + one figure) |
-| Abstract shape | Summary / Availability and Implementation / Contact / Supplementary information |
-| Software rules | Freely available to non-commercial users; state availability + implementation; keep available ≥2 years after publication |
+| Type | Application Note |
+| Length | Up to ~4 pages (~2,600 words, or ~2,000 words + one figure) |
+| Title | Must include the application name (`FastaGuard: …`) |
+| Abstract | Summary / Availability and Implementation / Contact / Supplementary information |
+| Software | Freely available; state availability + implementation; keep available ≥2 years |
 
 Format-free initial submission is allowed. For revision / camera-ready, switch to the [OUP General Template](https://www.overleaf.com/latex/templates/oup-general-template/fqkhysbcbpwv) with Bioinformatics options (`numsec,webpdf,modern,large`) and author-date bibliography style as documented by OUP.
 
-Venue ranking and framing notes for authors live in the Project store doc `docs/publication-venues.md` (not in this repo path).
-
-## Layout of this folder
+## Layout
 
 ```text
 paper/
-  main.tex           Application Note skeleton (claims + section outline)
+  main.tex           Full Application Note draft
   references.bib     BibTeX database
   Makefile           latexmk / pdflatex build
   README.md          this file
-  figures/           figure placeholders (add PDF/PNG before submission)
-  tables/            optional table source / CSV exports
+  HANDOFF.md         cold-start status + next steps
+  figures/           notes for optional external artwork
+  tables/            optional CSV / working tables
 ```
 
 ## Build the PDF
 
-Requires a standard TeX Live (or MacTeX / MiKTeX) install with:
-
-- `pdflatex`
-- `bibtex` (or `biber` if you later switch the bibliography backend)
-- `latexmk` (recommended)
-- packages used by `main.tex`: `geometry`, `times`, `graphicx`, `booktabs`, `hyperref`, `xcolor`, `natbib`, `setspace`, `lineno`, `url`
-
-### Quick build
+Requires TeX Live (or MacTeX / MiKTeX) with `pdflatex`, `bibtex`, `latexmk`, plus
+`geometry`, `times`, `graphicx`, `booktabs`, `hyperref`, `xcolor`, `natbib`,
+`setspace`, `lineno`, `url`, and **TikZ** (`texlive-pictures`).
 
 ```bash
 cd paper
-make
-```
-
-Output: `paper/main.pdf`.
-
-### Without latexmk
-
-```bash
-cd paper
+make              # → main.pdf
 make pdflatex-only
-```
-
-### Clean aux files
-
-```bash
 make clean        # keep PDF
 make distclean    # remove PDF too
 ```
 
-### Overleaf
+Overleaf: upload `main.tex`, `references.bib`, and compile with pdfLaTeX.
 
-Upload `main.tex`, `references.bib`, and `figures/` to a new Overleaf project. Set the compiler to pdfLaTeX. For final OUP formatting, replace the document class with the OUP General Template as linked above.
+## Draft status (short)
 
-## Word / page budget tips
+- **Done:** full draft body, TikZ overview figure, evidence table from v0.6 public pack, BibTeX, build path.
+- **Still TBD before submission:** author email/affiliation, funding, optional version-frozen re-evidence, preprint/DOI, OUP template on revision.
+- **Framing rule:** never pitch as “FastQC for FASTA.”
 
-- Keep the body short: Motivation → Implementation → Results/use → brief Discussion.
-- Prefer **one** main figure (pipeline placement or evidence summary).
-- Put finding catalogs, long tables, and extra screenshots in Supplementary Information.
-- Count words before submission; manuscripts that overrun the Application Note limit by a large margin are often returned without review.
+Durable venue + project context for multi-agent handoff live in the Project store:
 
-## Before submission checklist
-
-- [ ] Replace TBD emails, affiliation, funding, and benchmark table cells
-- [ ] Drop real figure(s) into `figures/` and uncomment `\includegraphics`
-- [ ] Freeze software version + DOI/archive (GitHub release / Zenodo) in Availability
-- [ ] Align claims with `docs/product-thesis.md` and `docs/tool-landscape.md` (no “FastQC for FASTA”)
-- [ ] Verify Bioconda / BioContainers / module links still resolve
-- [ ] Optionally deposit a preprint (bioRxiv / arXiv q-bio) — OUP is preprint-friendly with update-on-accept obligations
+- `docs/publication-venues.md`
+- `docs/project-context.md`
