@@ -50,8 +50,9 @@ Overleaf: upload `main.tex`, `references.bib`, and compile with pdfLaTeX.
 
 ## Draft status (short)
 
-- **Done:** full draft body, TikZ overview figure, evidence table from v0.6 public pack, BibTeX, build path.
-- **Still TBD before submission:** author email/affiliation, funding, optional version-frozen re-evidence, preprint/DOI, OUP template on revision.
+- **Done:** full draft body; TikZ overview figure; v0.6 evidence table; BibTeX; build path.
+- **Front-matter:** author/ORCID/Umeå/funding/COI/AI/CRediT reused from VariantFlow Application Note (see `HANDOFF.md`) — scientific content stays FastaGuard-only.
+- **Still TBD:** FastaGuard Zenodo/preprint DOI, OUP template on revision, ScholarOne submit.
 - **Framing rule:** never pitch as “FastQC for FASTA.”
 
 Durable venue + project context for multi-agent handoff live in the Project store:

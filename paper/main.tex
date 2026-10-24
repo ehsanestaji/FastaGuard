@@ -1,79 +1,90 @@
 % FastaGuard — Bioinformatics (OUP) Application Note
 % USER-CONFIRMED venue: Application Note (~4 pages / ~2,000–2,600 words)
-% Format-free first submission OK; use OUP General Template for revision.
+% Author / funding / disclosure front-matter aligned with VariantFlow
+%   (https://github.com/ehsanestaji/VariantFlow paper/bioinformatics-application-note/).
+% Scientific claims and evidence remain FastaGuard-specific (docs/evidence/).
 % Build: make   (see README.md and HANDOFF.md)
-%
-% Status: full first draft for review — author email/affiliation/funding still TBD;
-%         TikZ figure is submission-usable; table numbers from committed v0.6 evidence.
 \pdfminorversion=5
 \documentclass[11pt,a4paper]{article}
 
 % Draft layout approximating journal constraints without requiring oup-authoring-template.
 % For camera-ready / revision, switch to the OUP General Template with Bioinformatics
 % options: \documentclass[numsec,webpdf,modern,large]{...} and author-date bib style.
-\usepackage[margin=2.5cm]{geometry}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 \usepackage{times}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{array}
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage{natbib}
 \usepackage{url}
-\usepackage{setspace}
+\usepackage{microtype}
 \usepackage{lineno}
+\usepackage{amssymb}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,calc}
 
+\definecolor{fgblue}{HTML}{1F4E79}
+
 \hypersetup{
   colorlinks=true,
-  linkcolor=black,
-  citecolor=blue!50!black,
-  urlcolor=blue!50!black
+  linkcolor=fgblue,
+  citecolor=fgblue,
+  urlcolor=fgblue
 }
-
-% Single spacing approximates final page budget while drafting.
-% For ScholarOne first submission, enable \doublespacing and keep \linenumbers.
-% \doublespacing
-\linenumbers
+\setlength{\emergencystretch}{2em}
 
 \title{FastaGuard: FASTA preflight QC for modern bioinformatics pipelines}
-
 \author{
-  Ehsan Estaji%
-  \thanks{Corresponding author. Email: \texttt{[institutional-email@example.org]}}%
-  \\
-  \textit{[Affiliation to be completed]}
+Ehsan Estaji\textsuperscript{1,$\dag$}
+\href{https://orcid.org/0009-0005-0838-228X}{\small(ORCID 0009-0005-0838-228X)} \qquad
+Jian-Feng Mao\textsuperscript{1,$\dag$}
+\href{https://orcid.org/0000-0001-9735-8516}{\small(ORCID 0000-0001-9735-8516)} \\[6pt]
+\small \textsuperscript{1}Ume{\aa} Plant Science Centre,
+Department of Plant Physiology, Ume{\aa} University,
+SE-901\,87 Ume{\aa}, Sweden \\[4pt]
+\small \textsuperscript{$\dag$}Correspondence:
+       \href{mailto:ehsan.estaji@umu.se}{\texttt{ehsan.estaji@umu.se}},
+       \href{mailto:jianfeng.mao@umu.se}{\texttt{jianfeng.mao@umu.se}}
 }
-
 \date{}
 
 \begin{document}
+\linenumbers
 \maketitle
 
 \begin{abstract}
 \noindent\textbf{Summary:}
 FastaGuard is a fast, explainable FASTA preflight QC tool that validates assembly
 FASTA files, detects structural and composition red flags, and emits a stable
-multi-format report contract before expensive downstream analysis.
+multi-format report contract before expensive downstream analysis such as QUAST,
+BUSCO, BlobToolKit, CheckM, annotation, or official repository validation.
 
 \noindent\textbf{Availability and Implementation:}
-Freely available under the MIT license at
+Source code and documentation are freely available under the MIT license at
 \url{https://github.com/ehsanestaji/FastaGuard}.
-Install via Bioconda (\texttt{mamba install -c bioconda fastaguard}), BioContainers,
-or GitHub release binaries. Implemented in Rust; supported on Linux and macOS.
-Published packaging targets include Bioconda builds for \texttt{linux-64},
-\texttt{linux-aarch64}, \texttt{osx-64}, and \texttt{osx-arm64}, plus a pinned
-BioContainers image.
+Install via Bioconda (\texttt{mamba install -c conda-forge -c bioconda fastaguard}),
+BioContainers, or GitHub release binaries.
+Implemented in Rust; supported on Linux and macOS, including Bioconda builds for
+\texttt{linux-64}, \texttt{linux-aarch64}, \texttt{osx-64}, and \texttt{osx-arm64}.
 
 \noindent\textbf{Contact:}
-\texttt{[institutional-email@example.org]}
+\href{mailto:ehsan.estaji@umu.se}{\texttt{ehsan.estaji@umu.se}};
+\href{mailto:jianfeng.mao@umu.se}{\texttt{jianfeng.mao@umu.se}}
 
 \noindent\textbf{Supplementary information:}
-Supplementary notes, finding-catalog excerpts, and reproducibility pointers are
-maintained with the software repository under \texttt{docs/} and \texttt{paper/}.
+Finding-catalog excerpts, evidence packs, and reproducibility notes are maintained
+with the software repository under \texttt{docs/} and \texttt{paper/}.
 \end{abstract}
 
-\section*{Motivation}
+\vspace{0.4em}
+\noindent\textbf{Keywords:} FASTA, quality control, genome assembly, preflight,
+bioinformatics pipelines, Rust
+
+\section{Introduction}
 Genome assemblies and reference FASTA files are foundational inputs for
 bioinformatics pipelines, yet FASTA-level quality control remains fragmented.
 Teams commonly combine ad hoc scripts, general sequence utilities such as
@@ -114,7 +125,7 @@ The product thesis is therefore a contract as much as a report:
 stable field names, documented finding identifiers, provenance checksums, and
 gate continuation booleans that pipelines can depend on across releases.
 
-\section*{Implementation}
+\section{Implementation}
 FastaGuard is a streaming-first command-line tool implemented in Rust and
 distributed as a single binary.
 The primary assembly workflow is:
@@ -162,7 +173,7 @@ gate fields), not on process status alone.
 \texttt{machine\_summary.safe\_for\_downstream} is intentionally stricter (true
 only for overall PASS) and is not a synonym for gate continuation.
 
-\paragraph{Submission-readiness and compare mode.}
+\paragraph{Submission-readiness, compare mode, and reference checks.}
 \texttt{--gate submission} with \texttt{--submission-target generic|ncbi}
 performs FASTA-level submission preflight before official validators.
 For NCBI genome targeting, FastaGuard applies a documented
@@ -237,7 +248,7 @@ the MIT license~\citep{fastaguard2026}.
   \label{fig:overview}
 \end{figure}
 
-\section*{Results}
+\section{Results}
 Committed public-evidence summaries for FastaGuard v0.6.0 illustrate the intended
 behaviour on synthetic contract fixtures and two exact NCBI reference assemblies
 (Table~\ref{tab:evidence}).
@@ -268,14 +279,15 @@ visible in FAIL reports that workflow engines can parse.
 Compare mode and submission gates extend the same contract to cohort triage and
 FASTA-level submission hazards; reference mode adds companion-declaration
 compatibility checks when indexes, dictionaries, or headers must agree with a
-canonical FASTA before mapping or variant workflows proceed.
+canonical FASTA before mapping or annotation workflows proceed.
 
 \begin{table}[t]
   \centering
   \caption{Illustrative FastaGuard v0.6.0 public-evidence outcomes (assembly
   profile, pipeline gate). Elapsed times are single-machine contextual
   measurements from the committed evidence pack, not cross-platform guarantees.
-  Full portable JSON/TSV summaries are in the software repository.}
+  Full portable JSON/TSV summaries are in the software repository
+  (\texttt{docs/evidence/}).}
   \label{tab:evidence}
   \begin{tabular}{@{}llllr@{}}
     \toprule
@@ -304,7 +316,7 @@ contamination status, taxonomy, annotation quality, or archive acceptance.
 That boundary is deliberate: FastaGuard owns FASTA-level preflight and triage;
 interpretive tools own interpretive questions.
 
-\section*{Discussion}
+\section{Discussion}
 FastaGuard's contribution is a pipeline-native FASTA preflight \emph{contract}:
 streaming validation, explainable findings, stable schemas, explicit gates, and
 packaging paths that workflow authors can adopt without reinventing per-pipeline
@@ -328,14 +340,41 @@ for citation; feature expansion beyond FASTA preflight belongs in software
 releases and, if warranted later, a separate research article rather than an
 overloaded note.
 
-\section*{Acknowledgements}
-Funding: [to be completed].
-Conflict of interest: none declared.
-The software repository acknowledgements and release notes credit packaging and
-workflow integration milestones (Bioconda, BioContainers, nf-core modules, and
-Snakemake wrappers).
+\section*{Author contributions}
+Following CRediT, E.E.: conceptualisation, software, validation, investigation,
+data curation, and writing of the original draft. J.-F.M.: supervision and
+writing through review and editing. Both authors read and approved the final
+manuscript.
 
-\bibliographystyle{plainnat}
+\section*{Funding}
+This work was partially supported by the Wallenberg Initiatives in Forest
+Research (WIFORCE) funded by the Knut and Alice Wallenberg Foundation.
+
+\section*{Conflict of interest}
+The authors declare no competing interests.
+
+\section*{AI usage disclosure}
+AI coding assistants (including Cursor-based agents and related large-language-model
+tools) were used for planning, manuscript scaffolding, repository evidence
+cross-checks, and prose drafting support.
+The authors reviewed all output and remain responsible for the manuscript, code,
+evidence interpretation, and all scientific claims.
+
+\section*{Acknowledgements}
+Computing resources provided by SNIC/HPC2N at Ume{\aa} University.
+We thank packaging and workflow maintainers who exercised Bioconda,
+BioContainers, nf-core module, and Snakemake wrapper integrations for FastaGuard.
+
+\section*{Data availability}
+FastaGuard source code, schemas, finding catalog, and documentation are openly
+available at \url{https://github.com/ehsanestaji/FastaGuard} under the MIT
+license.
+Committed public-evidence summaries used in Table~\ref{tab:evidence} are
+archived under \texttt{docs/evidence/} in the repository.
+No new biological samples were generated for this study; public NCBI assemblies
+cited in the evidence pack are used under their existing data-access terms.
+
+\bibliographystyle{apalike}
 \bibliography{references}
 
 \end{document}

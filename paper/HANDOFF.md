@@ -3,7 +3,7 @@
 For any agent or human resuming FastaGuard **paper preparation** after a pause.
 This track is **paper-only**. Do not change product CLI/schema/packaging unless
 the user explicitly expands scope. Product/dev work may be on a separate track
-(e.g. Aragon / other agents) — do not conflict with it.
+— do not conflict with it.
 
 ## Locked decisions
 
@@ -15,60 +15,76 @@ the user explicitly expands scope. Product/dev work may be on a separate track
 | Forbidden phrase | Do **not** use “FastQC for FASTA” |
 | Repo branch / PR | `cursor/paper-prep-venues-198e` / [#21](https://github.com/ehsanestaji/FastaGuard/pull/21) |
 | LaTeX root | `paper/main.tex` |
+| Author / funding template source | [VariantFlow](https://github.com/ehsanestaji/VariantFlow) `paper/bioinformatics-application-note/` (**user-directed reuse**) |
+
+## What was copied from VariantFlow (front-matter only)
+
+Reuse these from VariantFlow’s Application Note — **not** its VCF science:
+
+- Author list: Ehsan Estaji + Jian-Feng Mao, ORCIDs, Umeå Plant Science Centre affiliation
+- Correspondence emails: `ehsan.estaji@umu.se`, `jianfeng.mao@umu.se`
+- CRediT **Author contributions** wording pattern
+- **Funding:** WIFORCE / Knut and Alice Wallenberg Foundation
+- **Conflict of interest:** no competing interests
+- **AI usage disclosure** pattern (adapted to FastaGuard / Cursor agents)
+- **Acknowledgements:** SNIC/HPC2N at Umeå University (+ FastaGuard packaging thanks)
+- Sectioning: Introduction / Implementation / Results / Discussion + end-matter blocks
+- LaTeX front-matter conventions (margin, ORCID hyperlinks, `apalike`, keywords line)
+
+## What must stay FastaGuard-specific
+
+- All scientific claims, comparison framing, gates/contract description
+- Evidence table and timings from `docs/evidence/` (v0.6 public pack) — **never** VariantFlow VCF benchmarks/tables
+- Availability URLs, Bioconda/BioContainers/nf-core/Snakemake packaging story
+- TikZ preflight figure and FastaGuard `references.bib` (QUAST/BUSCO/etc.)
 
 ## What is done
 
-- Full Application Note **first draft** in `main.tex` (Motivation, Implementation, Results, Discussion).
-- Structured abstract (Summary / Availability and Implementation / Contact / Supplementary).
-- TikZ main figure (preflight placement story).
-- Evidence table filled from committed v0.6 public-evidence pack (`docs/evidence/`).
-- BibTeX `references.bib` with core ecosystem citations.
-- `Makefile` + build README; PDF builds with TeX Live (`pdflatex` + `bibtex` via `latexmk`).
-- Project store venue brief + project context (paths below).
+- Full Application Note draft with VariantFlow-aligned author/funding/disclosures
+- Structured Bioinformatics Application Note abstract (Summary / Availability / Contact / SI)
+- TikZ overview figure; v0.6 evidence table
+- ~2.0k words (within ~2.0–2.6k Application Note target); PDF builds via `make`
+- Store context + venue brief updated
 
 ## Draft vs final
 
 | Piece | Status |
 | --- | --- |
-| Scientific framing / claims | Draft-complete; aligned with `docs/product-thesis.md` |
-| Author email / affiliation | **TBD placeholders** |
-| Funding / COI details | **TBD** (COI currently “none declared”) |
-| Figure | **Usable TikZ**; optional polish / export to PDF art later |
-| Table numbers | From **v0.6** evidence (contextual timings); re-freeze if citing newer release |
-| Word count | Aim ~2,000–2,600; recount after edits (`paper/HANDOFF.md` workflow) |
+| Author / ORCID / affiliation / emails | **Filled from VariantFlow** (same author block by user default) |
+| Funding / COI / AI disclosure / CRediT | **Filled** (VariantFlow patterns) |
+| Scientific body + evidence | **FastaGuard draft-complete** |
+| Word count | ~2.0k — OK; trim if journal typesetting overruns |
+| Figure | Usable TikZ |
+| Table | v0.6 evidence (contextual timings) |
+| Zenodo / preprint DOI | **Not yet** (VariantFlow had these; add for FastaGuard when archived) |
 | OUP camera-ready template | **Not yet** — format-free OK for first submission |
-| Preprint / Zenodo DOI | **Not yet** |
-| Submission to ScholarOne | **Not yet** |
+| ScholarOne submit | **Not yet** |
 
 ## How to build
 
 ```bash
 cd paper
-make          # latexmk -pdf main.tex → main.pdf
-make clean    # aux only
+make          # → main.pdf
+make clean
 ```
 
-Requires: `pdflatex`, `bibtex`, `latexmk`, and packages used in `main.tex`
-(including `tikz` from `texlive-pictures`). PDF is gitignored.
+Requires TeX Live with `pdflatex`, `bibtex`, `latexmk`, TikZ (`texlive-pictures`), `microtype`.
 
-## Store docs (durable Project Context)
+## Store docs
 
-- Venue + framing: `/cursor/stores/bc-53e26eb2-1f92-41f8-9fa2-384c56a6ad53/docs/publication-venues.md`
-- Project context / resume: `/cursor/stores/bc-53e26eb2-1f92-41f8-9fa2-384c56a6ad53/docs/project-context.md`
+- `/cursor/stores/bc-53e26eb2-1f92-41f8-9fa2-384c56a6ad53/docs/publication-venues.md`
+- `/cursor/stores/bc-53e26eb2-1f92-41f8-9fa2-384c56a6ad53/docs/project-context.md`
 
-(Also via symlink `/cursor/stores/self/docs/...` when that alias is mounted.)
+## Next concrete steps
 
-## Next concrete manuscript steps
-
-1. Replace `[institutional-email@example.org]` and affiliation; complete funding.
-2. Recount words; trim or expand to stay near Application Note budget (~2k–2.6k words / ~4 typeset pages). Enable `\doublespacing` before ScholarOne upload if desired.
-3. Optionally re-run evidence for the exact software version named in Availability (v1.0.0 packaging vs newer source tag) and update Table 1.
-4. Deposit preprint (bioRxiv) and/or archive DOI (Zenodo) if desired before or with submission.
-5. Submit format-free PDF + SI; on revision, switch to OUP General Template.
-6. Confirm APC / Read & Publish / ISCB discount before acceptance.
+1. Confirm Jian-Feng Mao co-authorship for FastaGuard is intentional (defaulted yes per user).
+2. Optional: archive a FastaGuard release on Zenodo and add DOI to Availability.
+3. Optional preprint (bioRxiv); recount words after any edits.
+4. Submit format-free PDF; on revision use OUP General Template.
+5. Confirm APC / Read & Publish / ISCB discount before acceptance.
 
 ## Key in-repo sources for claims
 
 - `README.md`, `docs/product-thesis.md`, `docs/tool-landscape.md`, `docs/output-contract.md`
 - `docs/evidence/fastaguard-v0.6-public-evidence.md` + `docs/evidence/results/v0.6/`
-- `CITATION.cff`
+- VariantFlow front-matter only: `https://github.com/ehsanestaji/VariantFlow/tree/main/paper/bioinformatics-application-note`
