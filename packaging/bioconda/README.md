@@ -17,9 +17,10 @@ BioContainers publishes the pinned workflow image:
 docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
 ```
 
-This local recipe directory mirrors the FastaGuard v1.0.0 Bioconda recipe. The
-v1.0.0 GitHub source archive is published and `meta.yaml` includes the verified
-archive SHA256.
+This local recipe directory mirrors the FastaGuard v1.1.0 Bioconda recipe
+submitted in [PR #70692](https://github.com/bioconda/bioconda-recipes/pull/70692).
+The v1.1.0 GitHub source archive is published and `meta.yaml` includes the
+verified archive SHA256.
 
 ## Local Checks
 

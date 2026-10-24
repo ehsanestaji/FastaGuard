@@ -16,7 +16,7 @@ SOURCE_VERSION = "1.1.0"
 PUBLISHED_VERSION = "1.0.0"
 CURRENT_CONTAINER = "1.0.0--hfa8f182_0"
 CURRENT_SOURCE_SHA256 = (
-    "427bd1b9cf406f42e9754bdf2e79370c3c879249cfb87e8a4a7c9dbfa6dc4cfa"
+    "bb7551298039cc94b5c02ed0f6538d2f7ed61cf93637129186992c3069437bbe"
 )
 
 
@@ -266,10 +266,10 @@ class ReleaseMetadataTest(unittest.TestCase):
             )
         )
 
-    def test_bioconda_recipe_tracks_published_v1_0_0_archive(self):
+    def test_bioconda_recipe_tracks_published_v1_1_0_archive(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
 
-        self.assertIn('{% set version = "1.0.0" %}', recipe)
+        self.assertIn('{% set version = "1.1.0" %}', recipe)
         self.assertIn("fastaguard --version | grep {{ version }}", recipe)
 
     def test_v0_2_0_release_notes_exist(self):
@@ -336,12 +336,12 @@ class ReleaseMetadataTest(unittest.TestCase):
                     description = text[start : start + 120]
                     self.assertIn("output-write", description, description)
 
-    def test_bioconda_recipe_has_publishable_v1_0_0_source_sha(self):
+    def test_bioconda_recipe_has_publishable_v1_1_0_source_sha(self):
         recipe = (ROOT / "packaging" / "bioconda" / "meta.yaml").read_text()
         marker = "REPLACE" + "_WITH_"
 
         self.assertTrue((ROOT / "docs" / "releases" / "v0.6.0.md").exists())
-        self.assertIn('{% set version = "1.0.0" %}', recipe)
+        self.assertIn('{% set version = "1.1.0" %}', recipe)
         self.assertNotIn(marker, recipe)
 
         match = re.search(r"sha256: ([a-f0-9]{64})", recipe)
