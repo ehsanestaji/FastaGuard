@@ -1,7 +1,9 @@
 # Cover letter — *Bioinformatics* Application Note (draft)
 
-**To:** The Editors, *Bioinformatics* (Oxford University Press)  
-**From:** Ehsan Estaji and Jian-Feng Mao  
+**To:** The Editors, *Bioinformatics* (Oxford University Press)
+
+**From:** Ehsan Estaji and Jian-Feng Mao
+
 **Re:** Application Note submission — *FastaGuard: FASTA preflight QC for modern bioinformatics pipelines*
 
 Dear Editors,
@@ -27,7 +29,7 @@ and abstract conventions (Summary / Availability and Implementation / Contact /
 Supplementary information). Source and documentation:
 https://github.com/ehsanestaji/FastaGuard
 
-**Suggested topical area:** genome assembly / sequence analysis software tools  
+**Suggested topical area:** genome assembly / sequence analysis software tools
 (Editors may reassign as appropriate.)
 
 **Software availability.** The submitted release (v1.0.0) is open source (MIT),
@@ -50,7 +52,10 @@ consideration at another journal, and that all authors approve submission.
 
 Thank you for your consideration.
 
-Sincerely,  
-Ehsan Estaji  
-Jian-Feng Mao  
+Sincerely,
+
+Ehsan Estaji
+
+Jian-Feng Mao
+
 Umeå Plant Science Centre, Department of Plant Physiology, Umeå University

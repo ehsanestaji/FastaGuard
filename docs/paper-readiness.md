@@ -1,8 +1,11 @@
 # FastaGuard paper readiness (*Bioinformatics* Application Note)
 
-Venue: **Bioinformatics (OUP) — Application Note** (user-confirmed).  
-Branch/PR: `cursor/paper-prep-venues-198e` / [#21](https://github.com/ehsanestaji/FastaGuard/pull/21).  
-Control manifest: [`paper/submission.yml`](../paper/submission.yml).  
+Venue: **Bioinformatics (OUP) — Application Note** (user-confirmed).
+
+Branch/PR: `cursor/paper-prep-venues-198e` / [#21](https://github.com/ehsanestaji/FastaGuard/pull/21).
+
+Control manifest: [`paper/submission.yml`](../paper/submission.yml).
+
 Machine check: `cd paper && make check`.
 
 ## DONE (machine / repo complete)

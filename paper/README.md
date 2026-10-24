@@ -1,6 +1,7 @@
 # FastaGuard paper (LaTeX)
 
-**Venue (user-confirmed):** [*Bioinformatics*](https://academic.oup.com/bioinformatics) — **Application Note**  
+**Venue (user-confirmed):** [*Bioinformatics*](https://academic.oup.com/bioinformatics) — **Application Note**
+
 **PR:** [#21](https://github.com/ehsanestaji/FastaGuard/pull/21) · `cursor/paper-prep-venues-198e`
 
 Paper-prep only. Cold-start: [`HANDOFF.md`](HANDOFF.md). Readiness checklist: [`../docs/paper-readiness.md`](../docs/paper-readiness.md).
