@@ -60,7 +60,7 @@ Let humans, pipelines, and agents decide the next step confidently.
 7. Keep contract discovery commands such as `--schema`, `--finding-catalog`, and `--explain-finding <id>` stable.
 8. Add a stable schema migration policy before the first widely distributed release.
 9. Keep conformance tests with tiny FASTA fixtures and golden JSON outputs current.
-10. Add an MCP or tool-server layer later, after the CLI contract is stable.
+10. Maintain the lightweight stdio MCP starter in `integrations/mcp/` (`fastaguard-mcp`) on top of the stable CLI contract.
 11. Add compare-mode outputs that make many FASTA files easy for agents to rank, filter, and route.
 12. Keep generated LLM summaries optional, local-metrics-only, and traceable back to structured fields.
 
@@ -157,3 +157,16 @@ fastaguard --explain-finding high_n_rate
 ```
 
 These are the first practical bridge from "nice report" to "tool-readable QC contract."
+
+## MCP Server Integration (`integrations/mcp/`)
+
+A zero-dependency Python stdio Model Context Protocol (MCP) starter package is available under `integrations/mcp/` (`fastaguard-mcp`). It exposes the FastaGuard CLI contract directly to MCP-compatible clients over JSON-RPC 2.0:
+
+- `fastaguard_schema`: returns the parsed JSON Schema from `fastaguard --schema`.
+- `fastaguard_finding_catalog`: returns the parsed finding catalog from `fastaguard --finding-catalog`.
+- `fastaguard_explain_finding`: returns one catalog entry from `fastaguard --explain-finding <id>`.
+- `fastaguard_inspect_fasta`: runs single-FASTA preflight QC and returns the structured JSON report (`verdict`, `gate.can_continue`, `readiness`, `findings`, `machine_summary`, `scope`).
+- `fastaguard_compare`: runs `fastaguard compare` across a FASTA cohort and returns the structured cohort JSON report.
+- `fastaguard_reference`: runs `fastaguard reference` against declared reference companions (`.fai`, `.dict`, alignment headers, variant headers, GFF3 annotations) and returns the structured reference JSON report.
+
+The MCP integration enforces the same scope boundaries as the CLI: it requires no external database, never modifies input FASTA files, never fabricates findings outside the CLI JSON report, and surfaces CLI exit codes (`0`, `2`, `3`) explicitly.

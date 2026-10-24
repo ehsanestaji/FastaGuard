@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fastaguard-mcp"
+version = "0.1.0"
+description = "Model Context Protocol (MCP) stdio server for FastaGuard FASTA preflight and reference contract QC"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/ehsanestaji/FastaGuard"
+Repository = "https://github.com/ehsanestaji/FastaGuard"
+Issues = "https://github.com/ehsanestaji/FastaGuard/issues"
+
+[project.scripts]
+fastaguard-mcp = "fastaguard_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fastaguard_mcp"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"README.md" = "share/doc/fastaguard-mcp/README.md"
