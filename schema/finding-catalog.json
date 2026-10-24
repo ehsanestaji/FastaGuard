@@ -950,6 +950,102 @@
         {"tool": "samtools or bcftools", "role": "supply complete declarations or verify content identity"}
       ],
       "cannot_conclude": ["the stronger identity relationship required by the selected policy"]
+    },
+    {
+      "id": "internal_stop_codons",
+      "category": "validity",
+      "severity": "critical",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "protein",
+      "default_severity": "critical",
+      "default_verdict_effect": "fail",
+      "meaning": "One or more protein sequences contain an internal '*' stop codon symbol before the terminal residue.",
+      "why_it_matters": "Internal stop codons usually indicate translation-table mismatches, frameshifts, or corrupted coding sequences and are rejected by most protein analysis tools.",
+      "evidence_fields": [
+        "findings[].affected_count",
+        "findings[].evidence.records[].signals"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "inspect_or_retranslate_records",
+          "target": "protein records with internal stop codons",
+          "reason": "Internal stop codons usually indicate translation-table mismatches, frameshifts, or corrupted coding sequences.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "inspect and filter protein records containing internal stop codons"
+        }
+      ],
+      "cannot_conclude": ["biological pseudogene status", "translation table without coding nucleotide sequence"]
+    },
+    {
+      "id": "terminal_stop_codons",
+      "category": "validity",
+      "severity": "minor",
+      "confidence": "high",
+      "requires_followup_tool": false,
+      "profile": "protein",
+      "default_severity": "minor",
+      "default_verdict_effect": "warn",
+      "meaning": "One or more protein sequences end with a trailing '*' stop codon symbol.",
+      "why_it_matters": "Some domain, homology search, and structure prediction tools reject trailing '*' stop codon symbols.",
+      "evidence_fields": [
+        "findings[].affected_count",
+        "findings[].evidence.records[].signals"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "strip_terminal_stops",
+          "target": "protein records ending with '*'",
+          "reason": "Downstream domain, search, and structure tools frequently reject trailing stop codon symbols.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "strip trailing '*' stop codon symbols before running protein tools"
+        }
+      ],
+      "cannot_conclude": ["protein function", "domain completeness"]
+    },
+    {
+      "id": "nucleotide_like_proteins",
+      "category": "composition",
+      "severity": "major",
+      "confidence": "moderate",
+      "requires_followup_tool": false,
+      "profile": "protein",
+      "default_severity": "major",
+      "default_verdict_effect": "warn",
+      "meaning": "One or more records in a protein FASTA are composed almost entirely of A/C/G/T/U/N symbols.",
+      "why_it_matters": "Untranslated DNA or RNA records accidentally passed to a protein workflow will produce meaningless homology, domain, or structure results.",
+      "evidence_fields": [
+        "findings[].affected_count",
+        "findings[].evidence.records[].signals"
+      ],
+      "suggested_actions": [
+        {
+          "action_type": "verify_sequence_alphabet",
+          "target": "nucleotide-like records in protein FASTA",
+          "reason": "Records composed almost entirely of A/C/G/T/U/N may be untranslated nucleotide sequences rather than proteins.",
+          "recommended_tool": "seqkit",
+          "requires_external_database": false
+        }
+      ],
+      "recommended_next_tools": [
+        {
+          "tool": "seqkit",
+          "role": "inspect sequence alphabet and translate coding sequences if needed"
+        }
+      ],
+      "cannot_conclude": ["whether a low-complexity protein is genuinely nucleotide sequence without header or coding context"]
     }
   ]
 }

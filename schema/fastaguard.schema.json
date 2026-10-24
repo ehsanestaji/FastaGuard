@@ -1197,7 +1197,10 @@
             "gc_outliers",
             "length_outliers",
             "composite_anomalies",
-            "invalid_fasta_structure"
+            "invalid_fasta_structure",
+            "internal_stop_codons",
+            "terminal_stop_codons",
+            "nucleotide_like_proteins"
           ]
         },
         "category": {
@@ -1385,7 +1388,10 @@
                   "gap_run",
                   "unsafe_id",
                   "long_header",
-                  "reserved_header_chars"
+                  "reserved_header_chars",
+                  "internal_stop",
+                  "terminal_stop",
+                  "nucleotide_like"
                 ]
               },
               {

@@ -527,6 +527,47 @@ fn freshly_generated_outlier_report_validates_against_json_schema() {
     );
 }
 
+#[test]
+fn protein_profile_report_validates_against_json_schema() {
+    let temp_dir = TempDir::new().unwrap();
+    let input = temp_dir.path().join("proteome.faa");
+    std::fs::write(
+        &input,
+        concat!(
+            ">prot_internal\n",
+            "MKTLLLTLVVVT*IVCLDLGYTDFKRVWQHIL\n",
+            ">prot_terminal\n",
+            "MKTLLLTLVVVTIVCLDLGYTDFKRVWQHIL*\n",
+            ">prot_nt_like\n",
+            "ACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+        ),
+    )
+    .unwrap();
+
+    let html = temp_dir.path().join("proteome.html");
+    let json = temp_dir.path().join("proteome.json");
+    let tsv = temp_dir.path().join("proteome.tsv");
+    let multiqc = temp_dir.path().join("proteome_mqc.json");
+    let mut cmd = assert_cmd::Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg(&input)
+        .args(["--profile", "protein", "--gate", "pipeline", "--out"])
+        .arg(&html)
+        .arg("--json")
+        .arg(&json)
+        .arg("--tsv")
+        .arg(&tsv)
+        .arg("--multiqc")
+        .arg(&multiqc)
+        .assert()
+        .success();
+
+    let schema = read_json(Path::new("schema/fastaguard.schema.json"));
+    let report = read_json(&json);
+    let validator =
+        jsonschema::validator_for(&schema).expect("schema/fastaguard.schema.json should compile");
+    assert_validates(&validator, &report, "protein profile report");
+}
+
 fn golden_report_paths() -> Vec<&'static Path> {
     vec![
         Path::new("tests/golden/valid_assembly.json"),

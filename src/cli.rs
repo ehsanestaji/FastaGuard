@@ -186,7 +186,7 @@ pub struct ReferenceOutputArgs {
 
 #[derive(Debug, Clone, Args)]
 pub struct AnalysisArgs {
-    /// QC profile. The current release supports assembly.
+    /// QC profile (assembly or protein).
     #[arg(long, default_value = "assembly")]
     pub profile: String,
 
@@ -667,10 +667,15 @@ impl AnalysisArgs {
     }
 
     fn validate(&self) -> Result<ValidatedAnalysis> {
-        if self.profile != "assembly" {
+        if !matches!(self.profile.as_str(), "assembly" | "protein") {
             return Err(anyhow!(
-                "unsupported profile '{}'; the current release supports assembly",
+                "unsupported profile '{}'; supported profiles are assembly and protein",
                 self.profile
+            ));
+        }
+        if self.profile == "protein" && self.submission_target == Some(SubmissionTarget::Ncbi) {
+            return Err(anyhow!(
+                "--submission-target ncbi is only supported with --profile assembly"
             ));
         }
         if self.threads == 0 {

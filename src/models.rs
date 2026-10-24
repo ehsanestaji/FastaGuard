@@ -404,8 +404,8 @@ impl FastaguardReport {
             },
             gate,
             readiness,
-            machine_summary: build_machine_summary(analysis.status, &findings),
-            scope: fasta_preflight_scope(),
+            machine_summary: build_machine_summary(&config.profile, analysis.status, &findings),
+            scope: fasta_preflight_scope(&config.profile),
             provenance,
             summary: Summary {
                 sequence_count: metrics.sequence_count,
@@ -504,8 +504,8 @@ impl FastaguardReport {
             },
             gate,
             readiness,
-            machine_summary: build_machine_summary(VerdictStatus::Fail, &findings),
-            scope: fasta_preflight_scope(),
+            machine_summary: build_machine_summary(&config.profile, VerdictStatus::Fail, &findings),
+            scope: fasta_preflight_scope(&config.profile),
             provenance,
             summary: Summary {
                 sequence_count: 0,
@@ -738,6 +738,27 @@ pub fn finding_actions(id: &str) -> Vec<FindingAction> {
             "samtools or bcftools",
             false,
         )],
+        "internal_stop_codons" => vec![action(
+            "inspect_or_retranslate_records",
+            "protein records with internal stop codons",
+            "Internal stop codons usually indicate translation-table mismatches, frameshifts, or corrupted coding sequences.",
+            "seqkit",
+            false,
+        )],
+        "terminal_stop_codons" => vec![action(
+            "strip_terminal_stops",
+            "protein records ending with '*'",
+            "Downstream domain, search, and structure tools frequently reject trailing stop codon symbols.",
+            "seqkit",
+            false,
+        )],
+        "nucleotide_like_proteins" => vec![action(
+            "verify_sequence_alphabet",
+            "nucleotide-like records in protein FASTA",
+            "Records composed almost entirely of A/C/G/T/U/N may be untranslated nucleotide sequences rather than proteins.",
+            "seqkit",
+            false,
+        )],
         _ => Vec::new(),
     }
 }
@@ -779,12 +800,16 @@ fn action(
     }
 }
 
-fn build_machine_summary(status: VerdictStatus, findings: &[Finding]) -> MachineSummary {
+fn build_machine_summary(
+    profile: &str,
+    status: VerdictStatus,
+    findings: &[Finding],
+) -> MachineSummary {
     MachineSummary {
         verdict: status,
         safe_for_downstream: status == VerdictStatus::Pass,
         top_findings: findings.iter().map(|finding| finding.id.clone()).collect(),
-        recommended_next_tools: recommended_next_tools(status, findings),
+        recommended_next_tools: recommended_next_tools(profile, status, findings),
         routing_hints: routing_hints(findings),
     }
 }
@@ -832,6 +857,30 @@ fn routing_hints(findings: &[Finding]) -> Vec<RoutingHint> {
                 &mut hints,
                 "validity_failure",
                 "repair_fasta_before_downstream_qc",
+                false,
+            ),
+            "internal_stop_codons" => push_routing_hint(
+                &mut hints,
+                "validity_failure",
+                "repair_or_retranslate_protein_fasta_before_downstream_qc",
+                false,
+            ),
+            "terminal_stop_codons" => push_routing_hint(
+                &mut hints,
+                "terminal_stop_warning",
+                "strip_terminal_stop_codons_before_downstream_tools",
+                false,
+            ),
+            "nucleotide_like_proteins" => push_routing_hint(
+                &mut hints,
+                "alphabet_suspect_warning",
+                "verify_protein_vs_nucleotide_input",
+                false,
+            ),
+            "high_n_rate" if finding.profile == "protein" => push_routing_hint(
+                &mut hints,
+                "protein_ambiguity",
+                "inspect_unknown_x_residues",
                 false,
             ),
             "high_n_rate" | "gap_runs" => push_routing_hint(
@@ -893,8 +942,57 @@ fn push_routing_hint(
     });
 }
 
-fn recommended_next_tools(status: VerdictStatus, findings: &[Finding]) -> Vec<RecommendedTool> {
+fn recommended_next_tools(
+    profile: &str,
+    status: VerdictStatus,
+    findings: &[Finding],
+) -> Vec<RecommendedTool> {
     let mut tools = Vec::new();
+
+    if profile == "protein" {
+        if status == VerdictStatus::Pass {
+            push_tool(
+                &mut tools,
+                "InterProScan",
+                "protein domain and functional signature annotation after FASTA preflight passes",
+            );
+            push_tool(
+                &mut tools,
+                "MMseqs2",
+                "fast protein homology search and clustering after FASTA preflight passes",
+            );
+            push_tool(
+                &mut tools,
+                "Foldseek",
+                "structural similarity search after protein sequence preflight and structure prediction",
+            );
+            return tools;
+        }
+
+        for finding in findings {
+            for action in &finding.actions {
+                if action.recommended_tool == "QUAST" {
+                    continue;
+                }
+                push_tool(&mut tools, &action.recommended_tool, &action.reason);
+            }
+        }
+
+        if status == VerdictStatus::Warn {
+            push_tool(
+                &mut tools,
+                "InterProScan",
+                "protein domain and functional signature annotation after reviewing preflight warnings",
+            );
+            push_tool(
+                &mut tools,
+                "MMseqs2",
+                "fast protein homology search and clustering after reviewing preflight warnings",
+            );
+        }
+
+        return tools;
+    }
 
     if status == VerdictStatus::Pass {
         push_tool(
@@ -967,7 +1065,28 @@ fn push_tool(tools: &mut Vec<RecommendedTool>, tool: &str, reason: &str) {
     });
 }
 
-fn fasta_preflight_scope() -> Scope {
+fn fasta_preflight_scope(profile: &str) -> Scope {
+    if profile == "protein" {
+        return Scope {
+            level: "fasta_preflight".to_string(),
+            can_conclude: vec![
+                "FASTA parse validity".to_string(),
+                "duplicate identifiers".to_string(),
+                "invalid amino acid symbols".to_string(),
+                "internal and terminal stop codon presence".to_string(),
+                "suspected untranslated nucleotide sequences".to_string(),
+                "basic sequence length and ambiguity statistics".to_string(),
+            ],
+            cannot_conclude: vec![
+                "protein folding or 3D structure quality".to_string(),
+                "functional domain completeness".to_string(),
+                "orthology or homology accuracy".to_string(),
+                "translation table or reading frame correctness".to_string(),
+                "repository acceptance".to_string(),
+            ],
+        };
+    }
+
     Scope {
         level: "fasta_preflight".to_string(),
         can_conclude: vec![

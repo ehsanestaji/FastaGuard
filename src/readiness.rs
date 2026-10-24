@@ -135,7 +135,10 @@ fn base_categories(scope: ReadinessScope) -> Vec<ReadinessCategory> {
 fn category_ids_for_finding(id: &str) -> &'static [&'static str] {
     match id {
         "invalid_fasta_structure" => &["file", "structure", "submission"],
-        "invalid_chars" => &["alphabet", "submission"],
+        "invalid_chars" | "internal_stop_codons" | "terminal_stop_codons" => {
+            &["alphabet", "submission"]
+        }
+        "nucleotide_like_proteins" => &["alphabet", "assembly"],
         "duplicate_ids" | "duplicate_first_token_ids" => &["index", "submission"],
         "unsafe_ids" | "long_headers" | "reserved_header_chars" => &["index", "submission"],
         "ncbi_genome_seqid" => &["index", "submission"],

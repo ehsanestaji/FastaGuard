@@ -74,7 +74,7 @@ pub(crate) fn build_single_report(
     config: cli::RunConfig,
     started: Instant,
 ) -> Result<models::FastaguardReport> {
-    let profile = profile::ProfileConfig::assembly(config.thresholds);
+    let profile = profile::ProfileConfig::from_name(&config.profile, config.thresholds);
     let metrics = match metrics::AssemblyMetrics::from_path(&config.input, &profile) {
         Ok(metrics) => metrics,
         Err(error) if parser::is_structural_fasta_error(&error) => {

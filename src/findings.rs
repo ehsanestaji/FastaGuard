@@ -41,6 +41,7 @@ fn build_findings(
     submission_target: Option<SubmissionTarget>,
 ) -> Vec<Finding> {
     let mut findings = Vec::new();
+    let is_protein = profile.name == "protein";
 
     if metrics.duplicate_id_count > 0 {
         findings.push(finding(
@@ -243,6 +244,96 @@ fn build_findings(
                     "Invalid characters can make parsers, aligners, or annotation tools fail or misinterpret records.",
                 suggested_next_step:
                     "Inspect and correct non-IUPAC sequence symbols before continuing the workflow.",
+            },
+        ));
+    }
+
+    if is_protein && metrics.internal_stop_sequence_count > 0 {
+        findings.push(finding(
+            "internal_stop_codons",
+            Severity::Critical,
+            profile,
+            metrics.internal_stop_sequence_count,
+            affected_fraction(metrics.internal_stop_sequence_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.internal_stop_sequence_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.internal_stop),
+                "protein sequence contains internal stop codon '*'",
+                EvidenceKind::InternalStop,
+            ),
+            FindingText {
+                message: format!(
+                    "{} protein sequences contain internal stop codons.",
+                    metrics.internal_stop_sequence_count
+                ),
+                why_it_matters:
+                    "Internal stop codons usually indicate translation-table mismatches, frameshifts, or corrupted coding sequences and are rejected by most protein analysis tools.",
+                suggested_next_step:
+                    "Inspect and retranslate or filter records containing internal '*' stop codons before running domain, homology, or structure tools.",
+            },
+        ));
+    }
+
+    if is_protein && metrics.terminal_stop_sequence_count > 0 {
+        findings.push(finding(
+            "terminal_stop_codons",
+            Severity::Minor,
+            profile,
+            metrics.terminal_stop_sequence_count,
+            affected_fraction(metrics.terminal_stop_sequence_count, metrics.sequence_count),
+            evidence_for_sequences(
+                metrics.terminal_stop_sequence_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.terminal_stop),
+                "protein sequence ends with terminal stop codon '*'",
+                EvidenceKind::TerminalStop,
+            ),
+            FindingText {
+                message: format!(
+                    "{} protein sequences end with a terminal '*' stop codon.",
+                    metrics.terminal_stop_sequence_count
+                ),
+                why_it_matters:
+                    "Some domain, homology search, and structure prediction tools reject trailing '*' stop codon symbols.",
+                suggested_next_step:
+                    "Strip trailing '*' stop codon characters with seqkit before running downstream protein tools.",
+            },
+        ));
+    }
+
+    if is_protein && metrics.nucleotide_like_sequence_count > 0 {
+        findings.push(finding(
+            "nucleotide_like_proteins",
+            Severity::Major,
+            profile,
+            metrics.nucleotide_like_sequence_count,
+            affected_fraction(
+                metrics.nucleotide_like_sequence_count,
+                metrics.sequence_count,
+            ),
+            evidence_for_sequences(
+                metrics.nucleotide_like_sequence_count,
+                metrics
+                    .sequences
+                    .iter()
+                    .filter(|sequence| sequence.nucleotide_like),
+                "sequence in protein profile is composed almost entirely of A/C/G/T/U/N residues",
+                EvidenceKind::NucleotideLikeProtein,
+            ),
+            FindingText {
+                message: format!(
+                    "{} records in the protein FASTA look like nucleotide sequences.",
+                    metrics.nucleotide_like_sequence_count
+                ),
+                why_it_matters:
+                    "Untranslated DNA or RNA records accidentally passed to a protein workflow will produce meaningless homology, domain, or structure results.",
+                suggested_next_step:
+                    "Verify whether the input FASTA is nucleotide or protein and translate coding sequences before running protein tools.",
             },
         ));
     }
@@ -634,9 +725,14 @@ fn finding_metadata(id: &str) -> FindingMetadata {
         "duplicate_ids" | "duplicate_sequences" | "duplicate_first_token_ids" => {
             (Duplication, High)
         }
-        "invalid_chars" | "invalid_fasta_structure" | "ncbi_genome_seqid" => (Validity, High),
+        "invalid_chars"
+        | "invalid_fasta_structure"
+        | "ncbi_genome_seqid"
+        | "internal_stop_codons"
+        | "terminal_stop_codons" => (Validity, High),
         "unsafe_ids" | "long_headers" | "reserved_header_chars" => (Validity, Moderate),
         "high_n_rate" => (Composition, High),
+        "nucleotide_like_proteins" => (Composition, Moderate),
         "tiny_contigs" | "terminal_ns" | "gap_pattern_warnings" | "expected_size_outlier" => {
             (Structure, Moderate)
         }
@@ -729,6 +825,9 @@ enum EvidenceKind {
     DuplicateFirstTokenId,
     DuplicateSequence,
     InvalidChars,
+    InternalStop,
+    TerminalStop,
+    NucleotideLikeProtein,
     HighN,
     TinyContig,
     GapRun,
@@ -857,6 +956,15 @@ fn evidence_record(sequence: &SequenceSummary, reason: &str, kind: EvidenceKind)
     match kind {
         EvidenceKind::InvalidChars => {
             record.invalid_count = Some(sequence.invalid_count);
+        }
+        EvidenceKind::InternalStop => {
+            record.signals.push("internal_stop".to_string());
+        }
+        EvidenceKind::TerminalStop => {
+            record.signals.push("terminal_stop".to_string());
+        }
+        EvidenceKind::NucleotideLikeProtein => {
+            record.signals.push("nucleotide_like".to_string());
         }
         EvidenceKind::HighN => {
             record.n_fraction = Some(round2(sequence.n_fraction));
@@ -1086,6 +1194,9 @@ mod tests {
             tiny_contig_count: 0,
             terminal_n_sequence_count: 0,
             repeated_gap_pattern_sequence_count: 0,
+            internal_stop_sequence_count: 0,
+            terminal_stop_sequence_count: 0,
+            nucleotide_like_sequence_count: 0,
             max_gap_run: 0,
             ungapped_total_length: 1_000,
             sequences: Vec::new(),
@@ -1138,6 +1249,9 @@ mod tests {
             terminal_n_prefix: 0,
             terminal_n_suffix: 0,
             gap_run_100_count: 0,
+            internal_stop: false,
+            terminal_stop: false,
+            nucleotide_like: false,
             n_fraction: if length == 0 {
                 0.0
             } else {
@@ -1346,5 +1460,37 @@ mod tests {
             finding.affected_fraction,
             1.0 / metrics.sequence_count as f64
         );
+    }
+
+    #[test]
+    fn protein_profile_emits_stop_and_nucleotide_like_findings() {
+        let mut metrics = clean_metrics();
+        metrics.sequence_count = 3;
+        metrics.internal_stop_sequence_count = 1;
+        metrics.terminal_stop_sequence_count = 1;
+        metrics.nucleotide_like_sequence_count = 1;
+
+        let mut internal = sequence_summary_with_id("prot_internal", 40, 0);
+        internal.internal_stop = true;
+        let mut terminal = sequence_summary_with_id("prot_terminal", 40, 0);
+        terminal.terminal_stop = true;
+        let mut nucleotide = sequence_summary_with_id("prot_nt", 40, 0);
+        nucleotide.nucleotide_like = true;
+        metrics.sequences = vec![internal, terminal, nucleotide];
+
+        let protein_profile = ProfileConfig::protein(ThresholdOverrides {
+            max_n_rate: None,
+            min_contig_length: None,
+            expected_size_bases: None,
+            expected_size_tolerance: None,
+        });
+        let analysis = analyze(&metrics, &protein_profile, &rules(&[]), None);
+
+        assert_eq!(analysis.status, VerdictStatus::Fail);
+        assert_eq!(analysis.reasons, ["internal_stop_codons"]);
+        let ids: Vec<&str> = analysis.findings.iter().map(|f| f.id.as_str()).collect();
+        assert!(ids.contains(&"internal_stop_codons"));
+        assert!(ids.contains(&"terminal_stop_codons"));
+        assert!(ids.contains(&"nucleotide_like_proteins"));
     }
 }

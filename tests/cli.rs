@@ -3627,3 +3627,191 @@ fn array_contains_record_id(value: &Value, expected: &str) -> bool {
         .iter()
         .any(|item| item["id"] == json!(expected))
 }
+
+#[test]
+fn protein_profile_clean_proteome_passes_and_recommends_protein_tools() {
+    let temp_dir = TempDir::new().unwrap();
+    let input = temp_dir.path().join("clean_proteome.faa");
+    std::fs::write(
+        &input,
+        concat!(
+            ">sp_P12345 kinase domain\n",
+            "MKTLLLTLVVVTIVCLDLGYTDFKRVWQHILPEDNGRSYVCAKLMNPQRSTVWY\n",
+            ">sp_Q67890 receptor fragment\n",
+            "MGSSHHHHHHSSGLVPRGSHMASMTGGQQMGRGSEFELRRQACGRTRAPPPPPLRSGC\n"
+        ),
+    )
+    .unwrap();
+    let outputs = output_paths(&temp_dir, "protein_clean");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg(&input)
+        .args(["--profile", "protein", "--gate", "pipeline", "--json"])
+        .arg(&outputs.json)
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .success();
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["verdict"]["status"], json!("PASS"));
+    assert_eq!(report["gate"]["status"], json!("PASS"));
+    assert_eq!(report["gate"]["can_continue"], json!(true));
+    assert_eq!(report["provenance"]["profile"], json!("protein"));
+    assert_eq!(
+        report["provenance"]["thresholds"]["min_contig_length"],
+        json!(10)
+    );
+    assert!(array_contains_tool(
+        &report["machine_summary"]["recommended_next_tools"],
+        "InterProScan"
+    ));
+    assert!(array_contains_tool(
+        &report["machine_summary"]["recommended_next_tools"],
+        "MMseqs2"
+    ));
+    assert!(array_contains_tool(
+        &report["machine_summary"]["recommended_next_tools"],
+        "Foldseek"
+    ));
+    assert!(array_contains_string(
+        &report["scope"]["cannot_conclude"],
+        "protein folding or 3D structure quality"
+    ));
+}
+
+#[test]
+fn protein_profile_flags_internal_stops_terminal_stops_and_nucleotide_like_records() {
+    let temp_dir = TempDir::new().unwrap();
+    let input = temp_dir.path().join("problem_proteome.faa");
+    std::fs::write(
+        &input,
+        concat!(
+            ">prot_internal\n",
+            "MKTLLLTLVVVT*IVCLDLGYTDFKRVWQHIL\n",
+            ">prot_terminal\n",
+            "MKTLLLTLVVVTIVCLDLGYTDFKRVWQHIL*\n",
+            ">prot_nt_like\n",
+            "ACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+        ),
+    )
+    .unwrap();
+    let outputs = output_paths(&temp_dir, "protein_problem");
+
+    let mut cmd = Command::cargo_bin("fastaguard").unwrap();
+    cmd.arg(&input)
+        .args(["--profile", "protein", "--gate", "pipeline", "--json"])
+        .arg(&outputs.json)
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .success();
+
+    let report = read_json(&outputs.json);
+    assert_eq!(report["verdict"]["status"], json!("FAIL"));
+    assert_eq!(report["gate"]["status"], json!("FAIL"));
+    assert_eq!(report["gate"]["can_continue"], json!(false));
+    assert!(array_contains_string(
+        &report["gate"]["blocking_findings"],
+        "internal_stop_codons"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["advisory_findings"],
+        "terminal_stop_codons"
+    ));
+    assert!(array_contains_string(
+        &report["gate"]["advisory_findings"],
+        "nucleotide_like_proteins"
+    ));
+
+    let internal = finding_by_id(&report, "internal_stop_codons");
+    assert_eq!(internal["severity"], json!("critical"));
+    assert_eq!(internal["affected_count"], json!(1));
+    assert!(array_contains_record_id(
+        &internal["evidence"]["records"],
+        "prot_internal"
+    ));
+
+    let terminal = finding_by_id(&report, "terminal_stop_codons");
+    assert_eq!(terminal["severity"], json!("minor"));
+    assert_eq!(terminal["affected_count"], json!(1));
+    assert!(array_contains_record_id(
+        &terminal["evidence"]["records"],
+        "prot_terminal"
+    ));
+
+    let nt_like = finding_by_id(&report, "nucleotide_like_proteins");
+    assert_eq!(nt_like["severity"], json!("major"));
+    assert_eq!(nt_like["affected_count"], json!(1));
+    assert!(array_contains_record_id(
+        &nt_like["evidence"]["records"],
+        "prot_nt_like"
+    ));
+}
+
+#[test]
+fn protein_profile_compare_and_explain_finding_work_end_to_end() {
+    let temp_dir = TempDir::new().unwrap();
+    let clean = temp_dir.path().join("clean_proteome.faa");
+    let warn = temp_dir.path().join("warn_proteome.faa");
+    std::fs::write(
+        &clean,
+        ">prot_1\nMKTLLLTLVVVTIVCLDLGYTDFKRVWQHILPEDNGRSYVCAKLMNPQRSTVWY\n",
+    )
+    .unwrap();
+    std::fs::write(
+        &warn,
+        ">prot_2\nMKTLLLTLVVVTIVCLDLGYTDFKRVWQHILPEDNGRSYVCAKLMNPQRSTVWY*\n",
+    )
+    .unwrap();
+    let outputs = output_paths(&temp_dir, "protein_compare");
+
+    let mut compare_cmd = Command::cargo_bin("fastaguard").unwrap();
+    compare_cmd
+        .arg("compare")
+        .arg(&clean)
+        .arg(&warn)
+        .args(["--profile", "protein", "--gate", "pipeline", "--json"])
+        .arg(&outputs.json)
+        .arg("--out")
+        .arg(&outputs.html)
+        .arg("--tsv")
+        .arg(&outputs.tsv)
+        .arg("--multiqc")
+        .arg(&outputs.multiqc)
+        .assert()
+        .success();
+
+    let compare_report = read_json(&outputs.json);
+    assert_eq!(compare_report["report_type"], json!("compare"));
+    assert_eq!(compare_report["input"]["profile"], json!("protein"));
+    assert_eq!(compare_report["summary"]["pass_count"], json!(1));
+    assert_eq!(compare_report["summary"]["warn_count"], json!(1));
+    assert_eq!(compare_report["summary"]["fail_count"], json!(0));
+
+    for finding_id in [
+        "internal_stop_codons",
+        "terminal_stop_codons",
+        "nucleotide_like_proteins",
+    ] {
+        let mut explain_cmd = Command::cargo_bin("fastaguard").unwrap();
+        let output = explain_cmd
+            .args(["--explain-finding", finding_id])
+            .assert()
+            .success()
+            .get_output()
+            .stdout
+            .clone();
+        let entry: Value = serde_json::from_slice(&output).unwrap();
+        assert_eq!(entry["id"], json!(finding_id));
+        assert_eq!(entry["profile"], json!("protein"));
+    }
+}

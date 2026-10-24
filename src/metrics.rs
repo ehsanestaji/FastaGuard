@@ -37,6 +37,9 @@ pub struct SequenceSummary {
     pub length_outlier: bool,
     pub composite_anomaly: bool,
     pub gc_zscore: Option<f64>,
+    pub internal_stop: bool,
+    pub terminal_stop: bool,
+    pub nucleotide_like: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -67,6 +70,9 @@ pub struct AssemblyMetrics {
     pub tiny_contig_count: u64,
     pub terminal_n_sequence_count: u64,
     pub repeated_gap_pattern_sequence_count: u64,
+    pub internal_stop_sequence_count: u64,
+    pub terminal_stop_sequence_count: u64,
+    pub nucleotide_like_sequence_count: u64,
     pub max_gap_run: u64,
     pub ungapped_total_length: u64,
     pub sequences: Vec<SequenceSummary>,
@@ -120,6 +126,9 @@ struct MetricsAccumulator<'a> {
     tiny_contig_count: u64,
     terminal_n_sequence_count: u64,
     repeated_gap_pattern_sequence_count: u64,
+    internal_stop_sequence_count: u64,
+    terminal_stop_sequence_count: u64,
+    nucleotide_like_sequence_count: u64,
     max_gap_run: u64,
     ungapped_total: u128,
     current_sequence: Option<SequenceSummaryBuilder>,
@@ -150,6 +159,9 @@ impl<'a> MetricsAccumulator<'a> {
             tiny_contig_count: 0,
             terminal_n_sequence_count: 0,
             repeated_gap_pattern_sequence_count: 0,
+            internal_stop_sequence_count: 0,
+            terminal_stop_sequence_count: 0,
+            nucleotide_like_sequence_count: 0,
             max_gap_run: 0,
             ungapped_total: 0,
             current_sequence: None,
@@ -190,6 +202,7 @@ impl<'a> MetricsAccumulator<'a> {
             id,
             header,
             first_token_id,
+            self.profile.name == "protein",
             HeaderReadinessFlags {
                 duplicate_id,
                 duplicate_first_token_id,
@@ -239,6 +252,15 @@ impl<'a> MetricsAccumulator<'a> {
         }
         if summary.gap_run_100_count > 0 {
             self.repeated_gap_pattern_sequence_count += 1;
+        }
+        if summary.internal_stop {
+            self.internal_stop_sequence_count += 1;
+        }
+        if summary.terminal_stop {
+            self.terminal_stop_sequence_count += 1;
+        }
+        if summary.nucleotide_like {
+            self.nucleotide_like_sequence_count += 1;
         }
         self.max_gap_run = self.max_gap_run.max(summary.max_gap_run);
         self.sequences.push(summary);
@@ -292,6 +314,9 @@ impl<'a> MetricsAccumulator<'a> {
             tiny_contig_count: self.tiny_contig_count,
             terminal_n_sequence_count: self.terminal_n_sequence_count,
             repeated_gap_pattern_sequence_count: self.repeated_gap_pattern_sequence_count,
+            internal_stop_sequence_count: self.internal_stop_sequence_count,
+            terminal_stop_sequence_count: self.terminal_stop_sequence_count,
+            nucleotide_like_sequence_count: self.nucleotide_like_sequence_count,
             max_gap_run: self.max_gap_run,
             ungapped_total_length: saturating_u128_to_u64(self.ungapped_total),
             sequences: self.sequences,
@@ -299,18 +324,21 @@ impl<'a> MetricsAccumulator<'a> {
     }
 
     fn mark_outlier_signals(&mut self) {
-        let gc_values = self
-            .sequences
-            .iter()
-            .map(|sequence| sequence.gc_percent)
-            .collect::<Vec<_>>();
-        let gc_zscores = gc_zscores(&gc_values);
-        for (sequence, zscore) in self.sequences.iter_mut().zip(gc_zscores) {
-            sequence.gc_zscore = zscore;
-        }
-        for index in zscore_outlier_indices(&gc_values, self.profile.gc_outlier_zscore) {
-            if let Some(sequence) = self.sequences.get_mut(index) {
-                sequence.gc_outlier = true;
+        let is_protein = self.profile.name == "protein";
+        if !is_protein {
+            let gc_values = self
+                .sequences
+                .iter()
+                .map(|sequence| sequence.gc_percent)
+                .collect::<Vec<_>>();
+            let gc_zscores = gc_zscores(&gc_values);
+            for (sequence, zscore) in self.sequences.iter_mut().zip(gc_zscores) {
+                sequence.gc_zscore = zscore;
+            }
+            for index in zscore_outlier_indices(&gc_values, self.profile.gc_outlier_zscore) {
+                if let Some(sequence) = self.sequences.get_mut(index) {
+                    sequence.gc_outlier = true;
+                }
             }
         }
 
@@ -325,18 +353,20 @@ impl<'a> MetricsAccumulator<'a> {
             }
         }
 
-        for sequence in &mut self.sequences {
-            let has_composition_signal =
-                sequence.gc_outlier || sequence.n_fraction >= self.profile.high_n_sequence_fraction;
-            let has_independent_signal = [
-                sequence.length_outlier,
-                sequence.duplicate_sequence,
-                sequence.invalid_count > 0,
-                sequence.max_gap_run > self.profile.max_gap_run,
-            ]
-            .into_iter()
-            .any(|signal| signal);
-            sequence.composite_anomaly = has_composition_signal && has_independent_signal;
+        if !is_protein {
+            for sequence in &mut self.sequences {
+                let has_composition_signal = sequence.gc_outlier
+                    || sequence.n_fraction >= self.profile.high_n_sequence_fraction;
+                let has_independent_signal = [
+                    sequence.length_outlier,
+                    sequence.duplicate_sequence,
+                    sequence.invalid_count > 0,
+                    sequence.max_gap_run > self.profile.max_gap_run,
+                ]
+                .into_iter()
+                .any(|signal| signal);
+                sequence.composite_anomaly = has_composition_signal && has_independent_signal;
+            }
         }
     }
 }
@@ -354,6 +384,7 @@ struct SequenceSummaryBuilder {
     id: String,
     header: String,
     first_token_id: String,
+    is_protein: bool,
     duplicate_id: bool,
     duplicate_first_token_id: bool,
     unsafe_id: bool,
@@ -375,6 +406,9 @@ struct SequenceSummaryBuilder {
     trailing_n_count: u64,
     current_gap_run_length: u64,
     gap_run_100_count: u64,
+    internal_stop_count: u64,
+    nucleotide_like_count: u64,
+    acgt_mask: u8,
 }
 
 impl SequenceSummaryBuilder {
@@ -382,12 +416,14 @@ impl SequenceSummaryBuilder {
         id: String,
         header: String,
         first_token_id: String,
+        is_protein: bool,
         flags: HeaderReadinessFlags,
     ) -> Self {
         Self {
             id,
             header,
             first_token_id,
+            is_protein,
             duplicate_id: flags.duplicate_id,
             duplicate_first_token_id: flags.duplicate_first_token_id,
             unsafe_id: flags.unsafe_id,
@@ -409,6 +445,9 @@ impl SequenceSummaryBuilder {
             trailing_n_count: 0,
             current_gap_run_length: 0,
             gap_run_100_count: 0,
+            internal_stop_count: 0,
+            nucleotide_like_count: 0,
+            acgt_mask: 0,
         }
     }
 
@@ -420,6 +459,48 @@ impl SequenceSummaryBuilder {
             if self.first_base.is_none() {
                 self.first_base = Some(upper);
             }
+            if self.is_protein {
+                if self.last_base == Some(b'*') {
+                    self.internal_stop_count += 1;
+                }
+                self.last_base = Some(upper);
+                match upper {
+                    b'A' => {
+                        self.nucleotide_like_count += 1;
+                        self.acgt_mask |= 1;
+                    }
+                    b'C' => {
+                        self.nucleotide_like_count += 1;
+                        self.acgt_mask |= 2;
+                    }
+                    b'G' => {
+                        self.nucleotide_like_count += 1;
+                        self.acgt_mask |= 4;
+                    }
+                    b'T' => {
+                        self.nucleotide_like_count += 1;
+                        self.acgt_mask |= 8;
+                    }
+                    b'U' | b'N' => {
+                        self.nucleotide_like_count += 1;
+                    }
+                    b'D' | b'E' | b'F' | b'H' | b'I' | b'K' | b'L' | b'M' | b'O' | b'P' | b'Q'
+                    | b'R' | b'S' | b'V' | b'W' | b'Y' => {}
+                    b'X' => {
+                        self.n_count += 1;
+                        self.ambiguity_count += 1;
+                    }
+                    b'B' | b'Z' | b'J' => {
+                        self.ambiguity_count += 1;
+                    }
+                    b'*' => {}
+                    _ => {
+                        self.invalid_count += 1;
+                    }
+                }
+                continue;
+            }
+
             self.last_base = Some(upper);
             if upper == b'N' && self.length == self.leading_n_count.saturating_add(1) {
                 self.leading_n_count += 1;
@@ -471,6 +552,15 @@ impl SequenceSummaryBuilder {
 
     fn finish(mut self) -> (SequenceSummary, [u8; 32]) {
         self.finish_current_gap_run();
+        let internal_stop = self.is_protein && self.internal_stop_count > 0;
+        let terminal_stop = self.is_protein && self.last_base == Some(b'*');
+        let nucleotide_like = self.is_protein
+            && self.length >= 30
+            && self.invalid_count == 0
+            && !internal_stop
+            && !terminal_stop
+            && u128::from(self.nucleotide_like_count) * 100 >= u128::from(self.length) * 95
+            && self.acgt_mask.count_ones() >= 3;
         let summary = SequenceSummary {
             id: self.id,
             header: self.header,
@@ -489,12 +579,12 @@ impl SequenceSummaryBuilder {
             ambiguity_count: self.ambiguity_count,
             invalid_count: self.invalid_count,
             max_gap_run: self.max_gap_run,
-            terminal_n_prefix: if self.first_base == Some(b'N') {
+            terminal_n_prefix: if !self.is_protein && self.first_base == Some(b'N') {
                 self.leading_n_count
             } else {
                 0
             },
-            terminal_n_suffix: if self.last_base == Some(b'N') {
+            terminal_n_suffix: if !self.is_protein && self.last_base == Some(b'N') {
                 self.trailing_n_count
             } else {
                 0
@@ -506,6 +596,9 @@ impl SequenceSummaryBuilder {
             length_outlier: false,
             composite_anomaly: false,
             gc_zscore: None,
+            internal_stop,
+            terminal_stop,
+            nucleotide_like,
         };
 
         (summary, self.hasher.finalize().into())
@@ -830,5 +923,60 @@ mod tests {
             .into_iter()
             .take(length)
             .collect()
+    }
+
+    #[test]
+    fn protein_profile_tracks_stops_ambiguity_and_nucleotide_like_records() {
+        let protein_profile = ProfileConfig::protein(ThresholdOverrides {
+            max_n_rate: None,
+            min_contig_length: None,
+            expected_size_bases: None,
+            expected_size_tolerance: None,
+        });
+        let records = vec![
+            FastaRecord {
+                id: "clean_protein".into(),
+                header: "clean_protein".into(),
+                sequence: b"MKTIIALSYIFCLVFADYKDDDDK".to_vec(),
+            },
+            FastaRecord {
+                id: "terminal_stop".into(),
+                header: "terminal_stop".into(),
+                sequence: b"MKTIIALSYIFCLVFADYKDDDDK*".to_vec(),
+            },
+            FastaRecord {
+                id: "internal_stop".into(),
+                header: "internal_stop".into(),
+                sequence: b"MKTIIAL*SYIFCLVFADYKDDDDK".to_vec(),
+            },
+            FastaRecord {
+                id: "ambiguous_protein".into(),
+                header: "ambiguous_protein".into(),
+                sequence: b"MKTIIALSYIFCLVFADYKDDXBZJUO".to_vec(),
+            },
+            FastaRecord {
+                id: "untranslated_dna".into(),
+                header: "untranslated_dna".into(),
+                sequence: b"ACGTACGTACGTACGTACGTACGTACGTACGT".to_vec(),
+            },
+        ];
+
+        let metrics = AssemblyMetrics::from_records(records, &protein_profile);
+
+        assert_eq!(metrics.sequence_count, 5);
+        assert_eq!(metrics.invalid_sequence_count, 0);
+        assert_eq!(metrics.internal_stop_sequence_count, 1);
+        assert_eq!(metrics.terminal_stop_sequence_count, 1);
+        assert_eq!(metrics.nucleotide_like_sequence_count, 1);
+        assert_eq!(metrics.terminal_n_sequence_count, 0);
+        assert!(!metrics.sequences[0].internal_stop);
+        assert!(!metrics.sequences[0].terminal_stop);
+        assert!(metrics.sequences[1].terminal_stop);
+        assert!(!metrics.sequences[1].internal_stop);
+        assert!(metrics.sequences[2].internal_stop);
+        assert!(!metrics.sequences[2].terminal_stop);
+        assert_eq!(metrics.sequences[3].n_count, 1);
+        assert_eq!(metrics.sequences[3].ambiguity_count, 4);
+        assert!(metrics.sequences[4].nucleotide_like);
     }
 }
