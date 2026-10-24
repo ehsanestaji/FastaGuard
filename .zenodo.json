@@ -1,0 +1,36 @@
+{
+  "title": "FastaGuard: FASTA preflight QC for modern bioinformatics pipelines",
+  "description": "FastaGuard is a streaming-first Rust CLI for FASTA preflight quality control in assembly pipelines. It validates structure, flags FASTA-level red flags, and emits a stable HTML/JSON/TSV/MultiQC report contract with explicit pipeline gates before expensive downstream QC (QUAST, BUSCO, BlobToolKit, CheckM, annotation, or official validators). This Zenodo deposit archives a citable software release accompanying the Bioinformatics Application Note.",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Estaji, Ehsan",
+      "orcid": "0009-0005-0838-228X",
+      "affiliation": "Umeå Plant Science Centre, Department of Plant Physiology, Umeå University"
+    },
+    {
+      "name": "Mao, Jian-Feng",
+      "orcid": "0000-0001-9735-8516",
+      "affiliation": "Umeå Plant Science Centre, Department of Plant Physiology, Umeå University"
+    }
+  ],
+  "keywords": [
+    "FASTA",
+    "quality control",
+    "genome assembly",
+    "preflight",
+    "bioinformatics",
+    "Rust",
+    "pipelines"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/ehsanestaji/FastaGuard/releases/tag/v1.0.0",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    }
+  ],
+  "notes": "Deposit the existing GitHub release tag v1.0.0 (Reference Contract Gate / Bioconda-published line). Do not invent DOIs. After Zenodo mints a version DOI, paste it into paper/submission.yml and the Availability sentence in paper/main.tex, then rebuild the PDF."
+}

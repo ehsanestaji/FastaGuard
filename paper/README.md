@@ -1,61 +1,39 @@
 # FastaGuard paper (LaTeX)
 
-**Venue (user-confirmed):** [*Bioinformatics*](https://academic.oup.com/bioinformatics) (Oxford Academic) — **Application Note**.
+**Venue (user-confirmed):** [*Bioinformatics*](https://academic.oup.com/bioinformatics) — **Application Note**  
+**PR:** [#21](https://github.com/ehsanestaji/FastaGuard/pull/21) · `cursor/paper-prep-venues-198e`
 
-**PR / branch:** [#21](https://github.com/ehsanestaji/FastaGuard/pull/21) · `cursor/paper-prep-venues-198e`
+Paper-prep only. Cold-start: [`HANDOFF.md`](HANDOFF.md). Readiness checklist: [`../docs/paper-readiness.md`](../docs/paper-readiness.md).
 
-This folder is **paper preparation only**. It does not change the FastaGuard product.
-Cold-start resume details: see [`HANDOFF.md`](HANDOFF.md).
-
-## Article constraints
-
-| Item | Target |
-| --- | --- |
-| Type | Application Note |
-| Length | Up to ~4 pages (~2,600 words, or ~2,000 words + one figure) |
-| Title | Must include the application name (`FastaGuard: …`) |
-| Abstract | Summary / Availability and Implementation / Contact / Supplementary information |
-| Software | Freely available; state availability + implementation; keep available ≥2 years |
-
-Format-free initial submission is allowed. For revision / camera-ready, switch to the [OUP General Template](https://www.overleaf.com/latex/templates/oup-general-template/fqkhysbcbpwv) with Bioinformatics options (`numsec,webpdf,modern,large`) and author-date bibliography style as documented by OUP.
-
-## Layout
-
-```text
-paper/
-  main.tex           Full Application Note draft
-  references.bib     BibTeX database
-  Makefile           latexmk / pdflatex build
-  README.md          this file
-  HANDOFF.md         cold-start status + next steps
-  figures/           notes for optional external artwork
-  tables/            optional CSV / working tables
-```
-
-## Build the PDF
-
-Requires TeX Live (or MacTeX / MiKTeX) with `pdflatex`, `bibtex`, `latexmk`, plus
-`geometry`, `times`, `graphicx`, `booktabs`, `hyperref`, `xcolor`, `natbib`,
-`setspace`, `lineno`, `url`, and **TikZ** (`texlive-pictures`).
+## Build & check
 
 ```bash
 cd paper
-make              # → main.pdf
-make pdflatex-only
-make clean        # keep PDF
-make distclean    # remove PDF too
+make check      # submission control (must pass)
+make            # → main.pdf
+make biorxiv    # → build/fastaguard-biorxiv.pdf
 ```
 
-Overleaf: upload `main.tex`, `references.bib`, and compile with pdfLaTeX.
+Requires TeX Live (`pdflatex`, `bibtex`, `latexmk`, TikZ, `microtype`) and Python 3.
 
-## Draft status (short)
+## Submission package files
 
-- **Done:** full draft body; TikZ overview figure; v0.6 evidence table; BibTeX; build path.
-- **Front-matter:** author/ORCID/Umeå/funding/COI/AI/CRediT reused from VariantFlow Application Note (see `HANDOFF.md`) — scientific content stays FastaGuard-only.
-- **Still TBD:** FastaGuard Zenodo/preprint DOI, OUP template on revision, ScholarOne submit.
-- **Framing rule:** never pitch as “FastQC for FASTA.”
+| File | Role |
+| --- | --- |
+| `main.tex` / `references.bib` | Manuscript |
+| `submission.yml` | Control manifest (versions, freezes, blockers) |
+| `check_submission.py` | Machine gate |
+| `cover-letter.md` | ScholarOne cover letter draft |
+| `ZENODO.md` | USER-ACTION DOI mint from `v1.0.0` |
+| `biorxiv-checklist.md` | Optional preprint steps |
+| `../.zenodo.json` | Zenodo metadata (no DOI invented) |
 
-Durable venue + project context for multi-agent handoff live in the Project store:
+## Freezes
 
-- `docs/publication-venues.md`
-- `docs/project-context.md`
+- Availability software: **`v1.0.0`**
+- Table 1 evidence: **v0.6.0** pack under `docs/evidence/results/v0.6/`
+- Format-free first submission OK; OUP General Template deferred to revision
+
+## Framing
+
+Never pitch as “FastQC for FASTA.”

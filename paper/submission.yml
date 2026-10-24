@@ -1,0 +1,109 @@
+# FastaGuard Bioinformatics Application Note — submission control manifest
+# Validated by: python3 paper/check_submission.py
+
+target_journal: Bioinformatics
+publisher: Oxford University Press
+article_type: Application Note
+submission_portal: ScholarOne (Bioinformatics)
+format_policy: format-free_first_submission_ok
+oup_template_deferred_to: revision
+
+# Machine-check status after `make check` (human ScholarOne/Zenodo steps remain USER-ACTION).
+submission_status: ready_for_author_upload
+author_gate_status: pending_coauthor_confirmation
+zenodo_gate_status: pending_user_deposit
+scholarone_status: not_submitted
+
+manuscript:
+  source: paper/main.tex
+  bibliography: paper/references.bib
+  pdf: paper/main.pdf
+  biorxiv_pdf: paper/build/fastaguard-biorxiv.pdf
+  title: "FastaGuard: FASTA preflight QC for modern bioinformatics pipelines"
+  cover_letter: paper/cover-letter.md
+
+authors:
+  - name: Ehsan Estaji
+    affiliation: Umeå Plant Science Centre, Department of Plant Physiology, Umeå University
+    email: ehsan.estaji@umu.se
+    orcid: 0009-0005-0838-228X
+    corresponding: true
+  - name: Jian-Feng Mao
+    affiliation: Umeå Plant Science Centre, Department of Plant Physiology, Umeå University
+    email: jianfeng.mao@umu.se
+    orcid: 0000-0001-9735-8516
+    corresponding: true
+
+# Software version cited for Availability / packaging (published GitHub + Bioconda release).
+release:
+  tag: v1.0.0
+  source_archive_url: https://github.com/ehsanestaji/FastaGuard/releases/tag/v1.0.0
+  bioconda_package: fastaguard=1.0.0
+  archive_doi: null
+  version_doi: null
+  zenodo_notes: USER-ACTION — mint DOI from existing GitHub release v1.0.0 (see paper/ZENODO.md); do not invent DOIs.
+
+# Public-evidence freeze used by Table 1 (contract illustrations; not a cross-platform benchmark).
+evidence_freeze:
+  pack: docs/evidence/fastaguard-v0.6-public-evidence.md
+  portable_tsv: docs/evidence/results/v0.6/evidence_summary.tsv
+  portable_json: docs/evidence/results/v0.6/evidence_summary.json
+  fastaguard_version: "0.6.0"
+  source_commit: cf27295da0cb9b1a48318caa9e3b8739cfd0c104
+  generated_at: "2026-08-21T08:11:21+00:00"
+  table_rows:
+    - id: synthetic_valid
+      elapsed_seconds: "0.0194"
+      verdict: PASS
+      gate_status: PASS
+      total_length: 604
+      sequence_count: 4
+    - id: problem_fixture
+      elapsed_seconds: "0.0185"
+      verdict: FAIL
+      gate_status: FAIL
+      total_length: 145
+      sequence_count: 5
+    - id: ecoli_k12_mg1655
+      accession: GCF_000005845.2
+      elapsed_seconds: "0.0569"
+      verdict: PASS
+      gate_status: PASS
+      total_length: 4641652
+      sequence_count: 1
+    - id: neurospora_crassa_or74a
+      accession: GCF_000182925.2
+      elapsed_seconds: "0.3441"
+      verdict: WARN
+      gate_status: WARN
+      total_length: 41102378
+      sequence_count: 21
+
+claim_policy:
+  forbidden_phrase: "FastQC for FASTA"
+  broad_replacement_claim_allowed: false
+  performance_claim_source: docs/evidence_only
+  caveats_required: true
+
+submission_docs:
+  - docs/paper-readiness.md
+  - paper/cover-letter.md
+  - paper/ZENODO.md
+  - paper/biorxiv-checklist.md
+  - paper/HANDOFF.md
+  - paper/README.md
+
+required_human_inputs:
+  - coauthor_final_ok_jian_feng_mao
+  - zenodo_doi_from_v1.0.0_release
+  - optional_biorxiv_deposit
+  - scholarone_upload
+  - apc_or_read_and_publish_check
+  - suggested_editors_or_accept_defaults
+
+blockers_for_machine_ready: []
+blockers_for_human_submit:
+  - ScholarOne upload (credentials)
+  - Zenodo DOI mint from GitHub release v1.0.0 (credentials / GitHub–Zenodo link)
+  - Co-author final confirmation
+  - APC / institutional Read & Publish / ISCB discount check

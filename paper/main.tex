@@ -65,8 +65,11 @@ BUSCO, BlobToolKit, CheckM, annotation, or official repository validation.
 
 \noindent\textbf{Availability and Implementation:}
 Source code and documentation are freely available under the MIT license at
-\url{https://github.com/ehsanestaji/FastaGuard}.
-Install via Bioconda (\texttt{mamba install -c conda-forge -c bioconda fastaguard}),
+\url{https://github.com/ehsanestaji/FastaGuard}
+(release tag \texttt{v1.0.0}:
+\url{https://github.com/ehsanestaji/FastaGuard/releases/tag/v1.0.0}).
+Install via Bioconda
+(\texttt{mamba install -c conda-forge -c bioconda fastaguard=1.0.0}),
 BioContainers, or GitHub release binaries.
 Implemented in Rust; supported on Linux and macOS, including Bioconda builds for
 \texttt{linux-64}, \texttt{linux-aarch64}, \texttt{osx-64}, and \texttt{osx-arm64}.
@@ -202,8 +205,9 @@ FastaGuard is published on Bioconda and BioContainers, ships GitHub release
 binaries for major Linux and macOS targets, and has merged nf-core module and
 Snakemake wrapper integrations for assembly preflight.
 A typical install path is
-\texttt{mamba install -c conda-forge -c bioconda fastaguard=1.0.0}, with a
-pinned BioContainers image for containerized workflow engines.
+\texttt{mamba install -c conda-forge -c bioconda fastaguard=1.0.0}
+(matching GitHub release tag \texttt{v1.0.0}), with a pinned BioContainers image
+for containerized workflow engines.
 These distribution paths are part of the Application Note claim: the tool is
 meant to be installed and gated in real pipelines with low friction, not only
 built from source by specialists.
@@ -256,10 +260,10 @@ Portable JSON and TSV summaries in the repository record input byte sizes,
 SHA-256 digests, structural metrics, finding identifiers, and scoped provenance
 separately for the observed executable and the verified source tree.
 On a recorded macOS arm64 run, a clean \emph{Escherichia coli} K-12 MG1655
-assembly (\texttt{GCF\_000005845.2}; 4.64~Mbp) completed pipeline-gated
-preflight in 0.06~s with PASS and no findings.
-A \emph{Neurospora crassa} OR74A assembly (\texttt{GCF\_000182925.2}; 41.1~Mbp)
-completed in 0.34~s with WARN for gap-pattern advisories and
+assembly (\texttt{GCF\_000005845.2}; 4\,641\,652~bp) completed pipeline-gated
+preflight in 0.0569~s with PASS and no findings.
+A \emph{Neurospora crassa} OR74A assembly (\texttt{GCF\_000182925.2}; 41\,102\,378~bp)
+completed in 0.3441~s with WARN for gap-pattern advisories and
 \texttt{gate.can\_continue} still true under the pipeline gate, routing to deeper
 assembly or composition follow-up rather than hard failure.
 An intentionally broken local fixture returned FAIL with blocking findings
@@ -283,20 +287,19 @@ canonical FASTA before mapping or annotation workflows proceed.
 
 \begin{table}[t]
   \centering
-  \caption{Illustrative FastaGuard v0.6.0 public-evidence outcomes (assembly
-  profile, pipeline gate). Elapsed times are single-machine contextual
-  measurements from the committed evidence pack, not cross-platform guarantees.
-  Full portable JSON/TSV summaries are in the software repository
-  (\texttt{docs/evidence/}).}
+  \caption{Frozen FastaGuard v0.6.0 public-evidence outcomes (assembly profile,
+  pipeline gate) from \texttt{docs/evidence/results/v0.6/evidence\_summary.tsv}.
+  Elapsed times are single-machine contextual measurements, not cross-platform
+  guarantees. Software Availability cites the published \texttt{v1.0.0} release.}
   \label{tab:evidence}
   \begin{tabular}{@{}llllr@{}}
     \toprule
     Input & Scale & Verdict & Gate & Time (s) \\
     \midrule
-    Synthetic valid fixture & 604~bp / 4 seqs & PASS & PASS & 0.019 \\
-    Problem fixture & 145~bp / 5 seqs & FAIL & FAIL & 0.019 \\
-    \emph{E.\ coli} \texttt{GCF\_000005845.2} & 4.64~Mbp / 1 seq & PASS & PASS & 0.057 \\
-    \emph{N.\ crassa} \texttt{GCF\_000182925.2} & 41.1~Mbp / 21 seqs & WARN & WARN & 0.344 \\
+    Synthetic valid fixture & 604~bp / 4 seqs & PASS & PASS & 0.0194 \\
+    Problem fixture & 145~bp / 5 seqs & FAIL & FAIL & 0.0185 \\
+    \emph{E.\ coli} \texttt{GCF\_000005845.2} & 4\,641\,652~bp / 1 seq & PASS & PASS & 0.0569 \\
+    \emph{N.\ crassa} \texttt{GCF\_000182925.2} & 41\,102\,378~bp / 21 seqs & WARN & WARN & 0.3441 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -368,9 +371,10 @@ BioContainers, nf-core module, and Snakemake wrapper integrations for FastaGuard
 \section*{Data availability}
 FastaGuard source code, schemas, finding catalog, and documentation are openly
 available at \url{https://github.com/ehsanestaji/FastaGuard} under the MIT
-license.
+license (cited release tag \texttt{v1.0.0}).
 Committed public-evidence summaries used in Table~\ref{tab:evidence} are
-archived under \texttt{docs/evidence/} in the repository.
+archived under \texttt{docs/evidence/} (v0.6.0 portable JSON/TSV pack) in the
+repository.
 No new biological samples were generated for this study; public NCBI assemblies
 cited in the evidence pack are used under their existing data-access terms.
 
