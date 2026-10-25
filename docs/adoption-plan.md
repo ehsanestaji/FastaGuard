@@ -15,10 +15,10 @@ Bioconda published -> BioContainers available -> MultiQC plugin -> public benchm
 
 Goal: make installation natural for bioinformatics users.
 
-Status: GitHub publishes the FastaGuard v1.0.0 source release and binaries.
-Bioconda publishes v1.0.0 on `linux-64`, `linux-aarch64`, `osx-64`, and
+Status: GitHub publishes the FastaGuard v1.1.0 source release and binaries.
+Bioconda publishes v1.1.0 on `linux-64`, `linux-aarch64`, `osx-64`, and
 `osx-arm64`; BioContainers publishes
-`quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0` for Linux x86_64.
+`quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0` for Linux x86_64.
 
 - Keep GitHub release binaries working.
 - Keep Docker smoke tests passing.
@@ -28,12 +28,12 @@ Bioconda publishes v1.0.0 on `linux-64`, `linux-aarch64`, `osx-64`, and
 Done when:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=1.0.0
+mamba install -c conda-forge -c bioconda fastaguard=1.1.0
 fastaguard --schema
 ```
 
 works in a clean environment, and workflow engines can pull the pinned
-BioContainers image. Both are published for v1.0.0; repeat the install and
+BioContainers image. Both are published for v1.1.0; repeat the install and
 runtime checks for each future release.
 
 ## Phase 2: Aggregate
@@ -79,13 +79,17 @@ credible for workflow users.
 
 Status: the nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
 merged 2026-08-21; its v1.0 update merged in
-[#12892](https://github.com/nf-core/modules/pull/12892) on 2026-09-19.
+[#12892](https://github.com/nf-core/modules/pull/12892) on 2026-09-19, and the
+v1.1.0 update is open in
+[#13452](https://github.com/nf-core/modules/pull/13452).
 The Snakemake wrapper PR
 [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436) merged
 2026-07-27. Its v1.0 dependency update merged in
 [#5847](https://github.com/snakemake/snakemake-wrappers/pull/5847) on
-2026-09-04. These components run assembly preflight, not reference mode.
-Local starters remain useful compatibility references.
+2026-09-04, and the v1.1.0 update is open in
+[#6117](https://github.com/snakemake/snakemake-wrappers/pull/6117). These
+components run assembly preflight, not reference mode. Local starters remain
+useful compatibility references.
 
 Next work:
 
@@ -117,8 +121,8 @@ Goal: make the current published tool discoverable and gather useful adoption
 evidence without collecting user sequence data.
 
 - Keep `docs/biotools-registration.json` as a reviewable bio.tools draft until
-  a maintainer submits it. It describes the v1.0.0 release and keeps
-  its Bioconda and BioContainers downloads pinned to the verified v1.0.0
+  a maintainer submits it. It describes the v1.1.0 release and keeps
+  its Bioconda and BioContainers downloads pinned to the verified v1.1.0
   distribution. It uses EDAM `format_1929` (FASTA) with `operation_3180`
   (Sequence assembly validation).
 - Offer optional report-only feedback pilots using `docs/pilots.md` before a

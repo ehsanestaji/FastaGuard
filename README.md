@@ -51,12 +51,12 @@ downstream tool.
 | --- | --- |
 | Source release | `v1.1.0` Reference Workflow Adoption |
 | GitHub release | `v1.1.0` release binaries and checksums |
-| Bioconda | `v1.0.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
-| BioContainers | `1.0.0--hfa8f182_0` is the published pinned workflow image |
+| Bioconda | `v1.1.0` is live for `linux-64`, `linux-aarch64`, `osx-64`, and `osx-arm64` |
+| BioContainers | `1.1.0--hfa8f182_0` is the published pinned workflow image |
 | Source build | local checkout builds report the package version from `Cargo.toml` |
 
 The [v1.1.0 release notes](docs/releases/v1.1.0.md) describe the reference
-workflow examples and CI checks included in the `v1.1.0` source release.
+workflow examples and CI checks included in the `v1.1.0` release.
 
 ## Install
 
@@ -66,19 +66,19 @@ reports, use the [five-minute quickstart](docs/quickstart.md).
 Published bioinformatics install:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=1.0.0
+mamba install -c conda-forge -c bioconda fastaguard=1.1.0
 ```
 
 Published containerized workflow install:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0
 ```
 
 Run through BioContainers:
 
 ```bash
-docker run --rm quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0 fastaguard --version
+docker run --rm quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0 fastaguard --version
 ```
 
 GitHub release binary for Linux x86_64:
@@ -163,7 +163,7 @@ fastaguard compare assemblies/*.fa --profile assembly --gate pipeline
 ```
 
 This command first shipped in the v0.4 GitHub release and is included in the
-published v1.0.0 Bioconda package and BioContainers image.
+published v1.1.0 Bioconda package and BioContainers image.
 
 Submission-readiness preflight:
 
@@ -232,10 +232,10 @@ docker run --rm -v "$PWD:/data" fastaguard:local /data/sample.fa \
   --multiqc /data/fastaguard_mqc.json
 ```
 
-Published BioContainers provides the v1.0 image for workflow engines:
+Published BioContainers provides the v1.1 image for workflow engines:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0
 ```
 
 Starting with FastaGuard v0.6.0, exit codes are:
@@ -512,11 +512,11 @@ Citation metadata for this source version is provided in
 
 ## Status
 
-FastaGuard v1.0.0 is the Reference Contract Gate source release. GitHub release
+FastaGuard v1.1.0 is the Reference Workflow Adoption source release. GitHub release
 archives include Linux x86_64, macOS Intel, and macOS Apple Silicon binaries
 plus a SHA-256 checksum manifest.
 
-Bioconda serves v1.0.0 for `linux-64`,
+Bioconda serves v1.1.0 for `linux-64`,
 `linux-aarch64`, `osx-64`, and `osx-arm64`, and BioContainers publishes the
-pinned v1.0 workflow image
-`quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0`.
+pinned v1.1 workflow image
+`quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0`.

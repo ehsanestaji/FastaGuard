@@ -4,7 +4,7 @@
   "description": "FastaGuard performs local, database-free FASTA-level preflight checks on sequence assemblies and emits explainable JSON, TSV, HTML, and MultiQC-compatible reports before downstream quality-control tools. Its scope is structural and composition triage; downstream biological evaluation and official validators remain required.",
   "homepage": "https://github.com/ehsanestaji/FastaGuard",
   "version": [
-    "1.0.0"
+    "1.1.0"
   ],
   "toolType": [
     "Command-line tool"
@@ -63,19 +63,19 @@
   ],
   "download": [
     {
-      "url": "https://github.com/ehsanestaji/FastaGuard/releases/tag/v1.0.0",
+      "url": "https://github.com/ehsanestaji/FastaGuard/releases/tag/v1.1.0",
       "type": "Binaries",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     {
       "url": "https://anaconda.org/bioconda/fastaguard",
       "type": "Software package",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     {
       "url": "https://quay.io/repository/biocontainers/fastaguard?tab=tags",
       "type": "Container file",
-      "version": "1.0.0--hfa8f182_0"
+      "version": "1.1.0--hfa8f182_0"
     }
   ],
   "documentation": [

@@ -6,11 +6,11 @@ merged assembly wrapper in `../wrapper/`.
 
 See `../../../docs/workflow-readiness.md` for the current upstream checklist.
 
-Published Bioconda and BioContainers provide FastaGuard v1.0.0:
+Published Bioconda and BioContainers provide FastaGuard v1.1.0:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=1.0.0
-docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
+mamba install -c conda-forge -c bioconda fastaguard=1.1.0
+docker pull quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0
 ```
 
 Run the local starter from this directory with a `reference.fa`,

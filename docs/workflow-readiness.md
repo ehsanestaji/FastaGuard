@@ -2,12 +2,12 @@
 
 ## Current State
 
-FastaGuard is ready for workflow use through the published v1.0.0 Bioconda
+FastaGuard is ready for workflow use through the published v1.1.0 Bioconda
 package and BioContainers image:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=1.0.0
-docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
+mamba install -c conda-forge -c bioconda fastaguard=1.1.0
+docker pull quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0
 ```
 
 The repository includes local starters for:
@@ -19,14 +19,18 @@ The repository includes local starters for:
   `examples/workflows/check_fastaguard_gate.py`
 
 The nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
-merged 2026-08-21, and its v1.0 update merged in
-[#12892](https://github.com/nf-core/modules/pull/12892) on 2026-09-19. The
+merged 2026-08-21, its v1.0 update merged in
+[#12892](https://github.com/nf-core/modules/pull/12892) on 2026-09-19, and its
+v1.1.0 update is open in
+[#13452](https://github.com/nf-core/modules/pull/13452). The
 Snakemake wrapper PR
 [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436) merged
-2026-07-27, and its v1.0 update merged in
+2026-07-27, its v1.0 update merged in
 [#5847](https://github.com/snakemake/snakemake-wrappers/pull/5847) on
-2026-09-04. These integrations run the assembly command; the repository
-starters remain local compatibility references.
+2026-09-04, and its v1.1.0 update is open in
+[#6117](https://github.com/snakemake/snakemake-wrappers/pull/6117). These
+integrations run the assembly command; the repository starters remain local
+compatibility references.
 
 Reference-specific workflow components are not yet available upstream.
 Use the [reference quickstart](quickstart.md#reference-quickstart) to exercise

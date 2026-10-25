@@ -81,14 +81,14 @@ Current product evidence:
 - Rust CLI builds and runs as a single binary.
 - Docker build and smoke test pass.
 - GitHub release workflow builds Linux and macOS binaries.
-- FastaGuard v1.0.0 is the Reference Contract Gate source release with Linux
-  and macOS binaries.
-- FastaGuard v1.0.0 is published on Bioconda for `linux-64`,
+- FastaGuard v1.1.0 is the Reference Workflow Adoption source release with Linux
+  and macOS binaries, building on the v1.0.0 Reference Contract Gate.
+- FastaGuard v1.1.0 is published on Bioconda for `linux-64`,
   `linux-aarch64`, `osx-64`, and `osx-arm64`.
 - Earlier releases have clean-install smoke tests recorded in their evidence
   reports; package publication alone is not a fresh runtime test.
 - BioContainers publishes
-  `quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0`.
+  `quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0`.
 - JSON Schema validates committed golden reports.
 - Reports include bounded evidence records and suggested actions.
 - The v0.3 gate contract exposes `gate.blocking_findings`,
@@ -98,11 +98,15 @@ Current product evidence:
 - Bioconda recipe mirror exists under `packaging/bioconda/`.
 - nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
   merged 2026-08-21; its v1.0 update merged in
-  [#12892](https://github.com/nf-core/modules/pull/12892) on 2026-09-19.
+  [#12892](https://github.com/nf-core/modules/pull/12892) on 2026-09-19, and its
+  v1.1.0 update is open in
+  [#13452](https://github.com/nf-core/modules/pull/13452).
 - Snakemake wrapper PR [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436)
   merged 2026-07-27; its v1.0 dependency update merged in
   [#5847](https://github.com/snakemake/snakemake-wrappers/pull/5847) on
-  2026-09-04. Both upstream integrations still run assembly preflight.
+  2026-09-04, and its v1.1.0 update is open in
+  [#6117](https://github.com/snakemake/snakemake-wrappers/pull/6117). Both
+  upstream integrations still run assembly preflight.
 - The v0.2 evidence workflow is documented in
   `docs/evidence/fastaguard-v0.2-evidence.md`.
 - The v0.3 gate evidence workflow is documented in

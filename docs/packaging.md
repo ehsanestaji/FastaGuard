@@ -8,34 +8,32 @@ Treat packaging as part of the product, not as a later chore. For bioinformatics
 Bioconda -> BioContainers -> GitHub release binaries -> Docker image -> Homebrew later
 ```
 
-FastaGuard v1.0.0 is the Reference Contract Gate source release and provides
+FastaGuard v1.1.0 is the Reference Workflow Adoption source release and provides
 Linux x86_64, macOS Intel, and macOS Apple Silicon release binaries. Bioconda
-serves v1.0.0 on `linux-64`,
+serves v1.1.0 on `linux-64`,
 `linux-aarch64`, `osx-64`, and `osx-arm64` platforms. BioContainers provides
-the pinned v1.0 workflow image `quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0`
+the pinned v1.1 workflow image `quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0`
 generated from the Bioconda package. Docker remains useful for local smoke tests.
 
 The current published package includes the `--gate submission` and
 `--submission-target generic|ncbi` contract. Keep future docs pinned to
 confirmed Bioconda and BioContainers versions before advertising them as live.
 
-FastaGuard v1.1.0 is published on GitHub with source and binary archives; its
+FastaGuard v1.1.0 is published on GitHub, Bioconda, and BioContainers; its
 [release notes](releases/v1.1.0.md) describe the reference workflow additions.
-Keep the recipe, source archive checksum and workflow image pins at the
-published Bioconda version (`1.0.0`) until downstream packages are updated.
 
 ## Bioconda
 
 Recommended install:
 
 ```bash
-mamba install -c conda-forge -c bioconda fastaguard=1.0.0
+mamba install -c conda-forge -c bioconda fastaguard=1.1.0
 ```
 
 Conda equivalent:
 
 ```bash
-conda install -c conda-forge -c bioconda fastaguard=1.0.0
+conda install -c conda-forge -c bioconda fastaguard=1.1.0
 ```
 
 Verify the installed package:
@@ -48,7 +46,7 @@ fastaguard --finding-catalog
 
 Current published package:
 
-- Version: `1.0.0`
+- Version: `1.1.0`
 - Platforms: `linux-64`, `linux-aarch64`, `osx-64`, `osx-arm64`
 - Package page: [anaconda.org/bioconda/fastaguard](https://anaconda.org/bioconda/fastaguard)
 - Recipe page: [Bioconda fastaguard recipe](https://bioconda.github.io/recipes/fastaguard/README.html)
@@ -215,7 +213,7 @@ The Bioconda recipe has merged upstream and generated a BioContainers image.
 Use the pinned tag in workflow examples:
 
 ```bash
-docker pull quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0
+docker pull quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0
 ```
 
 That path is preferable to maintaining a separate BioContainers Dockerfile.
@@ -224,11 +222,11 @@ The tag can be checked on the
 
 ## Apptainer
 
-Apptainer can execute the published v1.0.0 BioContainers OCI image directly:
+Apptainer can execute the published v1.1.0 BioContainers OCI image directly:
 
 ```bash
 apptainer exec --bind "$PWD:/work" \
-  docker://quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0 \
+  docker://quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0 \
   fastaguard /work/sample.fa \
   --out /work/fastaguard_report.html \
   --json /work/fastaguard.json \

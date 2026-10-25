@@ -13,8 +13,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_VERSION = "1.1.0"
-PUBLISHED_VERSION = "1.0.0"
-CURRENT_CONTAINER = "1.0.0--hfa8f182_0"
+PUBLISHED_VERSION = "1.1.0"
+CURRENT_CONTAINER = "1.1.0--hfa8f182_0"
 CURRENT_SOURCE_SHA256 = (
     "bb7551298039cc94b5c02ed0f6538d2f7ed61cf93637129186992c3069437bbe"
 )
@@ -475,7 +475,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         ):
             with self.subTest(path=relative):
                 text = " ".join((ROOT / relative).read_text().split())
-                self.assertIn("1.0.0", text)
+                self.assertIn(PUBLISHED_VERSION, text)
                 for stale in (
                     "Bioconda remains at v0.7.0",
                     "packages remain at v0.7.0",
@@ -492,6 +492,15 @@ class ReleaseMetadataTest(unittest.TestCase):
             "https://github.com/snakemake/snakemake-wrappers/pull/5847",
         ):
             self.assertIn(url, notes)
+
+        v1_1_notes = (ROOT / "docs/releases/v1.1.0.md").read_text()
+        self.assertIn("2026-10-25", v1_1_notes)
+        for url in (
+            "https://github.com/bioconda/bioconda-recipes/pull/70697",
+            "https://github.com/nf-core/modules/pull/13452",
+            "https://github.com/snakemake/snakemake-wrappers/pull/6117",
+        ):
+            self.assertIn(url, v1_1_notes)
 
     def test_current_release_docs_do_not_present_v0_5_as_latest(self):
         current_docs = [

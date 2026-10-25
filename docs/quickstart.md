@@ -1,6 +1,6 @@
 # Five-minute quickstart
 
-This path uses the published v1.0.0 CLI, available through Bioconda,
+This path uses the published v1.1.0 CLI, available through Bioconda,
 BioContainers, and GitHub release binaries. It includes assembly preflight and
 the Reference Contract Gate.
 
@@ -9,7 +9,7 @@ the Reference Contract Gate.
 With Bioconda:
 
 ```bash
-mamba create -n fastaguard -c conda-forge -c bioconda fastaguard=1.0.0
+mamba create -n fastaguard -c conda-forge -c bioconda fastaguard=1.1.0
 mamba activate fastaguard
 fastaguard --version
 ```
@@ -72,7 +72,7 @@ into workflow policy.
 
 ## Bundle mode
 
-The published v1.0.0 CLI also supports the shorter bundle command:
+The published v1.1.0 CLI also supports the shorter bundle command:
 
 ```bash
 fastaguard sample.fa --outdir reports --prefix sample-01
@@ -83,7 +83,7 @@ unless `--force` is supplied.
 
 ## Reference quickstart
 
-This example needs the installed v1.0.0 CLI, Bash, Python 3, and a repository
+This example needs the installed v1.1.0 CLI, Bash, Python 3, and a repository
 checkout containing the fixtures and gate helper. Run it from the repository
 root; the optional JSON inspection below also uses `jq`:
 
@@ -145,13 +145,13 @@ Lock writing requires JSON output. The v1.0 lock records semantic reference
 identity and declarations; it is not an approval or signed attestation. This
 version writes lockfiles but does not verify a later run against one.
 
-## Container alternatives for published v1.0.0
+## Container alternatives for published v1.1.0
 
 Docker:
 
 ```bash
 docker run --rm -v "$PWD:/work" \
-  quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0 \
+  quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0 \
   fastaguard /work/sample.fa --json /work/reports/sample-01.fastaguard.json
 ```
 
@@ -159,7 +159,7 @@ Apptainer can execute the same public OCI image from Quay:
 
 ```bash
 apptainer exec --bind "$PWD:/work" \
-  docker://quay.io/biocontainers/fastaguard:1.0.0--hfa8f182_0 \
+  docker://quay.io/biocontainers/fastaguard:1.1.0--hfa8f182_0 \
   fastaguard /work/sample.fa --json /work/reports/sample-01.fastaguard.json
 ```
 

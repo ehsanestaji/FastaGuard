@@ -3,13 +3,13 @@
 ## Current Release
 
 FastaGuard v1.1.0 is the Reference Workflow Adoption source and GitHub binary
-release. Bioconda and BioContainers serve v1.0.0 on `linux-64`,
+release. Bioconda and BioContainers serve v1.1.0 on `linux-64`,
 `linux-aarch64`, `osx-64`, and
-`osx-arm64`; the published BioContainers tag is `1.0.0--hfa8f182_0`.
+`osx-arm64`; the published BioContainers tag is `1.1.0--hfa8f182_0`.
 
 ## v1.1: Reference Workflow Adoption
 
-Status: released on GitHub.
+Status: released on GitHub, Bioconda, and BioContainers.
 
 - tested Nextflow and Snakemake examples for a single reference bundle
 - separate reporting and enforcement, with reports retained when a gate blocks
