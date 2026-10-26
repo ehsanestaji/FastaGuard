@@ -21,8 +21,8 @@ The repository includes local starters for:
 The nf-core module PR [#12239](https://github.com/nf-core/modules/pull/12239)
 merged 2026-08-21, its v1.0 update merged in
 [#12892](https://github.com/nf-core/modules/pull/12892) on 2026-09-19, and its
-v1.1.0 update is open in
-[#13452](https://github.com/nf-core/modules/pull/13452). The
+v1.1.0 update merged in
+[#13452](https://github.com/nf-core/modules/pull/13452) on 2026-10-26. The
 Snakemake wrapper PR
 [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436) merged
 2026-07-27, its v1.0 update merged in

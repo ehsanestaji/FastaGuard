@@ -3,7 +3,7 @@
 This directory mirrors the interface of the FastaGuard module merged into
 nf-core/modules in [PR #12239](https://github.com/nf-core/modules/pull/12239),
 updated to v1.0 in
-[PR #12892](https://github.com/nf-core/modules/pull/12892), and submitted for
+[PR #12892](https://github.com/nf-core/modules/pull/12892), and updated to
 v1.1.0 in [PR #13452](https://github.com/nf-core/modules/pull/13452). It remains
 a local compatibility reference for future FastaGuard releases. The module runs
 the assembly command, not `fastaguard reference`.
