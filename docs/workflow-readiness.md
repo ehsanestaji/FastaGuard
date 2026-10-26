@@ -104,6 +104,9 @@ module carries the expected interface shape:
 For future updates, repeat this checklist in a fresh upstream checkout after
 GitHub and package publication:
 
+- run `nf-core modules bump-version fastaguard` so `environment.yml`, `main.nf`,
+  and the latest nf-core container conventions (including Seqera containers) are
+  updated together
 - regenerate or validate the module against the current `nf-core/tools`
   template
 - run `nf-core modules lint fastaguard`

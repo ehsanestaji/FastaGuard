@@ -96,7 +96,9 @@ For a future upstream update, use this safe local order:
 1. Run the repository Python contract tests.
 2. Validate a fresh nf-core/modules checkout with the current nf-core/tools,
    Nextflow, and nf-test versions.
-3. Run `nf-core modules lint fastaguard`.
-4. Run `nf-core modules test fastaguard`.
-5. Update the existing upstream module only after the FastaGuard release and
+3. Run `nf-core modules bump-version fastaguard` to update the version pin and
+   apply current nf-core container conventions (including Seqera containers).
+4. Run `nf-core modules lint fastaguard`.
+5. Run `nf-core modules test fastaguard`.
+6. Update the existing upstream module only after the FastaGuard release and
    package are published.
