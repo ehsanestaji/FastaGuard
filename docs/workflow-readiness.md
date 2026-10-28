@@ -27,9 +27,9 @@ Snakemake wrapper PR
 [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436) merged
 2026-07-27, its v1.0 update merged in
 [#5847](https://github.com/snakemake/snakemake-wrappers/pull/5847) on
-2026-09-04, and its v1.1.0 update is open in
-[#6117](https://github.com/snakemake/snakemake-wrappers/pull/6117). These
-integrations run the assembly command; the repository starters remain local
+2026-09-04, and its v1.1.0 update merged in
+[#6117](https://github.com/snakemake/snakemake-wrappers/pull/6117) on
+2026-10-28. These integrations run the assembly command; the repository starters remain local
 compatibility references.
 
 Reference-specific workflow components are not yet available upstream.

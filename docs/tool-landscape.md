@@ -104,9 +104,9 @@ Current product evidence:
 - Snakemake wrapper PR [#5436](https://github.com/snakemake/snakemake-wrappers/pull/5436)
   merged 2026-07-27; its v1.0 dependency update merged in
   [#5847](https://github.com/snakemake/snakemake-wrappers/pull/5847) on
-  2026-09-04, and its v1.1.0 update is open in
-  [#6117](https://github.com/snakemake/snakemake-wrappers/pull/6117). Both
-  upstream integrations still run assembly preflight.
+  2026-09-04, and its v1.1.0 update merged in
+  [#6117](https://github.com/snakemake/snakemake-wrappers/pull/6117) on
+  2026-10-28. Both upstream integrations still run assembly preflight.
 - The v0.2 evidence workflow is documented in
   `docs/evidence/fastaguard-v0.2-evidence.md`.
 - The v0.3 gate evidence workflow is documented in

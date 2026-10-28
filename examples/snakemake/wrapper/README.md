@@ -6,8 +6,9 @@ snakemake-wrappers in
 local compatibility reference and copy-paste starter for future releases. The
 v1.0 dependency and generated Linux pin were updated in
 [PR #5847](https://github.com/snakemake/snakemake-wrappers/pull/5847), and the
-v1.1.0 update is open in
-[PR #6117](https://github.com/snakemake/snakemake-wrappers/pull/6117).
+v1.1.0 update merged in
+[PR #6117](https://github.com/snakemake/snakemake-wrappers/pull/6117) on
+2026-10-28.
 The wrapper runs the assembly command, not `fastaguard reference`.
 
 See `../../../docs/workflow-readiness.md` for the current update checklist.
